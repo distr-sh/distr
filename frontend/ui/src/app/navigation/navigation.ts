@@ -37,6 +37,8 @@ interface NavigationEntryDefinitionBase {
 export interface NavigationLinkDefinition extends NavigationEntryDefinitionBase {
   route: string;
   indicator?: NavigationPredicate;
+  /** The key that opens the page when pressed after "g". Unique within a portal. */
+  shortcut?: string;
 }
 
 export interface NavigationExternalLinkDefinition extends NavigationEntryDefinitionBase {
@@ -55,7 +57,15 @@ export interface NavigationSectionDefinition {
 export type NavigationDefinition = NavigationSectionDefinition[];
 
 export type NavigationEntry =
-  | {kind: 'link'; id: string; label: string; icon: IconDefinition; route: string; hasIndicator: boolean}
+  | {
+      kind: 'link';
+      id: string;
+      label: string;
+      icon: IconDefinition;
+      route: string;
+      hasIndicator: boolean;
+      shortcut?: string;
+    }
   | {kind: 'external'; id: string; label: string; icon: IconDefinition; href: string}
   | {kind: 'locked'; id: string; label: string; icon: IconDefinition; plan: UpgradePlan};
 
@@ -86,5 +96,13 @@ function resolveEntry(entry: NavigationEntryDefinition, context: NavigationConte
   if ('href' in entry) {
     return {kind: 'external', id, label, icon, href: entry.href};
   }
-  return {kind: 'link', id, label, icon, route: entry.route, hasIndicator: entry.indicator?.(context) ?? false};
+  return {
+    kind: 'link',
+    id,
+    label,
+    icon,
+    route: entry.route,
+    hasIndicator: entry.indicator?.(context) ?? false,
+    shortcut: entry.shortcut,
+  };
 }

@@ -12,7 +12,8 @@ import {FeatureLock, upgradePlan} from '../types/feature-lock';
 export type QuickNavigationCardType = 'neutral' | 'success' | 'warning' | 'error';
 
 /**
- * Shows the projected content as the headline above the projected `[subtitle]`, as a link to `link` if one is given.
+ * Shows `count` as the headline, labeled by the projected content, above the projected `[subtitle]`, as a link to
+ * `link` if one is given. Without `count`, the card shows no headline.
  * Every type but `neutral` colors the card and replaces `icon` with an icon of its own. With `locked`, the card
  * shows a plan badge and opens a plan hint instead of following `link`, like a locked sidebar entry.
  */
@@ -40,6 +41,7 @@ export class QuickNavigationCardComponent {
   public readonly icon = input.required<IconDefinition>();
   public readonly heading = input.required<string>();
   public readonly type = input<QuickNavigationCardType>('neutral');
+  public readonly count = input<number>();
   public readonly link = input<string | readonly unknown[]>();
   public readonly queryParams = input<Params>();
   public readonly locked = input<FeatureLock>();
@@ -49,6 +51,10 @@ export class QuickNavigationCardComponent {
     return locked && upgradePlan(locked);
   });
   protected readonly typeClass = computed(() => `card-${this.type()}`);
+  protected readonly alertClass = computed(() => {
+    const type = this.type();
+    return type === 'neutral' ? undefined : `distr-alert-${type}`;
+  });
   protected readonly typeIcon = computed(() => {
     switch (this.type()) {
       case 'success':

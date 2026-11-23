@@ -1,7 +1,12 @@
 @let item = entry();
 @switch (item.kind) {
   @case ('link') {
-    <a class="item" routerLinkActive="active" [routerLink]="item.route" (click)="sidebar.hide()">
+    <a
+      class="item"
+      routerLinkActive="active"
+      [routerLink]="item.route"
+      [attr.title]="item.shortcut ? 'Go to ' + item.label + ' (G then ' + (item.shortcut | uppercase) + ')' : null"
+      (click)="sidebar.hide()">
       <fa-icon [icon]="item.icon" size="lg" class="icon" />
       <span class="label">{{ item.label }}</span>
       @if (item.hasIndicator) {
