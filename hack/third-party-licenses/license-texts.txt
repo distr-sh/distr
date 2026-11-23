@@ -1,0 +1,6 @@
+Third-party license texts of Distr
+
+The license texts of the Go modules compiled into Distr, the Distr Controllers and the support collector and of the npm
+packages bundled into the Distr web interface follow, each text once under the names of all that carry it.
+https://github.com/distr-sh/distr/blob/main/THIRD_PARTY_LICENSES.md lists them with their versions.
+{{licenses}}

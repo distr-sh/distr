@@ -4,7 +4,8 @@
 
 Distr is licensed under the [Apache License 2.0](LICENSE). It ships with and is built from the third-party software
 listed below, each of which is licensed under its own terms. The attribution notices that these licenses require to be
-passed on are collected in [`NOTICE`](NOTICE).
+passed on are collected in [`NOTICE`](NOTICE), and the Distr image contains the full license texts of the Go modules and
+npm packages in `/usr/share/doc/distr/third-party-licenses.txt`.
 
 ## Bundled Components
 

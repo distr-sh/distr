@@ -1,0 +1,14 @@
+{
+  "@fortawesome/free-brands-svg-icons": {
+    "licenses": ["CC-BY-4.0"],
+    "reason": "The icons are licensed under CC-BY-4.0, a license for creative works that the OSI does not review."
+  },
+  "@fortawesome/free-regular-svg-icons": {
+    "licenses": ["CC-BY-4.0"],
+    "reason": "The icons are licensed under CC-BY-4.0, a license for creative works that the OSI does not review."
+  },
+  "@fortawesome/free-solid-svg-icons": {
+    "licenses": ["CC-BY-4.0"],
+    "reason": "The icons are licensed under CC-BY-4.0, a license for creative works that the OSI does not review."
+  }
+}

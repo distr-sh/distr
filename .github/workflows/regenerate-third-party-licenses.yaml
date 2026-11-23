@@ -17,7 +17,6 @@ on:
       - docker-autoheal/Dockerfile
       - THIRD_PARTY_LICENSES.md
       - NOTICE
-      - mise.toml
       - .github/workflows/regenerate-third-party-licenses.yaml
 
 concurrency:
@@ -37,15 +36,27 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
-      - name: Install mise
-        uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
+      - name: Setup Go
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
-          install_args: 'go go:github.com/google/go-licenses/v2 node pnpm'
+          go-version-file: 'go.mod'
+          check-latest: true
+          cache-dependency-path: |
+            go.sum
+            hack/third-party-licenses/go.sum
+      - name: Install pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - name: Setup node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: 'package.json'
+          cache: pnpm
       - name: Regenerate THIRD_PARTY_LICENSES.md and NOTICE
-        # a fresh checkout gives the files and their sources arbitrary mtimes, hence --force
+        # keep in sync with the build:third-party-licenses tasks in mise.toml
         run: |
           pnpm install --frozen-lockfile
-          mise run --force build:third-party-licenses
+          mkdir -p dist && pnpm licenses list --prod --json > dist/npm-licenses.json
+          go -C hack/third-party-licenses run . -npm ../../dist/npm-licenses.json
       - name: Check that THIRD_PARTY_LICENSES.md and NOTICE are up to date
         # Renovate changes the dependencies without running the generator, so the push job below commits for it
         if: ${{ !startsWith(github.head_ref, 'renovate/') }}

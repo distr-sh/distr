@@ -13,7 +13,6 @@ watchexec = "2.8.0"
 pnpm = "12.21.0"
 stripe = "1.55.14"
 "go:github.com/go-delve/delve/cmd/dlv" = "1.27.2"
-"go:github.com/google/go-licenses/v2" = "2.0.1"
 git-lfs = "3.8.1"
 
 [env]
@@ -157,22 +156,14 @@ description = "Generate values.schema.json from values.yaml and its helm-docs co
 run = 'schema'
 dir = "deploy/charts/distr"
 
+[tasks."build:third-party-licenses:npm"]
+description = "Write the licenses of the production npm packages to dist/npm-licenses.json"
+run = "mkdir -p dist && pnpm licenses list --prod --json > dist/npm-licenses.json"
+
 [tasks."build:third-party-licenses"]
 description = "Generate THIRD_PARTY_LICENSES.md and NOTICE from the Go modules, the npm packages and the bundled components"
-run = 'node hack/third-party-licenses/generate.mjs'
-sources = [
-  "go.mod",
-  "go.sum",
-  "package.json",
-  "pnpm-lock.yaml",
-  "hack/third-party-licenses/*",
-  "deploy/docker/*/docker-compose.yaml",
-  "deploy/charts/distr/Chart.yaml",
-  "deploy/charts/distr/values.yaml",
-  "Dockerfile.*",
-  "docker-autoheal/Dockerfile",
-]
-outputs = ["THIRD_PARTY_LICENSES.md", "NOTICE"]
+depends = ["build:third-party-licenses:npm"]
+run = "go -C hack/third-party-licenses run . -npm ../../dist/npm-licenses.json"
 
 [tasks."format:frontend"]
 run = ['pnpm dedupe', 'pnpm format']
@@ -224,7 +215,7 @@ run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/controller/kubernetes/ run'
 run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/support-collector/'
 
 [tasks."docker-build:distr"]
-depends = "build:distr:enterprise"
+depends = ["build:distr:enterprise", "build:third-party-licenses"]
 run = 'cp dist/distr dist/distr-$(go env GOARCH) && docker build -f Dockerfile.distr --tag ghcr.io/distr-sh/distr:$VERSION .'
 
 [tasks."docker-build:controller:docker"]

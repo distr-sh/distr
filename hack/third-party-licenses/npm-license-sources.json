@@ -1,0 +1,6 @@
+{
+  "@posthog/browser-common": {
+    "package": "posthog-js",
+    "reason": "Ships without a license file. Its package.json declares MIT, but the only license file of the PostHog/posthog-js repository it is published from is the Apache-2.0 LICENSE that posthog-js ships."
+  }
+}
