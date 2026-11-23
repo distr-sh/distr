@@ -1,4 +1,7 @@
-<div class="distr-dropdown-panel mt-[15vh] flex max-h-[60vh] w-xl flex-col gap-2" (keydown)="onKeydown($event)">
+<div
+  class="distr-dropdown-panel mt-[15vh] flex max-h-[60vh] w-xl flex-col gap-2"
+  (keydown)="onKeydown($event)"
+  (mousedown)="keepSearchFocus($event)">
   <app-search-bar
     [control]="search"
     placeholder="Search or jump to"
@@ -25,7 +28,6 @@
             [id]="command.elementId"
             [attr.aria-selected]="command.index === activeIndex()"
             class="distr-dropdown-item not-aria-selected:hover:bg-transparent aria-selected:bg-gray-100 dark:not-aria-selected:hover:bg-transparent dark:not-aria-selected:hover:text-gray-200 dark:aria-selected:bg-gray-600 dark:aria-selected:text-white"
-            (mousedown)="$event.preventDefault()"
             (mousemove)="activeIndex.set(command.index)"
             (click)="run(command)">
             <fa-icon [icon]="command.icon" class="w-5 text-gray-500 dark:text-gray-400" />

@@ -21,24 +21,22 @@ const sections: NavigationSection[] = [
     id: 'distribution',
     label: 'Distribution',
     entries: [
-      {kind: 'link', id: 'home', label: 'Home', icon: faHome, route: '/home', hasIndicator: false, shortcut: 'h'},
+      {kind: 'link', id: 'home', label: 'Home', icon: faHome, route: '/home', shortcut: 'h'},
       {
         kind: 'link',
         id: 'applications',
         label: 'Applications',
         icon: faCube,
         route: '/applications',
-        hasIndicator: false,
       },
       {kind: 'locked', id: 'security', label: 'Security', icon: faBox, plan: 'business'},
-      {kind: 'link', id: 'registry', label: 'Registry', icon: faBox, route: '/registry', hasIndicator: false},
+      {kind: 'link', id: 'registry', label: 'Registry', icon: faBox, route: '/registry'},
       {
         kind: 'link',
         id: 'deployments',
         label: 'Deployments',
         icon: faBoxesStacked,
         route: '/deployments',
-        hasIndicator: false,
       },
     ],
   },
@@ -212,6 +210,19 @@ describe('CommandPaletteModalComponent', () => {
     applications$.next([...applications, {id: 'app-2', name: 'Blog'} as Application]);
     fixture.detectChanges();
     expect(selected(fixture)).toBe('Running');
+  });
+
+  it('keeps the focus in the search input when the panel is clicked anywhere else', () => {
+    const fixture = render();
+    const mousedown = (element: Element) => {
+      const event = new MouseEvent('mousedown', {bubbles: true, cancelable: true});
+      element.dispatchEvent(event);
+      return event;
+    };
+
+    expect(mousedown(fixture.nativeElement.querySelector('[role="listbox"] > li')).defaultPrevented).toBe(true);
+    expect(mousedown(fixture.nativeElement.querySelector('[role="option"]')).defaultPrevented).toBe(true);
+    expect(mousedown(fixture.nativeElement.querySelector('input')).defaultPrevented).toBe(false);
   });
 
   it('moves the selection with Tab instead of the focus', () => {

@@ -328,6 +328,14 @@ export class CommandPaletteModalComponent {
     }
   }
 
+  // The keyboard handling only sees what is typed while the search input has the focus, which a click anywhere else in
+  // the panel would take away.
+  protected keepSearchFocus(event: MouseEvent) {
+    if (!(event.target instanceof HTMLInputElement)) {
+      event.preventDefault();
+    }
+  }
+
   protected async run(command: Command) {
     this.closed.emit();
     const action = command.action;
