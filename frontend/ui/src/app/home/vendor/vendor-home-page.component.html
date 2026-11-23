@@ -1,25 +1,40 @@
 <app-page>
   <div class="flex flex-col gap-4">
-    <p class="distr-text-muted -mt-2 min-h-5 text-sm">
-      @if (counts(); as counts) {
-        <ng-container [ngPlural]="counts.customers">
-          <ng-template ngPluralCase="=1">1 customer</ng-template>
-          <ng-template ngPluralCase="other">{{ counts.customers }} customers</ng-template>
-        </ng-container>
-        &middot;
-        <ng-container [ngPlural]="counts.deployments">
-          <ng-template ngPluralCase="=1">1 deployment</ng-template>
-          <ng-template ngPluralCase="other">{{ counts.deployments }} deployments</ng-template>
-        </ng-container>
-        @if (counts.applications !== null) {
-          &middot;
-          <ng-container [ngPlural]="counts.applications">
-            <ng-template ngPluralCase="=1">1 application</ng-template>
-            <ng-template ngPluralCase="other">{{ counts.applications }} applications</ng-template>
+    <div class="-mt-2 flex min-h-5 items-center justify-between gap-4">
+      <p class="distr-text-muted text-sm">
+        @if (counts(); as counts) {
+          <ng-container [ngPlural]="counts.customers">
+            <ng-template ngPluralCase="=1">1 customer</ng-template>
+            <ng-template ngPluralCase="other">{{ counts.customers }} customers</ng-template>
           </ng-container>
+          &middot;
+          <ng-container [ngPlural]="counts.deployments">
+            <ng-template ngPluralCase="=1">1 deployment</ng-template>
+            <ng-template ngPluralCase="other">{{ counts.deployments }} deployments</ng-template>
+          </ng-container>
+          @if (counts.applications !== null) {
+            &middot;
+            <ng-container [ngPlural]="counts.applications">
+              <ng-template ngPluralCase="=1">1 application</ng-template>
+              <ng-template ngPluralCase="other">{{ counts.applications }} applications</ng-template>
+            </ng-container>
+          }
         }
+      </p>
+      @if (tutorialsRestorable()) {
+        <button
+          type="button"
+          (click)="setTutorialsHidden(false)"
+          class="distr-text-muted inline-flex shrink-0 items-center gap-2 text-sm hover:text-gray-900 dark:hover:text-white">
+          <fa-icon [icon]="faListCheck" />
+          Show getting started
+        </button>
       }
-    </p>
+    </div>
+
+    @if (visibleTutorials(); as tutorials) {
+      <app-vendor-home-tutorials [tutorials]="tutorials" (dismissed)="setTutorialsHidden(true)" />
+    }
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
       @if (deploymentHealth(); as health) {
