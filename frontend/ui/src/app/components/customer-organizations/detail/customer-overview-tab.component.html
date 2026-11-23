@@ -202,20 +202,16 @@
     </div>
 
     @if (users(); as users) {
-      @if (users.total === 0) {
-        <a [routerLink]="tabLinks().users" class="distr-card distr-card-clickable h-auto min-h-96 self-start p-4">
-          <h2 appCardHeading [icon]="faUsers" class="mb-3">Users</h2>
+      <a [routerLink]="tabLinks().users" class="distr-card distr-card-clickable h-auto min-h-96 self-start p-4">
+        <h2 appCardHeading [icon]="faUsers" class="mb-3">
+          Users
+          @if (users.total > 0) {
+            <span class="distr-badge distr-badge-neutral ms-2">{{ users.total }}</span>
+          }
+        </h2>
+        @if (users.total === 0) {
           <p class="distr-text-muted text-sm">No users yet. Invite the first one on the users tab.</p>
-        </a>
-      } @else {
-        <div class="distr-card h-auto min-h-96 self-start p-4">
-          <div class="mb-3 flex items-center justify-between gap-2">
-            <h2 appCardHeading [icon]="faUsers">
-              Users
-              <span class="distr-badge distr-badge-neutral ms-2">{{ users.total }}</span>
-            </h2>
-            <a [routerLink]="tabLinks().users" class="distr-link text-sm">View all</a>
-          </div>
+        } @else {
           <ul class="distr-home-list -mx-2">
             @for (user of users.users; track user.id) {
               <li class="flex items-center gap-3 p-2">
@@ -234,8 +230,8 @@
               </li>
             }
           </ul>
-        </div>
-      }
+        }
+      </a>
     } @else {
       <app-loading-card class="min-h-96" />
     }
