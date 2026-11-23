@@ -13,7 +13,7 @@
 
       @if (shouldShowCustomerSettings()) {
         <div class="distr-panel">
-          <h2 appCardHeading>Customer Settings</h2>
+          <h2 appCardHeading>Advanced Settings</h2>
           @if (settingsEnabled()) {
             <p class="distr-text-muted mt-1 text-sm">
               The customer's admins can change these on their own settings page.
@@ -32,8 +32,8 @@
             </div>
           } @else {
             <p class="distr-text-muted mt-1 text-sm">
-              Enable Settings under Features to configure the customer's controllers and sign-in and to give its admins
-              a settings page of their own.
+              Enable Advanced Settings under Features to configure the customer's controllers and sign-in and to give
+              its admins a settings page of their own.
             </p>
           }
         </div>
