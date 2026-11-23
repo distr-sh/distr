@@ -105,9 +105,15 @@ export class TimeseriesTableComponent {
       const paginateForward = paginatesForward(source.range);
       let nextBefore: Date | null = null;
       let nextAfter: Date | null = null;
+      let initialLoadFailed = false;
       return merge(
         merge(
-          source.load().pipe(catchError((err) => this.handleError(err))),
+          source.load().pipe(
+            catchError((err) => {
+              initialLoadFailed = true;
+              return this.handleError(err);
+            })
+          ),
           this.loadMore$.pipe(
             exhaustMap(() => {
               if (paginateForward) {
@@ -124,12 +130,18 @@ export class TimeseriesTableComponent {
         ).pipe(tap((entries) => this.hasMore.set(entries.length >= source.batchSize))),
         live
           ? interval(TimeseriesTableComponent.LIVE_INTERVAL_MS).pipe(
-              switchMap(() =>
-                (nextAfter !== null
-                  ? source.loadAfter(nextAfter)
-                  : source.load().pipe(tap((entries) => this.hasMore.set(entries.length >= source.batchSize)))
-                ).pipe(catchError((err) => this.handleError(err)))
-              ),
+              switchMap(() => {
+                if (nextAfter !== null) {
+                  return source.loadAfter(nextAfter).pipe(catchError((err) => this.handleError(err)));
+                } else if (initialLoadFailed) {
+                  return EMPTY;
+                } else {
+                  return source.load().pipe(
+                    tap((entries) => this.hasMore.set(entries.length >= source.batchSize)),
+                    catchError((err) => this.handleError(err))
+                  );
+                }
+              }),
               tap((entries) => {
                 this.liveResetTimestamp.set(Date.now());
                 if (!newestFirst && entries.length > 0) {
