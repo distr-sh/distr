@@ -125,9 +125,9 @@ export class TimeseriesTableComponent {
         live
           ? interval(TimeseriesTableComponent.LIVE_INTERVAL_MS).pipe(
               switchMap(() =>
-                nextAfter !== null
-                  ? source.loadAfter(nextAfter).pipe(catchError((err) => this.handleError(err)))
-                  : EMPTY
+                (nextAfter !== null ? source.loadAfter(nextAfter) : source.load()).pipe(
+                  catchError((err) => this.handleError(err))
+                )
               ),
               tap((entries) => {
                 this.liveResetTimestamp.set(Date.now());
