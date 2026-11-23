@@ -12,12 +12,12 @@ import {
   faKey,
   faLifeRing,
 } from '@fortawesome/free-solid-svg-icons';
-import {RelativeDatePipe} from '../../util/dates';
-import {never} from '../../util/exhaust';
-import {AvatarComponent} from '../components/avatar.component';
-import {CardHeadingComponent} from '../components/card-heading.component';
-import {CustomerHomeCollapsibleComponent} from './customer/customer-home-collapsible.component';
-import {HomeActivity, HomeActivityViewer} from './home-activity';
+import {RelativeDatePipe} from '../../../util/dates';
+import {never} from '../../../util/exhaust';
+import {CustomerHomeCollapsibleComponent} from '../../home/customer/customer-home-collapsible.component';
+import {AvatarComponent} from '../avatar.component';
+import {CardHeadingComponent} from '../card-heading.component';
+import {ActivityFeedItem, ActivityFeedViewer} from './activity-feed';
 
 interface ActivityEntry {
   id: string;
@@ -31,7 +31,7 @@ interface ActivityEntry {
 }
 
 @Component({
-  selector: 'app-home-activity',
+  selector: 'app-activity-feed',
   imports: [
     DatePipe,
     RouterLink,
@@ -41,16 +41,16 @@ interface ActivityEntry {
     CardHeadingComponent,
     CustomerHomeCollapsibleComponent,
   ],
-  templateUrl: './home-activity.component.html',
+  templateUrl: './activity-feed.component.html',
   host: {
     class: 'block',
     '[class.lg:absolute]': 'fillHeight() && !expanded()',
     '[class.lg:inset-0]': 'fillHeight() && !expanded()',
   },
 })
-export class HomeActivityComponent {
-  public readonly activity = input.required<HomeActivity[]>();
-  public readonly viewer = input.required<HomeActivityViewer>();
+export class ActivityFeedComponent {
+  public readonly activity = input.required<ActivityFeedItem[]>();
+  public readonly viewer = input.required<ActivityFeedViewer>();
   /** Shown as the author of what the vendor did, to a customer only. */
   public readonly vendorName = input<string>();
   public readonly vendorLogo = input<string>();
@@ -96,7 +96,7 @@ export class HomeActivityComponent {
   });
 }
 
-function icon({type}: HomeActivity): IconDefinition {
+function icon({type}: ActivityFeedItem): IconDefinition {
   switch (type) {
     case 'application_version_created':
       return faCube;
@@ -120,8 +120,8 @@ function icon({type}: HomeActivity): IconDefinition {
 }
 
 function link(
-  {type, resourceId, subject, customer}: HomeActivity,
-  viewer: HomeActivityViewer
+  {type, resourceId, subject, customer}: ActivityFeedItem,
+  viewer: ActivityFeedViewer
 ): Pick<ActivityEntry, 'link' | 'queryParams'> {
   switch (type) {
     case 'application_version_created':
@@ -150,7 +150,7 @@ function link(
   }
 }
 
-function action({type, subject, detail}: HomeActivity): string {
+function action({type, subject, detail}: ActivityFeedItem): string {
   switch (type) {
     case 'application_version_created':
       return `version ${detail} of ${subject} released`;

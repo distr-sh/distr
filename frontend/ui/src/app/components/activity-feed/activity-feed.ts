@@ -1,30 +1,30 @@
-import {ActivityFeedEntry, ActivityFeedEntryType} from '../types/activity-feed';
+import {ActivityFeedEntry, ActivityFeedEntryType} from '../../types/activity-feed';
 
 /** Who looks at the activity, which decides where its entries link to and whether they name their customer. */
-export type HomeActivityViewer = 'customer' | 'vendor' | 'partner';
+export type ActivityFeedViewer = 'customer' | 'vendor' | 'partner';
 
-export interface HomeActivityUser {
+export interface ActivityFeedUser {
   name: string;
   imageUrl?: string;
 }
 
-export interface HomeActivityCustomer {
+export interface ActivityFeedCustomer {
   id: string;
   name: string;
 }
 
-export interface HomeActivity {
+export interface ActivityFeedItem {
   id: string;
   createdAt: string;
   type: ActivityFeedEntryType;
   resourceId: string;
   subject: string;
   detail?: string;
-  user?: HomeActivityUser;
-  customer?: HomeActivityCustomer;
+  user?: ActivityFeedUser;
+  customer?: ActivityFeedCustomer;
 }
 
-export function toHomeActivity(entries: ActivityFeedEntry[]): HomeActivity[] {
+export function toActivityFeedItems(entries: ActivityFeedEntry[]): ActivityFeedItem[] {
   return entries.map((entry) => ({
     id: entry.id,
     createdAt: entry.createdAt,

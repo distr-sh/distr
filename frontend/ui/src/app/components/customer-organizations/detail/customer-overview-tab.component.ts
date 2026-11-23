@@ -6,8 +6,6 @@ import {faBoxesStacked, faCircleArrowUp, faKey, faLifeRing, faSliders} from '@fo
 import {EMPTY, firstValueFrom, map, of, switchMap} from 'rxjs';
 import {refreshInBackground} from '../../../../util/refresh';
 import {DeploymentStatusFilter} from '../../../deployments/deployment-target-card/deployment-status-text.component';
-import {toHomeActivity} from '../../../home/home-activity';
-import {HomeActivityComponent} from '../../../home/home-activity.component';
 import {QuickNavigationCardComponent, QuickNavigationCardType} from '../../../home/quick-navigation-card.component';
 import {DeploymentHealth} from '../../../home/vendor/vendor-home';
 import {
@@ -26,6 +24,8 @@ import {DeploymentTargetsService} from '../../../services/deployment-targets.ser
 import {FeatureFlagService} from '../../../services/feature-flag.service';
 import {LicensesService} from '../../../services/licenses.service';
 import {SupportBundlesService} from '../../../services/support-bundles.service';
+import {toActivityFeedItems} from '../../activity-feed/activity-feed';
+import {ActivityFeedComponent} from '../../activity-feed/activity-feed.component';
 import {CardHeadingComponent} from '../../card-heading.component';
 import {LoadingCardComponent} from '../../loading-card/loading-card.component';
 import {CustomerDetailTabId} from './customer-detail-navigation';
@@ -94,7 +94,7 @@ function licenseCardCount(license: CustomerOverviewLicense, type: QuickNavigatio
     NgPluralCase,
     CardHeadingComponent,
     CustomerFeaturesComponent,
-    HomeActivityComponent,
+    ActivityFeedComponent,
     LoadingCardComponent,
     QuickNavigationCardComponent,
   ],
@@ -231,7 +231,7 @@ export class CustomerOverviewTabComponent {
   protected readonly activity = toSignal(
     this.customerOrganizationId$.pipe(
       switchMap((id) => this.activityFeedService.listForCustomer(id)),
-      map(toHomeActivity)
+      map(toActivityFeedItems)
     )
   );
 
