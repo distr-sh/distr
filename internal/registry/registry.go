@@ -113,7 +113,9 @@ func (r *registry) root(resp http.ResponseWriter, req *http.Request) {
 			zap.Error(rerr.Error),
 		)
 		switch {
-		case errors.Is(rerr.Error, context.Canceled):
+		// A client disconnecting during an upload surfaces as io.ErrUnexpectedEOF rather than
+		// context.Canceled, but net/http cancels the request context before that error is returned.
+		case errors.Is(rerr.Error, context.Canceled) || errors.Is(req.Context().Err(), context.Canceled):
 			log.Debug("registry request canceled by client")
 		case rerr.Status >= http.StatusInternalServerError:
 			log.Error("registry request failed")
