@@ -133,7 +133,6 @@ func ApiRouter(
 			chimiddleware.RequestID,
 			chimiddleware.ClientIPFromRemoteAddr,
 			chimiddleware.ClientIPFromXFFTrustedProxies(1),
-			middleware.Sentry,
 			middleware.LoggerCtxMiddleware(logger),
 			middleware.LoggingMiddleware,
 			middleware.MaintenanceMode,
@@ -146,6 +145,7 @@ func ApiRouter(
 			r.Group(func(r chiopenapi.Router) {
 				r.Use(
 					middleware.OTEL(tracers.Default()),
+					middleware.Sentry,
 					requestSize1MiB,
 				)
 
@@ -233,6 +233,7 @@ func ApiRouter(
 				r.Group(func(r chiopenapi.Router) {
 					r.Use(
 						middleware.OTEL(tracers.Controller()),
+						middleware.Sentry,
 						requestSize50MiB,
 					)
 					r.Route("/", handlers.ControllerRouter)
@@ -241,6 +242,7 @@ func ApiRouter(
 				r.Group(func(r chiopenapi.Router) {
 					r.Use(
 						middleware.OTEL(tracers.Default()),
+						middleware.Sentry,
 						// Collected resources (up to SUPPORT_BUNDLE_RESOURCE_MAX_BYTES each) can be
 						// sizeable, so allow a larger request body than the default.
 						requestSize10MiB,
@@ -310,7 +312,7 @@ func isReady(ctx context.Context, db *pgxpool.Pool) bool {
 
 func PublicRouter(tracers *tracers.Tracers) func(r chiopenapi.Router) {
 	return func(r chiopenapi.Router) {
-		r.Use(middleware.OTEL(tracers.Default()))
+		r.Use(middleware.OTEL(tracers.Default()), middleware.Sentry)
 
 		r.Route("/license-keys", handlers.PublicLicenseKeysRouter)
 		r.Route("/files", handlers.PublicFileRouter)

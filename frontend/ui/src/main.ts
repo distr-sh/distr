@@ -28,6 +28,7 @@ bootstrapApplication(AppComponent, appConfig).catch((err) => console.error(err))
       environment: remoteEnvironment.sentryEnvironment,
       integrations: [Sentry.browserTracingIntegration()],
       tracesSampleRate: remoteEnvironment.sentryTraceSampleRate ?? 1,
+      propagateTraceparent: true,
       dataCollection: {
         userInfo: false,
       },
