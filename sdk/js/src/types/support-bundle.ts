@@ -1,4 +1,3 @@
-import {OrganizationKind} from './base';
 import {DeploymentType} from './deployment';
 
 export type SupportBundleStatus = 'initialized' | 'created' | 'resolved' | 'canceled';
@@ -44,8 +43,9 @@ export interface SupportBundle {
   createdByUserAccountId?: string;
   createdByUserName?: string;
   createdByImageUrl?: string;
-  /** Missing when the user is no longer a member of the vendor's organization. */
-  createdByKind?: OrganizationKind;
+  createdByCustomerOrganizationId?: string;
+  createdByPartnerOrganizationId?: string;
+  createdByDeleted?: boolean;
   deploymentType: DeploymentType;
   title: string;
   description?: string;
@@ -55,8 +55,9 @@ export interface SupportBundle {
   lastCommentAt?: string;
   statusChangedByUserName?: string;
   statusChangedByImageUrl?: string;
-  /** Missing when the user is no longer a member of the vendor's organization. */
-  statusChangedByKind?: OrganizationKind;
+  statusChangedByCustomerOrganizationId?: string;
+  statusChangedByPartnerOrganizationId?: string;
+  statusChangedByDeleted?: boolean;
   statusChangedAt?: string;
 }
 
@@ -92,8 +93,9 @@ export interface SupportBundleComment {
   userAccountId?: string;
   userName?: string;
   userImageUrl?: string;
-  /** Missing when the user is no longer a member of the vendor's organization. */
-  userKind?: OrganizationKind;
+  userCustomerOrganizationId?: string;
+  userPartnerOrganizationId?: string;
+  userDeleted?: boolean;
   content: string;
 }
 

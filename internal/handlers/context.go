@@ -55,8 +55,10 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 
 	var customerOrg *api.CustomerOrganization
 	var sidebarLinks []api.SidebarLink
+	partnerOrgID := auth.CurrentPartnerOrgID()
 	if co := cmp.Or(auth.LensCustomerOrg(), auth.CurrentCustomerOrg()); co != nil {
 		customerOrg = new(mapping.CustomerOrganizationToAPI(*co))
+		partnerOrgID = co.PartnerOrganizationID
 		if links, err := db.GetSidebarLinks(ctx, co.ID); err != nil {
 			log.Error("failed to get sidebar links", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -66,7 +68,7 @@ func getContextHandler(r *http.Request) (respond.Responder, error) {
 	}
 
 	var partnerOrg *api.PartnerOrganization
-	if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
+	if partnerOrgID != nil {
 		if po, err := db.GetPartnerOrganizationByID(ctx, *partnerOrgID); err != nil {
 			log.Error("failed to get partner organization", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)

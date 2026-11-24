@@ -43,8 +43,6 @@ export class ContextService {
         userRole: ctx.user.userRole,
         customerOrganizationId: ctx.customerOrganization?.id,
         customerOrganizationName: ctx.customerOrganization?.name,
-        partnerOrganizationId: ctx.partnerOrganization?.id,
-        partnerOrganizationName: ctx.partnerOrganization?.name,
         joinedOrgAt: ctx.user.joinedOrgAt,
       }))
     );
@@ -58,6 +56,7 @@ export class ContextService {
     return this.cache.pipe(map((ctx) => ctx.customerOrganization));
   }
 
+  /** The partner the user is a member of or, in a customer organization, the partner it is assigned to. */
   public getPartnerOrganization(): Observable<PartnerOrganization | undefined> {
     return this.cache.pipe(map((ctx) => ctx.partnerOrganization));
   }

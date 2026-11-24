@@ -38,6 +38,26 @@
 
 ---
 
+### createdByCustomerOrganizationId?
+
+> `optional` **createdByCustomerOrganizationId?**: `string`
+
+#### Inherited from
+
+[`SupportBundle`](SupportBundle.md).[`createdByCustomerOrganizationId`](SupportBundle.md#createdbycustomerorganizationid)
+
+---
+
+### createdByDeleted?
+
+> `optional` **createdByDeleted?**: `boolean`
+
+#### Inherited from
+
+[`SupportBundle`](SupportBundle.md).[`createdByDeleted`](SupportBundle.md#createdbydeleted)
+
+---
+
 ### createdByImageUrl?
 
 > `optional` **createdByImageUrl?**: `string`
@@ -48,15 +68,13 @@
 
 ---
 
-### createdByKind?
+### createdByPartnerOrganizationId?
 
-> `optional` **createdByKind?**: [`OrganizationKind`](../type-aliases/OrganizationKind.md)
-
-Missing when the user is no longer a member of the vendor's organization.
+> `optional` **createdByPartnerOrganizationId?**: `string`
 
 #### Inherited from
 
-[`SupportBundle`](SupportBundle.md).[`createdByKind`](SupportBundle.md#createdbykind)
+[`SupportBundle`](SupportBundle.md).[`createdByPartnerOrganizationId`](SupportBundle.md#createdbypartnerorganizationid)
 
 ---
 
@@ -170,6 +188,26 @@ Missing when the user is no longer a member of the vendor's organization.
 
 ---
 
+### statusChangedByCustomerOrganizationId?
+
+> `optional` **statusChangedByCustomerOrganizationId?**: `string`
+
+#### Inherited from
+
+[`SupportBundle`](SupportBundle.md).[`statusChangedByCustomerOrganizationId`](SupportBundle.md#statuschangedbycustomerorganizationid)
+
+---
+
+### statusChangedByDeleted?
+
+> `optional` **statusChangedByDeleted?**: `boolean`
+
+#### Inherited from
+
+[`SupportBundle`](SupportBundle.md).[`statusChangedByDeleted`](SupportBundle.md#statuschangedbydeleted)
+
+---
+
 ### statusChangedByImageUrl?
 
 > `optional` **statusChangedByImageUrl?**: `string`
@@ -180,15 +218,13 @@ Missing when the user is no longer a member of the vendor's organization.
 
 ---
 
-### statusChangedByKind?
+### statusChangedByPartnerOrganizationId?
 
-> `optional` **statusChangedByKind?**: [`OrganizationKind`](../type-aliases/OrganizationKind.md)
-
-Missing when the user is no longer a member of the vendor's organization.
+> `optional` **statusChangedByPartnerOrganizationId?**: `string`
 
 #### Inherited from
 
-[`SupportBundle`](SupportBundle.md).[`statusChangedByKind`](SupportBundle.md#statuschangedbykind)
+[`SupportBundle`](SupportBundle.md).[`statusChangedByPartnerOrganizationId`](SupportBundle.md#statuschangedbypartnerorganizationid)
 
 ---
 

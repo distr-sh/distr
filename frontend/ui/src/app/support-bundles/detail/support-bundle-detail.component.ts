@@ -7,7 +7,7 @@ import {faCheck, faComment, faDownload, faTrash, faXmark} from '@fortawesome/fre
 import {catchError, combineLatest, firstValueFrom, map, of, startWith, Subject, switchMap} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError, isNotFound, toastDisplayedError} from '../../../util/errors';
-import {OrganizationKind} from '../../../util/organization-kind';
+import {organizationKind} from '../../../util/organization-kind';
 import {
   ActivityTimelineComponent,
   ActivityTimelineEntry,
@@ -17,12 +17,13 @@ import {ClipComponent} from '../../components/clip.component';
 import {DeploymentTypeBadgeComponent} from '../../components/deployment-type-badge.component';
 import {PageComponent} from '../../components/page.component';
 import {AuthService} from '../../services/auth.service';
+import {ContextService} from '../../services/context.service';
 import {OrganizationBrandingService} from '../../services/organization-branding.service';
 import {OrganizationService} from '../../services/organization.service';
 import {OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService, supportBundleZipFileName} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
-import {SupportBundleDetail} from '../../types/support-bundle';
+import {SupportBundle, SupportBundleComment, SupportBundleDetail} from '../../types/support-bundle';
 import {supportBundleDeleteConfirm} from '../support-bundle-display';
 import {SupportBundleStatusBadgeComponent} from '../support-bundle-status-badge.component';
 import {buildResourceTree} from './resource-tree';
@@ -33,18 +34,40 @@ interface Author {
   imageUrl?: string;
 }
 
-/**
- * Who did something, as far as the viewer may know. A vendor or partner member the API withholds stands in as the
- * vendor, which is all a customer should see of the vendor's side. A user without a kind is no longer a member.
- */
-function author(
-  user: {name?: string; imageUrl?: string; kind?: OrganizationKind},
-  vendor: Author | undefined
-): Author | undefined {
-  if (user.name) {
-    return {name: user.name, imageUrl: user.imageUrl};
-  }
-  return user.kind === 'vendor' || user.kind === 'partner' ? vendor : undefined;
+interface Actor {
+  name?: string;
+  imageUrl?: string;
+  customerOrganizationId?: string;
+  partnerOrganizationId?: string;
+  deleted?: boolean;
+}
+
+function createdBy(bundle: SupportBundle): Actor {
+  return {
+    name: bundle.createdByUserName,
+    customerOrganizationId: bundle.createdByCustomerOrganizationId,
+    partnerOrganizationId: bundle.createdByPartnerOrganizationId,
+    deleted: bundle.createdByDeleted,
+  };
+}
+
+function statusChangedBy(bundle: SupportBundle): Actor {
+  return {
+    name: bundle.statusChangedByUserName,
+    customerOrganizationId: bundle.statusChangedByCustomerOrganizationId,
+    partnerOrganizationId: bundle.statusChangedByPartnerOrganizationId,
+    deleted: bundle.statusChangedByDeleted,
+  };
+}
+
+function commentedBy(comment: SupportBundleComment): Actor {
+  return {
+    name: comment.userName,
+    imageUrl: comment.userImageUrl,
+    customerOrganizationId: comment.userCustomerOrganizationId,
+    partnerOrganizationId: comment.userPartnerOrganizationId,
+    deleted: comment.userDeleted,
+  };
 }
 
 @Component({
@@ -71,6 +94,7 @@ export class SupportBundleDetailComponent {
   private readonly overlay = inject(OverlayService);
   private readonly organizationService = inject(OrganizationService);
   private readonly organizationBranding = inject(OrganizationBrandingService);
+  private readonly context = inject(ContextService);
   protected readonly auth = inject(AuthService);
 
   protected readonly faCheck = faCheck;
@@ -113,25 +137,21 @@ export class SupportBundleDetailComponent {
           ),
         ]).pipe(map(([org, branding]) => ({name: org.name, imageUrl: branding?.logoImageId})))
   );
+  private readonly partner = toSignal(this.context.getPartnerOrganization());
 
   protected readonly createdByName = computed(() => {
     const bundle = this.bundle();
-    return bundle && author({name: bundle.createdByUserName, kind: bundle.createdByKind}, this.vendor())?.name;
+    return bundle && this.author(createdBy(bundle))?.name;
   });
 
   protected readonly statusChangedByName = computed(() => {
     const bundle = this.bundle();
-    return (
-      bundle && author({name: bundle.statusChangedByUserName, kind: bundle.statusChangedByKind}, this.vendor())?.name
-    );
+    return bundle && this.author(statusChangedBy(bundle))?.name;
   });
 
   protected readonly timelineEntries = computed<ActivityTimelineEntry[]>(() =>
     (this.bundle()?.comments ?? []).map((comment) => {
-      const commentAuthor = author(
-        {name: comment.userName, imageUrl: comment.userImageUrl, kind: comment.userKind},
-        this.vendor()
-      );
+      const commentAuthor = this.author(commentedBy(comment));
       return {
         id: comment.id,
         createdAt: comment.createdAt,
@@ -280,6 +300,30 @@ export class SupportBundleDetailComponent {
       }
     } finally {
       this.submittingComment.set(false);
+    }
+  }
+
+  /**
+   * Who did something, as far as the viewer may know. A vendor or partner member the API withholds stands in as their
+   * organization: the partner if the viewer's customer organization is assigned to it, the vendor otherwise. A
+   * deleted user stays anonymous.
+   */
+  private author(actor: Actor): Author | undefined {
+    if (actor.name) {
+      return {name: actor.name, imageUrl: actor.imageUrl};
+    }
+    if (actor.deleted) {
+      return undefined;
+    }
+    switch (organizationKind(actor)) {
+      case 'vendor':
+        return this.vendor();
+      case 'partner': {
+        const partner = this.partner();
+        return partner && actor.partnerOrganizationId === partner.id ? {name: partner.name} : this.vendor();
+      }
+      default:
+        return undefined;
     }
   }
 }

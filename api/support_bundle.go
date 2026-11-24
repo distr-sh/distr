@@ -118,25 +118,29 @@ func defaultSupportBundleDeploymentType(deploymentType *types.DeploymentType) {
 // Bundle
 
 type SupportBundle struct {
-	ID                       uuid.UUID               `json:"id"`
-	CreatedAt                time.Time               `json:"createdAt"`
-	CustomerOrganizationID   uuid.UUID               `json:"customerOrganizationId"`
-	CustomerOrganizationName string                  `json:"customerOrganizationName"`
-	CreatedByUserAccountID   *uuid.UUID              `json:"createdByUserAccountId,omitempty"`
-	CreatedByUserName        *string                 `json:"createdByUserName,omitempty"`
-	CreatedByImageURL        *string                 `json:"createdByImageUrl,omitempty"`
-	CreatedByKind            *types.OrganizationKind `json:"createdByKind,omitempty"`
-	DeploymentType           types.DeploymentType    `json:"deploymentType"`
-	Title                    string                  `json:"title"`
-	Description              *string                 `json:"description,omitempty"`
-	Status                   string                  `json:"status"`
-	ResourceCount            int64                   `json:"resourceCount"`
-	CommentCount             int64                   `json:"commentCount"`
-	LastCommentAt            *time.Time              `json:"lastCommentAt,omitempty"`
-	StatusChangedByUserName  *string                 `json:"statusChangedByUserName,omitempty"`
-	StatusChangedByImageURL  *string                 `json:"statusChangedByImageUrl,omitempty"`
-	StatusChangedByKind      *types.OrganizationKind `json:"statusChangedByKind,omitempty"`
-	StatusChangedAt          *time.Time              `json:"statusChangedAt,omitempty"`
+	ID                                    uuid.UUID            `json:"id"`
+	CreatedAt                             time.Time            `json:"createdAt"`
+	CustomerOrganizationID                uuid.UUID            `json:"customerOrganizationId"`
+	CustomerOrganizationName              string               `json:"customerOrganizationName"`
+	CreatedByUserAccountID                *uuid.UUID           `json:"createdByUserAccountId,omitempty"`
+	CreatedByUserName                     *string              `json:"createdByUserName,omitempty"`
+	CreatedByImageURL                     *string              `json:"createdByImageUrl,omitempty"`
+	CreatedByCustomerOrganizationID       *uuid.UUID           `json:"createdByCustomerOrganizationId,omitempty"`
+	CreatedByPartnerOrganizationID        *uuid.UUID           `json:"createdByPartnerOrganizationId,omitempty"`
+	CreatedByDeleted                      bool                 `json:"createdByDeleted,omitempty"`
+	DeploymentType                        types.DeploymentType `json:"deploymentType"`
+	Title                                 string               `json:"title"`
+	Description                           *string              `json:"description,omitempty"`
+	Status                                string               `json:"status"`
+	ResourceCount                         int64                `json:"resourceCount"`
+	CommentCount                          int64                `json:"commentCount"`
+	LastCommentAt                         *time.Time           `json:"lastCommentAt,omitempty"`
+	StatusChangedByUserName               *string              `json:"statusChangedByUserName,omitempty"`
+	StatusChangedByImageURL               *string              `json:"statusChangedByImageUrl,omitempty"`
+	StatusChangedByCustomerOrganizationID *uuid.UUID           `json:"statusChangedByCustomerOrganizationId,omitempty"`
+	StatusChangedByPartnerOrganizationID  *uuid.UUID           `json:"statusChangedByPartnerOrganizationId,omitempty"`
+	StatusChangedByDeleted                bool                 `json:"statusChangedByDeleted,omitempty"`
+	StatusChangedAt                       *time.Time           `json:"statusChangedAt,omitempty"`
 }
 
 type SupportBundleDetail struct {
@@ -187,13 +191,15 @@ type SupportBundleResource struct {
 // Comment
 
 type SupportBundleComment struct {
-	ID            uuid.UUID               `json:"id"`
-	CreatedAt     time.Time               `json:"createdAt"`
-	UserAccountID *uuid.UUID              `json:"userAccountId,omitempty"`
-	UserName      *string                 `json:"userName,omitempty"`
-	UserImageURL  *string                 `json:"userImageUrl,omitempty"`
-	UserKind      *types.OrganizationKind `json:"userKind,omitempty"`
-	Content       string                  `json:"content"`
+	ID                         uuid.UUID  `json:"id"`
+	CreatedAt                  time.Time  `json:"createdAt"`
+	UserAccountID              *uuid.UUID `json:"userAccountId,omitempty"`
+	UserName                   *string    `json:"userName,omitempty"`
+	UserImageURL               *string    `json:"userImageUrl,omitempty"`
+	UserCustomerOrganizationID *uuid.UUID `json:"userCustomerOrganizationId,omitempty"`
+	UserPartnerOrganizationID  *uuid.UUID `json:"userPartnerOrganizationId,omitempty"`
+	UserDeleted                bool       `json:"userDeleted,omitempty"`
+	Content                    string     `json:"content"`
 }
 
 type CreateSupportBundleCommentRequest struct {

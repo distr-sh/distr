@@ -288,25 +288,19 @@ var supportBundleWithDetailsOutputExpr = `
 	sb.status_changed_at,
 	u.name AS created_by_user_name,
 	u.image_id AS created_by_image_id,
-	` + organizationKindExpr("uj") + ` AS created_by_kind,
+	uj.customer_organization_id AS created_by_customer_organization_id,
+	uj.partner_organization_id AS created_by_partner_organization_id,
+	uj.user_account_id IS NULL AS created_by_deleted,
 	co.name AS customer_organization_name,
 	(SELECT count(*) FROM SupportBundleResource WHERE support_bundle_id = sb.id) AS resource_count,
 	(SELECT count(*) FROM SupportBundleComment WHERE support_bundle_id = sb.id) AS comment_count,
 	(SELECT max(created_at) FROM SupportBundleComment WHERE support_bundle_id = sb.id) AS last_comment_at,
 	scu.name AS status_changed_by_user_name,
 	scu.image_id AS status_changed_by_image_id,
-	` + organizationKindExpr("scuj") + ` AS status_changed_by_kind
+	scuj.customer_organization_id AS status_changed_by_customer_organization_id,
+	scuj.partner_organization_id AS status_changed_by_partner_organization_id,
+	sb.status_changed_at IS NOT NULL AND scuj.user_account_id IS NULL AS status_changed_by_deleted
 `
-
-// organizationKindExpr selects the types.OrganizationKind of the Organization_UserAccount joined as membership, or
-// NULL when the join found none.
-func organizationKindExpr(membership string) string {
-	return `CASE
-		WHEN ` + membership + `.customer_organization_id IS NOT NULL THEN 'customer'
-		WHEN ` + membership + `.partner_organization_id IS NOT NULL THEN 'partner'
-		WHEN ` + membership + `.user_account_id IS NOT NULL THEN 'vendor'
-	END`
-}
 
 const supportBundleWithDetailsJoinExpr = `
 	LEFT JOIN UserAccount u ON sb.created_by_user_account_id = u.id
@@ -665,10 +659,12 @@ func CreateSupportBundleResource(ctx context.Context, resource *types.SupportBun
 
 // Comments
 
-var supportBundleCommentWithUserOutputExpr = `
+const supportBundleCommentWithUserOutputExpr = `
 	c.id, c.created_at, c.support_bundle_id, c.user_account_id, c.content,
 	u.name AS user_name, u.image_id AS user_image_id,
-	` + organizationKindExpr("uj") + ` AS user_kind
+	uj.customer_organization_id AS user_customer_organization_id,
+	uj.partner_organization_id AS user_partner_organization_id,
+	uj.user_account_id IS NULL AS user_deleted
 `
 
 // supportBundleCommentWithUserJoinExpr joins the author of the comment c and their membership in the vendor's

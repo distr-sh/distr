@@ -25,17 +25,27 @@
 
 ---
 
+### createdByCustomerOrganizationId?
+
+> `optional` **createdByCustomerOrganizationId?**: `string`
+
+---
+
+### createdByDeleted?
+
+> `optional` **createdByDeleted?**: `boolean`
+
+---
+
 ### createdByImageUrl?
 
 > `optional` **createdByImageUrl?**: `string`
 
 ---
 
-### createdByKind?
+### createdByPartnerOrganizationId?
 
-> `optional` **createdByKind?**: [`OrganizationKind`](../type-aliases/OrganizationKind.md)
-
-Missing when the user is no longer a member of the vendor's organization.
+> `optional` **createdByPartnerOrganizationId?**: `string`
 
 ---
 
@@ -105,17 +115,27 @@ Missing when the user is no longer a member of the vendor's organization.
 
 ---
 
+### statusChangedByCustomerOrganizationId?
+
+> `optional` **statusChangedByCustomerOrganizationId?**: `string`
+
+---
+
+### statusChangedByDeleted?
+
+> `optional` **statusChangedByDeleted?**: `boolean`
+
+---
+
 ### statusChangedByImageUrl?
 
 > `optional` **statusChangedByImageUrl?**: `string`
 
 ---
 
-### statusChangedByKind?
+### statusChangedByPartnerOrganizationId?
 
-> `optional` **statusChangedByKind?**: [`OrganizationKind`](../type-aliases/OrganizationKind.md)
-
-Missing when the user is no longer a member of the vendor's organization.
+> `optional` **statusChangedByPartnerOrganizationId?**: `string`
 
 ---
 

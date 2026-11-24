@@ -68,7 +68,9 @@ func SupportBundleConfigurationScriptToInternal(
 
 // SupportBundleToAPI returns a mapper that converts a SupportBundleWithDetails to its API representation. The
 // identity of the users who created the bundle and changed its status is only included when the viewer is
-// allowed to see it, by the same rule as deploymentRevisionCreatorToAPI, while their kind always is.
+// allowed to see it, by the same rule as deploymentRevisionCreatorToAPI, while their organization and whether they
+// are deleted always are. A deleted user has no organization and ranks like a vendor, so only a vendor learns who
+// they were.
 func SupportBundleToAPI(
 	viewerCustomerOrgID *uuid.UUID,
 	viewerPartnerOrgID *uuid.UUID,
@@ -76,46 +78,39 @@ func SupportBundleToAPI(
 	viewerRank := organizationKindRank(viewerCustomerOrgID, viewerPartnerOrgID)
 	return func(bundle types.SupportBundleWithDetails) api.SupportBundle {
 		result := api.SupportBundle{
-			ID:                       bundle.ID,
-			CreatedAt:                bundle.CreatedAt,
-			CustomerOrganizationID:   bundle.CustomerOrganizationID,
-			CustomerOrganizationName: bundle.CustomerOrganizationName,
-			CreatedByKind:            bundle.CreatedByKind,
-			DeploymentType:           bundle.DeploymentType,
-			Title:                    bundle.Title,
-			Description:              bundle.Description,
-			Status:                   string(bundle.Status),
-			ResourceCount:            bundle.ResourceCount,
-			CommentCount:             bundle.CommentCount,
-			LastCommentAt:            bundle.LastCommentAt,
-			StatusChangedByKind:      bundle.StatusChangedByKind,
-			StatusChangedAt:          bundle.StatusChangedAt,
+			ID:                                    bundle.ID,
+			CreatedAt:                             bundle.CreatedAt,
+			CustomerOrganizationID:                bundle.CustomerOrganizationID,
+			CustomerOrganizationName:              bundle.CustomerOrganizationName,
+			CreatedByCustomerOrganizationID:       bundle.CreatedByCustomerOrganizationID,
+			CreatedByPartnerOrganizationID:        bundle.CreatedByPartnerOrganizationID,
+			CreatedByDeleted:                      bundle.CreatedByDeleted,
+			DeploymentType:                        bundle.DeploymentType,
+			Title:                                 bundle.Title,
+			Description:                           bundle.Description,
+			Status:                                string(bundle.Status),
+			ResourceCount:                         bundle.ResourceCount,
+			CommentCount:                          bundle.CommentCount,
+			LastCommentAt:                         bundle.LastCommentAt,
+			StatusChangedByCustomerOrganizationID: bundle.StatusChangedByCustomerOrganizationID,
+			StatusChangedByPartnerOrganizationID:  bundle.StatusChangedByPartnerOrganizationID,
+			StatusChangedByDeleted:                bundle.StatusChangedByDeleted,
+			StatusChangedAt:                       bundle.StatusChangedAt,
 		}
-		if memberRank(bundle.CreatedByKind) >= viewerRank {
+		if organizationKindRank(
+			bundle.CreatedByCustomerOrganizationID, bundle.CreatedByPartnerOrganizationID,
+		) >= viewerRank {
 			result.CreatedByUserAccountID = bundle.CreatedByUserAccountID
 			result.CreatedByUserName = bundle.CreatedByUserName
 			result.CreatedByImageURL = CreateImageURL(bundle.CreatedByImageID)
 		}
-		if memberRank(bundle.StatusChangedByKind) >= viewerRank {
+		if organizationKindRank(
+			bundle.StatusChangedByCustomerOrganizationID, bundle.StatusChangedByPartnerOrganizationID,
+		) >= viewerRank {
 			result.StatusChangedByUserName = bundle.StatusChangedByUserName
 			result.StatusChangedByImageURL = CreateImageURL(bundle.StatusChangedByImageID)
 		}
 		return result
-	}
-}
-
-// memberRank ranks a member of the given kind like organizationKindRank. A user who is no longer a member ranks
-// like a vendor, so that only a vendor learns who they were.
-func memberRank(kind *types.OrganizationKind) int {
-	switch {
-	case kind == nil:
-		return 0
-	case *kind == types.OrganizationKindCustomer:
-		return 2
-	case *kind == types.OrganizationKindPartner:
-		return 1
-	default:
-		return 0
 	}
 }
 
@@ -146,12 +141,14 @@ func SupportBundleCommentToAPI(
 	viewerRank := organizationKindRank(viewerCustomerOrgID, viewerPartnerOrgID)
 	return func(comment types.SupportBundleCommentWithUser) api.SupportBundleComment {
 		result := api.SupportBundleComment{
-			ID:        comment.ID,
-			CreatedAt: comment.CreatedAt,
-			UserKind:  comment.UserKind,
-			Content:   comment.Content,
+			ID:                         comment.ID,
+			CreatedAt:                  comment.CreatedAt,
+			UserCustomerOrganizationID: comment.UserCustomerOrganizationID,
+			UserPartnerOrganizationID:  comment.UserPartnerOrganizationID,
+			UserDeleted:                comment.UserDeleted,
+			Content:                    comment.Content,
 		}
-		if memberRank(comment.UserKind) >= viewerRank {
+		if organizationKindRank(comment.UserCustomerOrganizationID, comment.UserPartnerOrganizationID) >= viewerRank {
 			result.UserAccountID = comment.UserAccountID
 			result.UserName = comment.UserName
 			result.UserImageURL = CreateImageURL(comment.UserImageID)

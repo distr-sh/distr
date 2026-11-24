@@ -73,20 +73,25 @@ type CustomerSupportBundleEvent struct {
 	UserImageID            *uuid.UUID           `db:"user_image_id"`
 }
 
-// SupportBundleWithDetails carries the kind of membership the users who created the bundle and changed its status
-// have in the vendor's organization, nil for a user who is no longer a member or whose account was deleted.
+// SupportBundleWithDetails carries the customer and partner organization of the memberships the users who created
+// the bundle and changed its status have in the vendor's organization. Deleted is set for a user who is no longer a
+// member or whose account was deleted.
 type SupportBundleWithDetails struct {
 	SupportBundle
-	CreatedByUserName        *string           `db:"created_by_user_name"`
-	CreatedByImageID         *uuid.UUID        `db:"created_by_image_id"`
-	CreatedByKind            *OrganizationKind `db:"created_by_kind"`
-	CustomerOrganizationName string            `db:"customer_organization_name"`
-	ResourceCount            int64             `db:"resource_count"`
-	CommentCount             int64             `db:"comment_count"`
-	LastCommentAt            *time.Time        `db:"last_comment_at"`
-	StatusChangedByUserName  *string           `db:"status_changed_by_user_name"`
-	StatusChangedByImageID   *uuid.UUID        `db:"status_changed_by_image_id"`
-	StatusChangedByKind      *OrganizationKind `db:"status_changed_by_kind"`
+	CreatedByUserName                     *string    `db:"created_by_user_name"`
+	CreatedByImageID                      *uuid.UUID `db:"created_by_image_id"`
+	CreatedByCustomerOrganizationID       *uuid.UUID `db:"created_by_customer_organization_id"`
+	CreatedByPartnerOrganizationID        *uuid.UUID `db:"created_by_partner_organization_id"`
+	CreatedByDeleted                      bool       `db:"created_by_deleted"`
+	CustomerOrganizationName              string     `db:"customer_organization_name"`
+	ResourceCount                         int64      `db:"resource_count"`
+	CommentCount                          int64      `db:"comment_count"`
+	LastCommentAt                         *time.Time `db:"last_comment_at"`
+	StatusChangedByUserName               *string    `db:"status_changed_by_user_name"`
+	StatusChangedByImageID                *uuid.UUID `db:"status_changed_by_image_id"`
+	StatusChangedByCustomerOrganizationID *uuid.UUID `db:"status_changed_by_customer_organization_id"`
+	StatusChangedByPartnerOrganizationID  *uuid.UUID `db:"status_changed_by_partner_organization_id"`
+	StatusChangedByDeleted                bool       `db:"status_changed_by_deleted"`
 }
 
 type SupportBundleResourceSummary struct {
@@ -115,10 +120,12 @@ type SupportBundleComment struct {
 	Content         string     `db:"content"`
 }
 
-// SupportBundleCommentWithUser carries the kind of membership of the author like SupportBundleWithDetails.
+// SupportBundleCommentWithUser carries the membership of the author like SupportBundleWithDetails.
 type SupportBundleCommentWithUser struct {
 	SupportBundleComment
-	UserName    *string           `db:"user_name"`
-	UserImageID *uuid.UUID        `db:"user_image_id"`
-	UserKind    *OrganizationKind `db:"user_kind"`
+	UserName                   *string    `db:"user_name"`
+	UserImageID                *uuid.UUID `db:"user_image_id"`
+	UserCustomerOrganizationID *uuid.UUID `db:"user_customer_organization_id"`
+	UserPartnerOrganizationID  *uuid.UUID `db:"user_partner_organization_id"`
+	UserDeleted                bool       `db:"user_deleted"`
 }
