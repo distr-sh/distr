@@ -31,6 +31,8 @@ env:
 
 jobs:
   build-controller:
+    # The release pull request only bumps versions of what main has already checked.
+    if: ${{ github.head_ref != 'release-please--branches--main' }}
     timeout-minutes: 30
     runs-on: ${{ matrix.platform.runner }}
     permissions:

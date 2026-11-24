@@ -28,6 +28,8 @@ env:
 jobs:
   validate-migrations:
     name: Validate migrations
+    # The release pull request only bumps versions of what main has already checked.
+    if: ${{ github.head_ref != 'release-please--branches--main' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -37,6 +39,7 @@ jobs:
 
   lint-and-test-go:
     name: Lint and test (Go)
+    if: ${{ github.head_ref != 'release-please--branches--main' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -63,6 +66,7 @@ jobs:
 
   lint-and-test-node:
     name: Lint and test (Node)
+    if: ${{ github.head_ref != 'release-please--branches--main' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -99,6 +103,7 @@ jobs:
         ports:
           - 5432:5432
     name: Build
+    if: ${{ github.head_ref != 'release-please--branches--main' }}
     timeout-minutes: 10
     runs-on: ubuntu-latest
     permissions:
