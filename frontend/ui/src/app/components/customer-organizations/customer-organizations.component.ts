@@ -1,12 +1,13 @@
 import {AsyncPipe, NgPlural, NgPluralCase, NgTemplateOutlet} from '@angular/common';
 import {Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
-import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Params, Router} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, debounceTime, distinctUntilChanged, firstValueFrom, map, of, switchMap} from 'rxjs';
+import {combineLatest, firstValueFrom, of, switchMap} from 'rxjs';
 import {arraysEqual} from '../../../util/arrays';
+import {syncSearchWithQueryParam} from '../../../util/filter';
 import {refreshInBackground} from '../../../util/refresh';
 import {ClickableRowDirective} from '../../directives/clickable-row.directive';
 import {customerLicenseStatusSelectOptions, isCustomerLicenseStatus} from '../../licenses/customer-license-status';
@@ -188,22 +189,7 @@ export class CustomerOrganizationsComponent {
         enabled ? this.applicationEntitlementsService.refresh() : undefined
       )
     );
-    const search = this.filterForm.controls.search;
-    // The component is reused when only the query changes, e.g. when the home page links to the page it is on.
-    this.route.queryParamMap
-      .pipe(
-        map((params) => params.get('search') ?? ''),
-        distinctUntilChanged(),
-        takeUntilDestroyed()
-      )
-      .subscribe((value) => {
-        if (value !== search.value) {
-          search.setValue(value);
-        }
-      });
-    search.valueChanges
-      .pipe(debounceTime(300), takeUntilDestroyed())
-      .subscribe((value) => this.setQueryParams({search: value || null}));
+    syncSearchWithQueryParam(this.filterForm.controls.search);
   }
 
   protected selectLicenseStatuses(statuses: CustomerLicenseStatus[]) {

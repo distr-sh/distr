@@ -14,6 +14,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, firstValueFrom, map, of, switchMap} from 'rxjs';
 import {refreshInBackground} from '../../../util/refresh';
+import {toActivityFeedItems} from '../../components/activity-feed/activity-feed';
+import {ActivityFeedComponent} from '../../components/activity-feed/activity-feed.component';
 import {AvatarComponent} from '../../components/avatar.component';
 import {CardHeadingComponent} from '../../components/card-heading.component';
 import {CustomerUpdateStatus} from '../../components/customer-organizations/customer-list-display';
@@ -33,8 +35,6 @@ import {LicensesService} from '../../services/licenses.service';
 import {OrganizationService} from '../../services/organization.service';
 import {SupportBundlesService} from '../../services/support-bundles.service';
 import {TutorialsService} from '../../services/tutorials.service';
-import {toHomeActivity} from '../home-activity';
-import {HomeActivityComponent} from '../home-activity.component';
 import {QuickNavigationCardComponent, QuickNavigationCardType} from '../quick-navigation-card.component';
 import {DeploymentHealth, VendorHomeLicenses, VendorHomeUpdates} from './vendor-home';
 import {
@@ -118,7 +118,7 @@ function supportCardType(open: number, isConfigured: boolean): QuickNavigationCa
     CardHeadingComponent,
     LoadingCardComponent,
     QuickNavigationCardComponent,
-    HomeActivityComponent,
+    ActivityFeedComponent,
     QuickNavigationCardComponent,
     VendorHomeTutorialsComponent,
   ],
@@ -337,7 +337,7 @@ export class VendorHomePageComponent {
       : {customers, deployments, applications};
   });
 
-  protected readonly activity = toSignal(this.activityFeedService.list().pipe(map(toHomeActivity)));
+  protected readonly activity = toSignal(this.activityFeedService.list().pipe(map(toActivityFeedItems)));
 
   protected setTutorialsHidden(hidden: boolean) {
     if (hidden) {

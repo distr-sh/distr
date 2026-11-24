@@ -21,8 +21,6 @@ import {
   catchError,
   combineLatest,
   combineLatestWith,
-  debounceTime,
-  distinctUntilChanged,
   first,
   firstValueFrom,
   map,
@@ -33,6 +31,7 @@ import {
   switchMap,
 } from 'rxjs';
 import {arraysEqual, compareBy} from '../../util/arrays';
+import {syncSearchWithQueryParam} from '../../util/filter';
 import {refreshInBackground} from '../../util/refresh';
 import {isDeploymentOutdated} from '../../util/versions';
 import {MultiSelectComponent, MultiSelectOption} from '../components/multi-select/multi-select.component';
@@ -297,22 +296,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
         enabled ? this.applicationEntitlements.refresh() : undefined
       )
     );
-    const search = this.filterForm.controls.search;
-    // The component is reused when only the query changes, e.g. when the sidebar links to the page it is on.
-    this.route.queryParamMap
-      .pipe(
-        map((params) => params.get('search') ?? ''),
-        distinctUntilChanged(),
-        takeUntilDestroyed()
-      )
-      .subscribe((value) => {
-        if (value !== search.value) {
-          search.setValue(value);
-        }
-      });
-    search.valueChanges
-      .pipe(debounceTime(300), takeUntilDestroyed())
-      .subscribe((value) => this.setQueryParams({search: value || null}));
+    syncSearchWithQueryParam(this.filterForm.controls.search);
   }
 
   protected selectCustomers(ids: string[]) {

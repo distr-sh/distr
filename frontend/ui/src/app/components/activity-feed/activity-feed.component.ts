@@ -12,12 +12,13 @@ import {
   faKey,
   faLifeRing,
 } from '@fortawesome/free-solid-svg-icons';
-import {RelativeDatePipe} from '../../util/dates';
-import {never} from '../../util/exhaust';
-import {AvatarComponent} from '../components/avatar.component';
-import {CardHeadingComponent} from '../components/card-heading.component';
-import {CustomerHomeCollapsibleComponent} from './customer/customer-home-collapsible.component';
-import {HomeActivity, HomeActivityViewer} from './home-activity';
+import {RelativeDatePipe} from '../../../util/dates';
+import {never} from '../../../util/exhaust';
+import {CustomerHomeCollapsibleComponent} from '../../home/customer/customer-home-collapsible.component';
+import {AvatarComponent} from '../avatar.component';
+import {CardHeadingComponent} from '../card-heading.component';
+import {CustomerDetailTabId} from '../customer-organizations/detail/customer-detail-navigation';
+import {ActivityFeedItem, ActivityFeedViewer} from './activity-feed';
 
 interface ActivityEntry {
   id: string;
@@ -31,7 +32,7 @@ interface ActivityEntry {
 }
 
 @Component({
-  selector: 'app-home-activity',
+  selector: 'app-activity-feed',
   imports: [
     DatePipe,
     RouterLink,
@@ -41,19 +42,21 @@ interface ActivityEntry {
     CardHeadingComponent,
     CustomerHomeCollapsibleComponent,
   ],
-  templateUrl: './home-activity.component.html',
+  templateUrl: './activity-feed.component.html',
   host: {
     class: 'block',
     '[class.lg:absolute]': 'fillHeight() && !expanded()',
     '[class.lg:inset-0]': 'fillHeight() && !expanded()',
   },
 })
-export class HomeActivityComponent {
-  public readonly activity = input.required<HomeActivity[]>();
-  public readonly viewer = input.required<HomeActivityViewer>();
+export class ActivityFeedComponent {
+  public readonly activity = input.required<ActivityFeedItem[]>();
+  public readonly viewer = input.required<ActivityFeedViewer>();
   /** Shown as the author of what the vendor did, to a customer only. */
   public readonly vendorName = input<string>();
   public readonly vendorLogo = input<string>();
+  /** For a feed of a single customer, whose entries then link to its tabs instead of naming it. */
+  public readonly customerOrganizationId = input<string>();
   /**
    * Collapsed, the card takes the height of its positioned parent instead of its own, which places it next to the
    * other cards at their height. The parent's grid row then has to be sized by those cards alone.
@@ -68,6 +71,8 @@ export class HomeActivityComponent {
   protected readonly entries = computed<ActivityEntry[]>(() => {
     const viewer = this.viewer();
     const vendorName = this.vendorName();
+    const customerOrganizationId = this.customerOrganizationId();
+    const shouldShowCustomer = viewer !== 'customer' && customerOrganizationId === undefined;
     return this.activity().map((activity) => {
       const byVendor =
         activity.type === 'application_version_created' ||
@@ -80,20 +85,22 @@ export class HomeActivityComponent {
         createdAt: activity.createdAt,
         action: action(activity),
         icon: icon(activity),
-        ...link(activity, viewer),
+        ...(customerOrganizationId === undefined
+          ? link(activity, viewer)
+          : customerTabLink(activity, viewer, customerOrganizationId)),
         user:
           viewer === 'customer' && byVendor
             ? vendorName
               ? {name: vendorName, imageUrl: this.vendorLogo(), isVendor: true}
               : undefined
             : activity.user && {...activity.user, isVendor: false},
-        customerName: viewer === 'customer' ? undefined : activity.customer?.name,
+        customerName: shouldShowCustomer ? activity.customer?.name : undefined,
       };
     });
   });
 }
 
-function icon({type}: HomeActivity): IconDefinition {
+function icon({type}: ActivityFeedItem): IconDefinition {
   switch (type) {
     case 'application_version_created':
       return faCube;
@@ -117,15 +124,15 @@ function icon({type}: HomeActivity): IconDefinition {
 }
 
 function link(
-  {type, resourceId, subject, customer}: HomeActivity,
-  viewer: HomeActivityViewer
+  {type, resourceId, resourceName, customer}: ActivityFeedItem,
+  viewer: ActivityFeedViewer
 ): Pick<ActivityEntry, 'link' | 'queryParams'> {
   switch (type) {
     case 'application_version_created':
       // Only the vendor has access to the applications.
       return viewer === 'vendor'
         ? {link: `/applications/${resourceId}`}
-        : {link: '/deployments', queryParams: {search: subject}};
+        : {link: '/deployments', queryParams: {search: resourceName}};
     case 'artifact_version_created':
     case 'artifact_version_first_pulled':
       return {link: viewer === 'customer' ? `/artifacts/${resourceId}` : `/registry/${resourceId}`};
@@ -147,7 +154,34 @@ function link(
   }
 }
 
-function action({type, subject, detail}: HomeActivity): string {
+function customerTabLink(
+  activity: ActivityFeedItem,
+  viewer: ActivityFeedViewer,
+  customerOrganizationId: string
+): Pick<ActivityEntry, 'link' | 'queryParams'> {
+  const tab = (tab: CustomerDetailTabId) => ({link: `/customers/${customerOrganizationId}/${tab}`});
+  switch (activity.type) {
+    case 'application_version_created':
+    case 'artifact_version_created':
+      return link(activity, viewer);
+    case 'artifact_version_first_pulled':
+      return {...tab('registry'), queryParams: {artifactId: activity.resourceId}};
+    case 'deployment_revision_created':
+      return {...tab('deployments'), queryParams: {search: activity.resourceName}};
+    case 'license_key_created':
+    case 'license_key_updated':
+      return tab('licenses');
+    case 'support_bundle_created':
+    case 'support_bundle_uploaded':
+    case 'support_bundle_resolved':
+    case 'support_bundle_canceled':
+      return {...tab('support'), queryParams: {search: activity.resourceName}};
+    default:
+      return never(activity.type);
+  }
+}
+
+function action({type, subject, detail}: ActivityFeedItem): string {
   switch (type) {
     case 'application_version_created':
       return `version ${detail} of ${subject} released`;

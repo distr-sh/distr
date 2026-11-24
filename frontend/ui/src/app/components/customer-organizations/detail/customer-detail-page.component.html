@@ -30,7 +30,31 @@
             textClass="block max-w-lg truncate text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
             [loading]="savingName()"
             (save)="updateName(customer, $event)" />
-          <p class="distr-text-muted text-sm">Customer since {{ customer.createdAt | date }}</p>
+          <div class="distr-text-muted mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm">
+            <span>Customer since {{ customer.createdAt | date }}</span>
+            @if (partnerOptions(); as options) {
+              @let name = partnerName();
+              @if (canEdit || name) {
+                <span>&middot;</span>
+                <span class="flex items-center gap-1.5">
+                  @if (name) {
+                    Managed by
+                  }
+                  @if (canEdit) {
+                    <app-badge-select
+                      ariaLabel="Change partner"
+                      [plainOptions]="true"
+                      [options]="options"
+                      [value]="partnerValue()"
+                      [disabled]="savingPartner()"
+                      (selected)="updatePartner(customer, $event)" />
+                  } @else {
+                    <span class="distr-badge">{{ name }}</span>
+                  }
+                </span>
+              }
+            }
+          </div>
         </div>
         <div
           class="flex basis-full flex-wrap gap-2 self-start @[34rem]:max-w-max @[34rem]:grow-1000 @[34rem]:basis-0 @[34rem]:justify-end">
