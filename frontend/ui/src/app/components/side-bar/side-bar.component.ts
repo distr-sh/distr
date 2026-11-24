@@ -29,7 +29,7 @@ export class SideBarComponent {
   protected readonly faArrowRightLong = faArrowRightLong;
   protected readonly faXmark = faXmark;
 
-  protected readonly isFeedbackAlertVisible = signal(true);
+  protected readonly isAnnouncementVisible = signal(true);
 
   public readonly isBannerVisible = input<boolean>();
   public readonly isSidebarVisible = input<boolean>();
