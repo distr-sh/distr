@@ -6,67 +6,83 @@
     @if (hasMore() && !newestFirst() && !paginateForward()) {
       <ng-container *ngTemplateOutlet="loadMoreButton" />
     }
-    <table class="w-full text-left text-sm text-gray-500 rtl:text-right dark:text-gray-400">
-      <thead
-        class="sr-only bg-gray-50 text-xs text-gray-700 uppercase dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400">
-        <tr>
-          <th scope="col"></th>
-          <th scope="col">Date</th>
-          @if (showResourceColumn()) {
-            <th scope="col">Service</th>
+    @if (entries.length === 0) {
+      @if (!sourceWithStatus().loading()) {
+        <p class="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
+          @if (filtered() && !live()) {
+            No logs found matching your filter in the selected time range.
+          } @else if (filtered()) {
+            No logs found matching your filter.
+          } @else if (!live()) {
+            No logs found in the selected time range.
+          } @else {
+            No logs found.
           }
-          <th scope="col">Status</th>
-          <th scope="col">Details</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (entry of entries; track entry.id ?? entry.date) {
-          @let pinned = pinnedEntryId() === entry.id;
-          <tr
-            [class.bg-yellow-100]="pinned"
-            [class.dark:bg-yellow-950]="pinned"
-            [class.sticky]="pinned"
-            [class.bottom-0]="pinned"
-            [class.top-[calc(var(--spacing)*43+1px)]]="pinned"
-            [class.hover:bg-gray-50]="!pinned"
-            [class.dark:hover:bg-gray-600]="!pinned"
-            [class.hover:bg-yellow-200]="pinned"
-            [class.dark:hover:bg-yellow-900]="pinned"
-            class="group border-gray-200 not-last:border-b dark:border-gray-600">
-            <td class="w-0">
-              <button
-                type="button"
-                (click)="pin(entry)"
-                [class.invisible]="!pinned"
-                class="px-1 text-xs text-gray-400 group-hover:visible hover:text-gray-700 dark:hover:text-gray-200">
-                <fa-icon [icon]="pinned ? faThumbtackSlash : faThumbtack" />
-              </button>
-            </td>
-            <th class="px-1 font-medium whitespace-nowrap">{{ entry.date | date: 'medium' }}</th>
+        </p>
+      }
+    } @else {
+      <table class="w-full text-left text-sm text-gray-500 rtl:text-right dark:text-gray-400">
+        <thead
+          class="sr-only bg-gray-50 text-xs text-gray-700 uppercase dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400">
+          <tr>
+            <th scope="col"></th>
+            <th scope="col">Date</th>
             @if (showResourceColumn()) {
-              <td
-                class="px-1 font-mono text-xs whitespace-nowrap"
-                [ngClass]="resourceColorMap()[entry.resource!]"
-                [textContent]="entry.resource"></td>
+              <th scope="col">Service</th>
             }
-            <td
-              class="px-1 uppercase"
-              [class.text-red-500]="entry.status.toLowerCase().includes('err')"
-              [class.dark:text-red-400]="entry.status.toLowerCase().includes('err')"
-              [class.text-yellow-600]="entry.status.toLowerCase().includes('warn')"
-              [class.dark:text-yellow-500]="entry.status.toLowerCase().includes('warn')"
-              [class.text-blue-600]="entry.status.toLowerCase().includes('info')"
-              [class.dark:text-blue-500]="entry.status.toLowerCase().includes('info')"
-              [textContent]="entry.status"></td>
-            <td class="w-full max-w-0 px-1" data-ph-mask-text="true">
-              <div
-                class="overflow-x-auto font-mono whitespace-pre-wrap text-gray-900 dark:text-white"
-                [textContent]="entry.detail"></div>
-            </td>
+            <th scope="col">Status</th>
+            <th scope="col">Details</th>
           </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          @for (entry of entries; track entry.id ?? entry.date) {
+            @let pinned = pinnedEntryId() === entry.id;
+            <tr
+              [class.bg-yellow-100]="pinned"
+              [class.dark:bg-yellow-950]="pinned"
+              [class.sticky]="pinned"
+              [class.bottom-0]="pinned"
+              [class.top-[calc(var(--spacing)*43+1px)]]="pinned"
+              [class.hover:bg-gray-50]="!pinned"
+              [class.dark:hover:bg-gray-600]="!pinned"
+              [class.hover:bg-yellow-200]="pinned"
+              [class.dark:hover:bg-yellow-900]="pinned"
+              class="group border-gray-200 not-last:border-b dark:border-gray-600">
+              <td class="w-0">
+                <button
+                  type="button"
+                  (click)="pin(entry)"
+                  [class.invisible]="!pinned"
+                  class="px-1 text-xs text-gray-400 group-hover:visible hover:text-gray-700 dark:hover:text-gray-200">
+                  <fa-icon [icon]="pinned ? faThumbtackSlash : faThumbtack" />
+                </button>
+              </td>
+              <th class="px-1 font-medium whitespace-nowrap">{{ entry.date | date: 'medium' }}</th>
+              @if (showResourceColumn()) {
+                <td
+                  class="px-1 font-mono text-xs whitespace-nowrap"
+                  [ngClass]="resourceColorMap()[entry.resource!]"
+                  [textContent]="entry.resource"></td>
+              }
+              <td
+                class="px-1 uppercase"
+                [class.text-red-500]="entry.status.toLowerCase().includes('err')"
+                [class.dark:text-red-400]="entry.status.toLowerCase().includes('err')"
+                [class.text-yellow-600]="entry.status.toLowerCase().includes('warn')"
+                [class.dark:text-yellow-500]="entry.status.toLowerCase().includes('warn')"
+                [class.text-blue-600]="entry.status.toLowerCase().includes('info')"
+                [class.dark:text-blue-500]="entry.status.toLowerCase().includes('info')"
+                [textContent]="entry.status"></td>
+              <td class="w-full max-w-0 px-1" data-ph-mask-text="true">
+                <div
+                  class="overflow-x-auto font-mono whitespace-pre-wrap text-gray-900 dark:text-white"
+                  [textContent]="entry.detail"></div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
     @if (showScrollToBottom()) {
       <div class="sticky bottom-4 z-10 flex justify-center">
         <button
@@ -78,7 +94,7 @@
         </button>
       </div>
     }
-    <div #tableBottom></div>
+    <div class="-mt-4" #tableBottom></div>
 
     @if (hasMore() && (newestFirst() || paginateForward())) {
       <ng-container *ngTemplateOutlet="loadMoreButton" />
@@ -103,7 +119,7 @@
         <span>Loading&hellip;</span>
       </output>
     </div>
-  } @else if (live()) {
+  } @else if (polling()) {
     <div class="flex justify-center py-2">
       <div class="h-1 w-16 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
         <div

@@ -8,7 +8,7 @@ import {faDownload, faGear, faPlus, faTrash} from '@fortawesome/free-solid-svg-i
 import {combineLatest, firstValueFrom, map, of, startWith, Subject, switchMap, take} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
-import {filteredByFormControl} from '../../../util/filter';
+import {filteredByFormControl, syncSearchWithQueryParam} from '../../../util/filter';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {DeploymentTypeBadgeComponent} from '../../components/deployment-type-badge.component';
 import {SearchBarComponent} from '../../components/search-bar.component';
@@ -96,6 +96,10 @@ export class SupportBundleListComponent {
   public readonly hasBundles = computed(() => this.bundles().length > 0);
 
   private dialogRef: DialogRef | null = null;
+
+  constructor() {
+    syncSearchWithQueryParam(this.filterForm.controls.search);
+  }
 
   openDialog(templateRef: TemplateRef<unknown>) {
     this.closeDialog();

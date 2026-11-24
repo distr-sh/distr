@@ -21,8 +21,6 @@ import {
   catchError,
   combineLatest,
   combineLatestWith,
-  debounceTime,
-  distinctUntilChanged,
   first,
   firstValueFrom,
   map,
@@ -33,6 +31,7 @@ import {
   switchMap,
 } from 'rxjs';
 import {arraysEqual, compareBy} from '../../util/arrays';
+import {syncSearchWithQueryParam} from '../../util/filter';
 import {refreshInBackground} from '../../util/refresh';
 import {isDeploymentOutdated} from '../../util/versions';
 import {MultiSelectComponent, MultiSelectOption} from '../components/multi-select/multi-select.component';
@@ -59,6 +58,7 @@ import {
   isDeploymentStatusFilter,
 } from './deployment-target-card/deployment-status-text.component';
 import {DeploymentTargetCardComponent} from './deployment-target-card/deployment-target-card.component';
+import {deploymentTargetSearchTexts, matchesSearch} from './deployment-target-search';
 import {DeploymentWizardComponent} from './deployment-wizard/deployment-wizard.component';
 
 export interface DeploymentTargetViewData extends DeploymentTarget {
@@ -257,16 +257,17 @@ export class DeploymentTargetsComponent implements AfterViewInit {
           deployment: d,
           statuses: needsStatuses ? deploymentStatusFilters(d, applications, entitlements) : [],
         }));
-        const matchesSearch =
+        const isSearchMatch =
           !query ||
-          [
-            dt.name,
-            ...(dt.customerOrganization ? [dt.customerOrganization.name] : ['Internal', this.organization()?.name]),
-            ...deployments.flatMap(({deployment, statuses}) => [
-              deployment.application.name,
-              ...statuses.map((status) => deploymentStatusFilterLabels.get(status)),
-            ]),
-          ].some((it) => it?.toLowerCase().includes(query) ?? false);
+          matchesSearch(
+            [
+              ...deploymentTargetSearchTexts(dt, this.organization()?.name),
+              ...deployments.flatMap(({statuses}) =>
+                statuses.map((status) => deploymentStatusFilterLabels.get(status))
+              ),
+            ],
+            query
+          );
         const matchesFilter =
           (applicationIds.length === 0 && statuses.length === 0) ||
           deployments.some(
@@ -275,7 +276,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
                 (deployment.application.id !== undefined && applicationIds.includes(deployment.application.id))) &&
               (statuses.length === 0 || deploymentStatuses.some((status) => statuses.includes(status)))
           );
-        return matchesSearch && matchesFilter;
+        return isSearchMatch && matchesFilter;
       });
     }),
     combineLatestWith(this.deploymentTargetMetrics$),
@@ -295,22 +296,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
         enabled ? this.applicationEntitlements.refresh() : undefined
       )
     );
-    const search = this.filterForm.controls.search;
-    // The component is reused when only the query changes, e.g. when the sidebar links to the page it is on.
-    this.route.queryParamMap
-      .pipe(
-        map((params) => params.get('search') ?? ''),
-        distinctUntilChanged(),
-        takeUntilDestroyed()
-      )
-      .subscribe((value) => {
-        if (value !== search.value) {
-          search.setValue(value);
-        }
-      });
-    search.valueChanges
-      .pipe(debounceTime(300), takeUntilDestroyed())
-      .subscribe((value) => this.setQueryParams({search: value || null}));
+    syncSearchWithQueryParam(this.filterForm.controls.search);
   }
 
   protected selectCustomers(ids: string[]) {

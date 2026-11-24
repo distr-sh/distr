@@ -35,12 +35,12 @@ const (
 type blobHandler struct {
 	s3Client        *s3.Client
 	s3PresignClient *s3.PresignClient
-	allowRedirect   bool
 	bucket          string
 }
 
 var (
 	_ blob.BlobHandler               = &blobHandler{}
+	_ blob.BlobRangeHandler          = &blobHandler{}
 	_ blob.BlobPutHandler            = &blobHandler{}
 	_ blob.BlobDeleteHandler         = &blobHandler{}
 	_ blob.BlobChunkMinLengthHandler = &blobHandler{}
@@ -55,17 +55,11 @@ func NewBlobHandler(ctx context.Context, s3Client *s3.Client) (blob.BlobHandler,
 		}
 	}
 
-	h := blobHandler{
-		s3Client:      s3Client,
-		allowRedirect: s3Config.AllowRedirect,
-		bucket:        s3Config.Bucket,
-	}
-
-	if h.allowRedirect {
-		h.s3PresignClient = s3.NewPresignClient(s3Client)
-	}
-
-	return &h, nil
+	return &blobHandler{
+		s3Client:        s3Client,
+		s3PresignClient: s3.NewPresignClient(s3Client),
+		bucket:          s3Config.Bucket,
+	}, nil
 }
 
 func ensureBucketExists(ctx context.Context, client *s3.Client, bucket string, region string) error {
@@ -99,7 +93,7 @@ func (handler *blobHandler) Get(
 	allowRedirect bool,
 ) (io.ReadCloser, error) {
 	key := h.String()
-	if handler.allowRedirect && allowRedirect {
+	if allowRedirect {
 		resp, err := handler.s3PresignClient.PresignGetObject(ctx,
 			&s3.GetObjectInput{Bucket: &handler.bucket, Key: &key})
 		if err != nil {
@@ -117,6 +111,26 @@ func (handler *blobHandler) Get(
 		}
 		return obj.Body, nil
 	}
+}
+
+// GetRange implements blob.BlobRangeHandler.
+func (handler *blobHandler) GetRange(
+	ctx context.Context,
+	repo string,
+	h digest.Digest,
+	start, end int64,
+) (io.ReadCloser, error) {
+	key := h.String()
+	objectRange := fmt.Sprintf("bytes=%d-%d", start, end)
+	obj, err := handler.s3Client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: &handler.bucket,
+		Key:    &key,
+		Range:  &objectRange,
+	})
+	if err != nil {
+		return nil, convertErrNotFound(err)
+	}
+	return obj.Body, nil
 }
 
 // Stat implements blob.BlobHandler.

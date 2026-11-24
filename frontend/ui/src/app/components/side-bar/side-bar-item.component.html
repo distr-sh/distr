@@ -9,9 +9,6 @@
       (click)="sidebar.hide()">
       <fa-icon [icon]="item.icon" size="lg" class="icon" />
       <span class="label">{{ item.label }}</span>
-      @if (item.hasIndicator) {
-        <span class="mr-1.5 h-2.5 w-2.5 rounded-full bg-blue-700 dark:bg-blue-600"></span>
-      }
     </a>
   }
   @case ('external') {

@@ -14,6 +14,7 @@ type ActivityFeedEntry struct {
 	CreatedAt    time.Time              `json:"createdAt"`
 	Type         activityfeed.EntryType `json:"type"`
 	ResourceID   uuid.UUID              `json:"resourceId"`
+	ResourceName string                 `json:"resourceName"`
 	Subject      string                 `json:"subject"`
 	Detail       *string                `json:"detail,omitempty"`
 	UserName     *string                `json:"userName,omitempty"`

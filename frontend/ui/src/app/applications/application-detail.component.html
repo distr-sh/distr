@@ -109,7 +109,7 @@
                     </td>
                   }
                   @if (selectedVersionIds().size > 0) {
-                    <td class="px-3 text-sm normal-case" [attr.colspan]="application.type === 'kubernetes' ? 8 : 5">
+                    <td class="px-3 text-sm normal-case" [attr.colspan]="versionColumnCount()">
                       {{ selectedVersionIds().size }} selected
                       <button
                         (click)="bulkArchiveVersions(application)"
@@ -122,12 +122,13 @@
                     <th scope="col" class="px-6 py-3">Version</th>
                     @if (application.type === 'kubernetes') {
                       <th scope="col" class="px-6 py-3">Chart URL</th>
-                      <th scope="col" class="px-6 py-3">Chart Name</th>
+                      @if (isChartNameColumnVisible()) {
+                        <th scope="col" class="px-6 py-3">Chart Name</th>
+                      }
                       <th scope="col" class="px-6 py-3">Chart Version</th>
                     }
                     <th scope="col" class="px-6 py-3">Created At</th>
                     <th scope="col" class="px-6 py-3">Created By</th>
-                    <th scope="col" class="px-6 py-3">Status</th>
                     <th scope="col" class="px-6 py-3"></th>
                   }
                 </tr>
@@ -165,9 +166,11 @@
                       <td class="px-6 py-4">
                         {{ version.chartUrl }}
                       </td>
-                      <td class="px-6 py-4">
-                        {{ version.chartName }}
-                      </td>
+                      @if (isChartNameColumnVisible()) {
+                        <td class="px-6 py-4">
+                          {{ version.chartName }}
+                        </td>
+                      }
                       <td class="px-6 py-4">
                         {{ version.chartVersion }}
                       </td>
@@ -187,9 +190,6 @@
                           <span [title]="createdBy.email ?? ''">{{ createdByLabel }}</span>
                         </div>
                       }
-                    </td>
-                    <td class="px-6 py-4">
-                      {{ archived ? 'Archived' : 'Active' }}
                     </td>
                     <td class="px-6 py-2 text-right">
                       @if (auth.hasAnyRole('read_write', 'admin')) {

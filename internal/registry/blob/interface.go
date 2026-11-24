@@ -16,6 +16,13 @@ type BlobHandler interface {
 	Stat(ctx context.Context, repo string, h digest.Digest) (int64, error)
 }
 
+// BlobRangeHandler is an extension interface representing a blob storage backend that can serve a byte range
+// of a blob without reading the bytes before it.
+type BlobRangeHandler interface {
+	// GetRange gets the bytes from start to end of the blob, both inclusive, or errNotFound if the blob wasn't found.
+	GetRange(ctx context.Context, repo string, h digest.Digest, start, end int64) (io.ReadCloser, error)
+}
+
 // BlobPutHandler is an extension interface representing a blob storage backend
 // that can write blob contents.
 type BlobPutHandler interface {

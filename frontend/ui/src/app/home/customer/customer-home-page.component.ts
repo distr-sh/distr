@@ -4,6 +4,8 @@ import {CustomerOrganizationFeature} from '@distr-sh/distr-sdk';
 import {catchError, combineLatest, firstValueFrom, map, Observable, of, shareReplay, switchMap, take} from 'rxjs';
 import {isNotFound, recoverWithToast, toastDisplayedError} from '../../../util/errors';
 import {refreshInBackground} from '../../../util/refresh';
+import {toActivityFeedItems} from '../../components/activity-feed/activity-feed';
+import {ActivityFeedComponent} from '../../components/activity-feed/activity-feed.component';
 import {LoadingCardComponent} from '../../components/loading-card/loading-card.component';
 import {PageComponent} from '../../components/page.component';
 import {AccessTokensService} from '../../services/access-tokens.service';
@@ -26,8 +28,6 @@ import {SecretsService} from '../../services/secrets.service';
 import {SupportBundlesService} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
-import {toHomeActivity} from '../home-activity';
-import {HomeActivityComponent} from '../home-activity.component';
 import {CustomerHomeAccessTokensComponent} from './customer-home-access-tokens.component';
 import {CustomerHomeAlertsComponent} from './customer-home-alerts.component';
 import {CustomerHomeChecklistComponent} from './customer-home-checklist.component';
@@ -66,7 +66,7 @@ function storedFlag(storage: Storage, key: string | undefined): boolean | undefi
     CustomerHomeUpdateNotificationsComponent,
     CustomerHomeAccessTokensComponent,
     CustomerHomeSupportBundlesComponent,
-    HomeActivityComponent,
+    ActivityFeedComponent,
   ],
 })
 export class CustomerHomePageComponent {
@@ -340,7 +340,7 @@ export class CustomerHomePageComponent {
       ].filter(Boolean).length
   );
 
-  protected readonly activity = toSignal(this.activityFeedService.list().pipe(map(toHomeActivity)));
+  protected readonly activity = toSignal(this.activityFeedService.list().pipe(map(toActivityFeedItems)));
   protected readonly activityShown = computed(() => this.activity()?.length !== 0);
   protected readonly vendorName = toSignal(this.organizationService.get().pipe(map((org) => org.name)));
 

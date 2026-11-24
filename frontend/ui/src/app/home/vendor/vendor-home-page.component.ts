@@ -1,17 +1,21 @@
 import {NgPlural, NgPluralCase} from '@angular/common';
-import {Component, computed, inject} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
-import {ActivatedRoute, Router, RouterLink} from '@angular/router';
+import {Component, computed, inject, signal} from '@angular/core';
+import {toObservable, toSignal} from '@angular/core/rxjs-interop';
+import {RouterLink} from '@angular/router';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faAddressBook,
   faBoxesStacked,
   faCircleArrowUp,
   faKey,
   faLifeRing,
+  faListCheck,
   faShieldHalved,
 } from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, firstValueFrom, map, of, switchMap} from 'rxjs';
 import {refreshInBackground} from '../../../util/refresh';
+import {toActivityFeedItems} from '../../components/activity-feed/activity-feed';
+import {ActivityFeedComponent} from '../../components/activity-feed/activity-feed.component';
 import {AvatarComponent} from '../../components/avatar.component';
 import {CardHeadingComponent} from '../../components/card-heading.component';
 import {CustomerUpdateStatus} from '../../components/customer-organizations/customer-list-display';
@@ -28,9 +32,9 @@ import {CustomerOrganizationsService} from '../../services/customer-organization
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
 import {LicensesService} from '../../services/licenses.service';
+import {OrganizationService} from '../../services/organization.service';
 import {SupportBundlesService} from '../../services/support-bundles.service';
-import {toHomeActivity} from '../home-activity';
-import {HomeActivityComponent} from '../home-activity.component';
+import {TutorialsService} from '../../services/tutorials.service';
 import {QuickNavigationCardComponent, QuickNavigationCardType} from '../quick-navigation-card.component';
 import {DeploymentHealth, VendorHomeLicenses, VendorHomeUpdates} from './vendor-home';
 import {
@@ -45,6 +49,7 @@ import {
   vendorHomeAttentionStatuses,
   vendorHomeOpenAdvisoryStatuses,
 } from './vendor-home-mappers';
+import {VendorHomeTutorialsComponent} from './vendor-home-tutorials.component';
 
 const vendorHomeMaxCustomers = 10;
 const vendorHomeMaxAffectedNames = 2;
@@ -107,19 +112,21 @@ function supportCardType(open: number, isConfigured: boolean): QuickNavigationCa
     NgPlural,
     NgPluralCase,
     RouterLink,
+    FaIconComponent,
     PageComponent,
     AvatarComponent,
     CardHeadingComponent,
     LoadingCardComponent,
     QuickNavigationCardComponent,
-    HomeActivityComponent,
+    ActivityFeedComponent,
     QuickNavigationCardComponent,
+    VendorHomeTutorialsComponent,
   ],
 })
 export class VendorHomePageComponent {
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
+  private readonly organizationService = inject(OrganizationService);
+  private readonly tutorialsService = inject(TutorialsService);
   private readonly artifactPullsService = inject(ArtifactPullsService);
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   private readonly deploymentTargetsService = inject(DeploymentTargetsService);
@@ -143,7 +150,22 @@ export class VendorHomePageComponent {
   protected readonly faCircleArrowUp = faCircleArrowUp;
   protected readonly faKey = faKey;
   protected readonly faLifeRing = faLifeRing;
+  protected readonly faListCheck = faListCheck;
   protected readonly faShieldHalved = faShieldHalved;
+
+  private readonly tutorialsAvailable = computed(
+    () => this.isVendor && this.auth.hasRole('admin') && !this.organizationService.hasSubscription()
+  );
+  /** `null` while the user cannot take the tutorials. */
+  private readonly tutorials = toSignal(
+    toObservable(this.tutorialsAvailable).pipe(
+      switchMap((available) => (available ? this.tutorialsService.tutorialsProgress$ : of(null)))
+    )
+  );
+  private readonly tutorialsHiddenKey = `home.tutorialsHidden.${this.auth.getClaims()?.org ?? 'none'}.${this.auth.getClaims()?.sub ?? 'none'}`;
+  private readonly tutorialsHidden = signal(localStorage.getItem(this.tutorialsHiddenKey) === 'true');
+  protected readonly visibleTutorials = computed(() => (this.tutorialsHidden() ? undefined : this.tutorials()));
+  protected readonly tutorialsRestorable = computed(() => !!this.tutorials() && this.tutorialsHidden());
 
   private readonly customers = toSignal(this.customerOrganizationsService.getCustomerOrganizations());
   protected readonly customerCount = computed(() => this.customers()?.length);
@@ -315,9 +337,19 @@ export class VendorHomePageComponent {
       : {customers, deployments, applications};
   });
 
-  protected readonly activity = toSignal(this.activityFeedService.list().pipe(map(toHomeActivity)));
+  protected readonly activity = toSignal(this.activityFeedService.list().pipe(map(toActivityFeedItems)));
+
+  protected setTutorialsHidden(hidden: boolean) {
+    if (hidden) {
+      localStorage.setItem(this.tutorialsHiddenKey, 'true');
+    } else {
+      localStorage.removeItem(this.tutorialsHiddenKey);
+    }
+    this.tutorialsHidden.set(hidden);
+  }
 
   constructor() {
+    this.tutorialsService.refreshList();
     refreshInBackground(
       this.customerOrganizationsService.refresh(),
       this.deploymentTargetsService.refresh(),
@@ -328,21 +360,5 @@ export class VendorHomePageComponent {
         enabled ? this.applicationEntitlementsService.refresh() : undefined
       )
     );
-    if (this.route.snapshot.queryParamMap.get('from') === 'login') {
-      this.redirectAfterLogin();
-    }
-  }
-
-  private async redirectAfterLogin() {
-    if (this.isVendor) {
-      const [pulls, deploymentTargets] = await firstValueFrom(
-        combineLatest([this.artifactPullsService.get({count: 1}), this.deploymentTargetsService.list()])
-      );
-      if (pulls.length === 0 && deploymentTargets.length === 0) {
-        await this.router.navigate(['/tutorials']);
-        return;
-      }
-    }
-    await this.router.navigate([], {relativeTo: this.route, queryParams: {from: null}, replaceUrl: true});
   }
 }

@@ -59,7 +59,7 @@ const usageStepTaskTag = 'tag';
 const usageStepTaskPush = 'push';
 const usageStepTaskExplore = 'explore';
 
-const helloDistrTag = '0.4.32'; // renovate: datasource=github-releases depName=distr-sh/hello-distr
+const helloDistrTag = '0.4.33'; // renovate: datasource=github-releases depName=distr-sh/hello-distr
 
 function helloDistrProxyUrl(base: string): string {
   return `${base}/hello-distr/proxy:${helloDistrTag}`;
@@ -363,24 +363,32 @@ export class RegistryTutorialComponent implements OnInit, AfterViewInit, OnDestr
     this.usageFormGroup.markAllAsTouched();
     if (this.usageFormGroup.valid && this.usageFormGroup.dirty) {
       this.loading.set(true);
-      this.progress = await lastValueFrom(
-        this.tutorialsService.save(tutorialId, {
-          stepId: usageStep,
-          taskId: usageStepTaskExplore,
-          markCompleted: true,
-        })
-      );
-      this.stepper().selected!.completed = true;
-      this.loading.set(false);
-      this.toast.success('Congrats on finishing the tutorial! Good Job!');
-      this.navigateToOverviewPage();
+      try {
+        this.progress = await lastValueFrom(
+          this.tutorialsService.save(tutorialId, {
+            stepId: usageStep,
+            taskId: usageStepTaskExplore,
+            markCompleted: true,
+          })
+        );
+        this.stepper().selected!.completed = true;
+        this.toast.success('Congrats on finishing the tutorial! Good Job!');
+        this.navigateToOverviewPage();
+      } catch (e) {
+        const msg = getFormDisplayedError(e);
+        if (msg) {
+          this.toast.error(msg);
+        }
+      } finally {
+        this.loading.set(false);
+      }
     } else if (this.progress?.completedAt) {
       this.navigateToOverviewPage();
     }
   }
 
   protected navigateToOverviewPage() {
-    this.router.navigate(['tutorials']);
+    this.router.navigate(['/home']);
   }
 
   protected readonly faArrowRight = faArrowRight;

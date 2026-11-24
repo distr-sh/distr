@@ -23,6 +23,7 @@ import {
   merge,
   Observable,
   scan,
+  share,
   Subject,
   switchMap,
   tap,
@@ -66,6 +67,7 @@ export class TimeseriesTableComponent {
   private readonly range = computed(() => this.sourceWithStatus().range);
   protected readonly newestFirst = computed(() => this.range().order === 'DESC');
   protected readonly live = computed(() => isLiveRange(this.range()));
+  protected readonly filtered = computed(() => !!this.range().filter || !!this.range().exclusionFilter);
   protected readonly paginateForward = computed(() => paginatesForward(this.range()));
 
   private readonly toastService = inject(ToastService);
@@ -76,17 +78,19 @@ export class TimeseriesTableComponent {
   protected readonly faThumbtackSlash = faThumbtackSlash;
 
   private static readonly LIVE_INTERVAL_MS = 10_000;
+  private static readonly LIVE_CLOCK_SKEW_MS = 60_000;
 
   protected readonly hasMore = signal(true);
   protected readonly pinnedEntryId = signal<string | null>(null);
   protected readonly userIsAtBottom = signal(true);
   protected readonly showScrollToBottom = computed(() => !this.userIsAtBottom() && this.live() && !this.newestFirst());
+  protected readonly polling = signal(false);
   private readonly liveResetTimestamp = signal(Date.now());
 
   protected readonly liveProgress = toSignal(
-    combineLatest([toObservable(this.live), toObservable(this.liveResetTimestamp)]).pipe(
-      switchMap(([live, resetTimestamp]) =>
-        live
+    combineLatest([toObservable(this.polling), toObservable(this.liveResetTimestamp)]).pipe(
+      switchMap(([polling, resetTimestamp]) =>
+        polling
           ? interval(100).pipe(
               map(() =>
                 Math.min(100, ((Date.now() - resetTimestamp) / TimeseriesTableComponent.LIVE_INTERVAL_MS) * 100)
@@ -105,9 +109,16 @@ export class TimeseriesTableComponent {
       const paginateForward = paginatesForward(source.range);
       let nextBefore: Date | null = null;
       let nextAfter: Date | null = null;
+      // Log timestamps come from the controller's clock, so the cursor after an empty first page
+      // starts early enough to cover a browser clock that runs ahead of it.
+      const emptyPageCursor = new Date(Date.now() - TimeseriesTableComponent.LIVE_CLOCK_SKEW_MS);
+      const initialLoad$ = source.load().pipe(
+        catchError((err) => this.handleError(err)),
+        share()
+      );
       return merge(
         merge(
-          source.load().pipe(catchError((err) => this.handleError(err))),
+          initialLoad$,
           this.loadMore$.pipe(
             exhaustMap(() => {
               if (paginateForward) {
@@ -123,14 +134,31 @@ export class TimeseriesTableComponent {
           )
         ).pipe(tap((entries) => this.hasMore.set(entries.length >= source.batchSize))),
         live
-          ? interval(TimeseriesTableComponent.LIVE_INTERVAL_MS).pipe(
+          ? initialLoad$.pipe(
               switchMap(() =>
-                nextAfter !== null
-                  ? source.loadAfter(nextAfter).pipe(catchError((err) => this.handleError(err)))
-                  : EMPTY
+                interval(TimeseriesTableComponent.LIVE_INTERVAL_MS).pipe(
+                  tap({
+                    subscribe: () => {
+                      this.polling.set(true);
+                      this.liveResetTimestamp.set(Date.now());
+                    },
+                    next: () => this.liveResetTimestamp.set(Date.now()),
+                    finalize: () => this.polling.set(false),
+                  })
+                )
               ),
+              exhaustMap(() => {
+                const isFirstPage = nextBefore === null;
+                return source.loadAfter(nextAfter ?? emptyPageCursor).pipe(
+                  tap((entries) => {
+                    if (isFirstPage) {
+                      this.hasMore.set(entries.length >= source.batchSize);
+                    }
+                  }),
+                  catchError((err) => this.handleError(err))
+                );
+              }),
               tap((entries) => {
-                this.liveResetTimestamp.set(Date.now());
                 if (!newestFirst && entries.length > 0) {
                   this.autoScrollIfAtBottom();
                 }

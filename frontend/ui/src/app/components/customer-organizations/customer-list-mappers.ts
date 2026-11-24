@@ -2,14 +2,11 @@ import {Application, CustomerOrganizationWithUsage, DeploymentTarget} from '@dis
 import dayjs, {Dayjs} from 'dayjs';
 import {DeploymentHealth} from '../../home/vendor/vendor-home';
 import {
-  compareByOpenItems,
-  countCustomerOpenItems,
   filterOpenSupportBundles,
   licenseExpiryWindowDays,
   toCustomerUpdates,
   toDeploymentHealth,
 } from '../../home/vendor/vendor-home-mappers';
-import {isCustomerLicenseIssue} from '../../licenses/customer-license-status';
 import {ApplicationEntitlement} from '../../types/application-entitlement';
 import {LatestArtifactPull} from '../../types/artifact-version-pull';
 import {License} from '../../types/license';
@@ -87,17 +84,34 @@ function toCustomerManagement(
   }
 }
 
-export function toCustomerLicenseStatus(license: License | undefined, now: Dayjs = dayjs()): CustomerLicenseStatus {
+export interface LicenseGrantCounts {
+  grants: number;
+  expired: number;
+  /** The grants that expire within the window but have not expired yet. */
+  expiring: number;
+}
+
+export function toLicenseGrantCounts(license: License | undefined, now: Dayjs = dayjs()): LicenseGrantCounts {
   const grants = license
     ? [...license.licenseKeys, ...license.applicationEntitlements, ...license.artifactEntitlements]
     : [];
   const expirations = grants.map((it) => it.expiresAt).filter((expiresAt) => expiresAt !== undefined);
   const threshold = now.add(licenseExpiryWindowDays, 'day');
-  if (grants.length === 0) {
+  const expired = expirations.filter((expiresAt) => !now.isBefore(expiresAt)).length;
+  return {
+    grants: grants.length,
+    expired,
+    expiring: expirations.filter((expiresAt) => !threshold.isBefore(expiresAt)).length - expired,
+  };
+}
+
+export function toCustomerLicenseStatus(license: License | undefined, now: Dayjs = dayjs()): CustomerLicenseStatus {
+  const counts = toLicenseGrantCounts(license, now);
+  if (counts.grants === 0) {
     return 'no_license';
-  } else if (expirations.some((expiresAt) => !now.isBefore(expiresAt))) {
+  } else if (counts.expired > 0) {
     return 'expired';
-  } else if (expirations.some((expiresAt) => !threshold.isBefore(expiresAt))) {
+  } else if (counts.expiring > 0) {
     return 'expiring';
   } else {
     return 'valid';
@@ -119,7 +133,7 @@ export function toCustomerListRows(
   );
   const isLicensingInUse = [...licenseStatuses.values()].some((status) => status !== 'no_license');
   return customers
-    .map((customer) => {
+    .map((customer): CustomerListRow => {
       const health =
         deployments &&
         toDeploymentHealth(deployments.targets.filter((target) => target.customerOrganization?.id === customer.id));
@@ -133,17 +147,13 @@ export function toCustomerListRows(
           deployments.entitlements,
           deployments.pulls
         );
-      const license = licenseStatuses.get(customer.id);
-      const support =
-        supportBundles &&
-        toCustomerSupportBundles(supportBundles.filter((bundle) => bundle.customerOrganizationId === customer.id));
-      const row: CustomerListRow = {
+      return {
         id: customer.id,
         name: customer.name,
         imageUrl: customer.imageUrl,
         management: toCustomerManagement(customer, health, pulls),
         updatesTab: (health?.total ?? 0) > 0 ? 'deployments' : 'registry',
-        license,
+        license: licenseStatuses.get(customer.id),
         isLicensingInUse: licenses && isLicensingInUse,
         deployments: health && {
           ...health,
@@ -151,18 +161,12 @@ export function toCustomerListRows(
         },
         isOutdated: updates?.isOutdated,
         hasDeploymentsOrPulls: updates?.hasDeploymentsOrPulls,
-        supportBundles: support,
+        supportBundles:
+          supportBundles &&
+          toCustomerSupportBundles(supportBundles.filter((bundle) => bundle.customerOrganizationId === customer.id)),
       };
-      const openItems = countCustomerOpenItems(
-        health,
-        updates,
-        isCustomerLicenseIssue(license, isLicensingInUse),
-        support?.open ?? 0
-      );
-      return {row, name: customer.name, openItems};
     })
-    .sort(compareByOpenItems)
-    .map(({row}) => row);
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function toCustomerSupportBundles(bundles: SupportBundle[]): CustomerListSupportBundles {
