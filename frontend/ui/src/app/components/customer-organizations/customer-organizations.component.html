@@ -55,11 +55,8 @@
         </thead>
         <tbody>
           @for (customer of rows(); track customer.id) {
-            <tr class="distr-table-row">
-              <td
-                [appClickableRow]="['/', 'customers', customer.id, columnTabs.customer]"
-                [title]="tabTitles[columnTabs.customer]"
-                class="distr-table-cell">
+            <tr class="distr-table-row" [appClickableRow]="['/', 'customers', customer.id, columnTabs.customer]">
+              <td class="distr-table-cell">
                 <div class="flex items-center gap-3">
                   <app-avatar [image]="customer.imageUrl" [name]="customer.name" class="size-8 rounded-sm" />
                   <div class="min-w-0">
@@ -82,106 +79,135 @@
                   </div>
                 </div>
               </td>
-              <td
-                [appClickableRow]="['/', 'customers', customer.id, columnTabs.deployments]"
-                [title]="tabTitles[columnTabs.deployments]"
-                class="distr-table-cell">
+              <td class="distr-table-cell">
                 @if (customer.deployments; as deployments) {
                   @if (deployments.total === 0) {
                     <span class="distr-text-muted">-</span>
                   } @else {
-                    <span class="block">
-                      <ng-container [ngPlural]="deployments.total">
-                        <ng-template ngPluralCase="=1">1 deployment</ng-template>
-                        <ng-template ngPluralCase="other">{{ deployments.total }} deployments</ng-template>
-                      </ng-container>
-                    </span>
-                    <span class="flex flex-wrap gap-x-2 text-xs">
-                      @if (deployments.error > 0) {
-                        <span class="text-red-600 dark:text-red-400">
-                          <ng-container [ngPlural]="deployments.error">
-                            <ng-template ngPluralCase="=1">1 error</ng-template>
-                            <ng-template ngPluralCase="other">{{ deployments.error }} errors</ng-template>
-                          </ng-container>
-                        </span>
-                      }
-                      @if (deployments.running > 0) {
-                        <span class="text-green-600 dark:text-green-400">{{ deployments.running }} running</span>
-                      }
-                      @if (deployments.stale > 0) {
-                        <span class="text-yellow-600 dark:text-yellow-400">{{ deployments.stale }} stale</span>
-                      }
-                      @if (deployments.healthy > 0) {
-                        <span class="text-green-600 dark:text-green-400">{{ deployments.healthy }} healthy</span>
-                      }
-                      @if (deployments.progressing > 0) {
-                        <span class="text-blue-600 dark:text-blue-400">{{ deployments.progressing }} progressing</span>
-                      }
-                      @if (deployments.noStatus > 0) {
-                        <span class="distr-text-muted">{{ deployments.noStatus }} no status</span>
-                      }
-                    </span>
+                    <a
+                      [routerLink]="['/', 'customers', customer.id, columnTabs.deployments]"
+                      [title]="tabTitles[columnTabs.deployments]"
+                      class="group block">
+                      <span class="block group-hover:underline">
+                        <ng-container [ngPlural]="deployments.total">
+                          <ng-template ngPluralCase="=1">1 deployment</ng-template>
+                          <ng-template ngPluralCase="other">{{ deployments.total }} deployments</ng-template>
+                        </ng-container>
+                      </span>
+                      <span class="flex flex-wrap gap-x-2 text-xs">
+                        @if (deployments.error > 0) {
+                          <span class="text-red-600 group-hover:underline dark:text-red-400">
+                            <ng-container [ngPlural]="deployments.error">
+                              <ng-template ngPluralCase="=1">1 error</ng-template>
+                              <ng-template ngPluralCase="other">{{ deployments.error }} errors</ng-template>
+                            </ng-container>
+                          </span>
+                        }
+                        @if (deployments.running > 0) {
+                          <span class="text-green-600 group-hover:underline dark:text-green-400">
+                            {{ deployments.running }} running
+                          </span>
+                        }
+                        @if (deployments.stale > 0) {
+                          <span class="text-yellow-600 group-hover:underline dark:text-yellow-400">
+                            {{ deployments.stale }} stale
+                          </span>
+                        }
+                        @if (deployments.healthy > 0) {
+                          <span class="text-green-600 group-hover:underline dark:text-green-400">
+                            {{ deployments.healthy }} healthy
+                          </span>
+                        }
+                        @if (deployments.progressing > 0) {
+                          <span class="text-blue-600 group-hover:underline dark:text-blue-400">
+                            {{ deployments.progressing }} progressing
+                          </span>
+                        }
+                        @if (deployments.noStatus > 0) {
+                          <span class="distr-text-muted group-hover:underline">
+                            {{ deployments.noStatus }} no status
+                          </span>
+                        }
+                      </span>
+                    </a>
                   }
                 } @else {
                   <ng-container [ngTemplateOutlet]="twoLineSkeleton" />
                 }
               </td>
-              <td
-                [appClickableRow]="['/', 'customers', customer.id, customer.updatesTab]"
-                [title]="tabTitles[customer.updatesTab]"
-                class="distr-table-cell">
+              <td class="distr-table-cell">
                 @if (customer.isOutdated === true) {
-                  <span class="distr-badge distr-badge-warning">Outdated</span>
+                  <a
+                    [routerLink]="['/', 'customers', customer.id, customer.updatesTab]"
+                    [title]="tabTitles[customer.updatesTab]"
+                    class="distr-badge distr-badge-warning hover:underline">
+                    Outdated
+                  </a>
                 } @else if (customer.hasDeploymentsOrPulls === false) {
                   <span class="distr-text-muted">-</span>
                 } @else if (customer.isOutdated === false) {
-                  Up to date
+                  <a
+                    [routerLink]="['/', 'customers', customer.id, customer.updatesTab]"
+                    [title]="tabTitles[customer.updatesTab]"
+                    class="hover:underline">
+                    Up to date
+                  </a>
                 } @else {
                   <ng-container [ngTemplateOutlet]="badgeSkeleton" />
                 }
               </td>
               @if (showLicenseColumn()) {
-                <td
-                  [appClickableRow]="['/', 'customers', customer.id, columnTabs.license]"
-                  [title]="tabTitles[columnTabs.license]"
-                  class="distr-table-cell">
+                <td class="distr-table-cell">
                   @if (customer.license === 'valid') {
-                    Valid
+                    <a
+                      [routerLink]="['/', 'customers', customer.id, columnTabs.license]"
+                      [title]="tabTitles[columnTabs.license]"
+                      class="hover:underline">
+                      Valid
+                    </a>
                   } @else if (customer.isLicensingInUse === false) {
                     <span class="distr-text-muted">-</span>
                   } @else if (customer.license; as license) {
-                    <app-customer-license-badge [status]="license" />
+                    <a
+                      [routerLink]="['/', 'customers', customer.id, columnTabs.license]"
+                      [title]="tabTitles[columnTabs.license]">
+                      <app-customer-license-badge [status]="license" class="hover:underline" />
+                    </a>
                   } @else {
                     <ng-container [ngTemplateOutlet]="badgeSkeleton" />
                   }
                 </td>
               }
               @if (showSupportColumn()) {
-                <td
-                  [appClickableRow]="['/', 'customers', customer.id, columnTabs.support]"
-                  [title]="tabTitles[columnTabs.support]"
-                  class="distr-table-cell">
+                <td class="distr-table-cell">
                   @if (customer.supportBundles; as support) {
-                    @if (support.open > 0) {
-                      <span class="block">
-                        <ng-container [ngPlural]="support.open">
-                          <ng-template ngPluralCase="=1">1 open request</ng-template>
-                          <ng-template ngPluralCase="other">{{ support.open }} open requests</ng-template>
-                        </ng-container>
-                      </span>
-                    } @else if (support.resolved + support.canceled > 0) {
-                      <span class="distr-text-muted block">0 open requests</span>
-                    } @else {
+                    @if (support.open + support.resolved + support.canceled === 0) {
                       <span class="distr-text-muted block">-</span>
+                    } @else {
+                      <a
+                        [routerLink]="['/', 'customers', customer.id, columnTabs.support]"
+                        [title]="tabTitles[columnTabs.support]"
+                        class="group block">
+                        @if (support.open > 0) {
+                          <span class="block group-hover:underline">
+                            <ng-container [ngPlural]="support.open">
+                              <ng-template ngPluralCase="=1">1 open request</ng-template>
+                              <ng-template ngPluralCase="other">{{ support.open }} open requests</ng-template>
+                            </ng-container>
+                          </span>
+                        } @else {
+                          <span class="distr-text-muted block group-hover:underline">0 open requests</span>
+                        }
+                        <span class="flex flex-wrap gap-x-2 text-xs">
+                          @if (support.resolved > 0) {
+                            <span class="distr-text-muted group-hover:underline">{{ support.resolved }} resolved</span>
+                          }
+                          @if (support.canceled > 0) {
+                            <span class="distr-text-muted group-hover:underline">{{ support.canceled }} canceled</span>
+                          }
+                        </span>
+                      </a>
                     }
-                    <span class="flex flex-wrap gap-x-2 text-xs">
-                      @if (support.resolved > 0) {
-                        <span class="distr-text-muted">{{ support.resolved }} resolved</span>
-                      }
-                      @if (support.canceled > 0) {
-                        <span class="distr-text-muted">{{ support.canceled }} canceled</span>
-                      }
-                    </span>
                   } @else {
                     <ng-container [ngTemplateOutlet]="twoLineSkeleton" />
                   }

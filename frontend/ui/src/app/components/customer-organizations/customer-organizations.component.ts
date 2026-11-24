@@ -2,7 +2,7 @@ import {AsyncPipe, NgPlural, NgPluralCase, NgTemplateOutlet} from '@angular/comm
 import {Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
-import {ActivatedRoute, Params, Router} from '@angular/router';
+import {ActivatedRoute, Params, Router, RouterLink} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, firstValueFrom, of, switchMap} from 'rxjs';
@@ -43,6 +43,7 @@ import {CustomerDetailTabId, customerDetailTabs} from './detail/customer-detail-
     NgPluralCase,
     NgTemplateOutlet,
     ClickableRowDirective,
+    RouterLink,
     QuotaLimitComponent,
     AvatarComponent,
     PageComponent,
