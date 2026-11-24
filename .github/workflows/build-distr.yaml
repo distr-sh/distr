@@ -23,18 +23,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  not-release-please-preparation:
-    name: Not release-please preparation
-    # The release pull request only bumps versions of what main has already checked.
-    if: ${{ github.head_ref != 'release-please--branches--main' }}
-    runs-on: ubuntu-latest
-    permissions: {}
-    steps:
-      - run: 'true'
-
   validate-migrations:
     name: Validate migrations
-    needs: not-release-please-preparation
+    # The release pull request only bumps versions of what main has already checked.
+    if: ${{ github.head_ref != 'release-please--branches--main' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -44,7 +36,7 @@ jobs:
 
   lint-and-test-go:
     name: Lint and test (Go)
-    needs: not-release-please-preparation
+    if: ${{ github.head_ref != 'release-please--branches--main' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -66,7 +58,7 @@ jobs:
 
   lint-and-test-node:
     name: Lint and test (Node)
-    needs: not-release-please-preparation
+    if: ${{ github.head_ref != 'release-please--branches--main' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -103,7 +95,7 @@ jobs:
         ports:
           - 5432:5432
     name: Build
-    needs: not-release-please-preparation
+    if: ${{ github.head_ref != 'release-please--branches--main' }}
     timeout-minutes: 10
     runs-on: ubuntu-latest
     permissions:
