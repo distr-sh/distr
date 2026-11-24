@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/distrerr"
@@ -136,6 +137,43 @@ func GetDeploymentTargetsByScope(
 			)
 		ORDER BY dt.name`,
 		pgx.NamedArgs{"orgID": orgID, "customerOrgID": customerOrgID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query DeploymentTargets: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.DeploymentTarget])
+	if err != nil {
+		return nil, fmt.Errorf("failed to get DeploymentTargets: %w", err)
+	}
+	return result, nil
+}
+
+// GetDeploymentTargetsCreatedSince returns the newest deployment targets the filter matches, at most limit of them.
+// Unlike in GetDeploymentTargets, a zero filter matches none.
+func GetDeploymentTargetsCreatedSince(
+	ctx context.Context,
+	orgID uuid.UUID,
+	filter DeploymentTargetFilter,
+	since time.Time,
+	limit int,
+) ([]types.DeploymentTarget, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT`+deploymentTargetOutputExprBase+`
+		FROM DeploymentTarget dt
+		WHERE dt.organization_id = @orgId
+			AND ((@filterInternal AND dt.customer_organization_id IS NULL)
+				OR dt.customer_organization_id = any(@filterCustomerOrgIds::uuid[]))
+			AND dt.created_at > @since
+		ORDER BY dt.created_at DESC
+		LIMIT @limit`,
+		pgx.NamedArgs{
+			"orgId":                orgID,
+			"filterInternal":       filter.Internal,
+			"filterCustomerOrgIds": filter.CustomerOrganizationIDs,
+			"since":                since,
+			"limit":                limit,
+		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query DeploymentTargets: %w", err)

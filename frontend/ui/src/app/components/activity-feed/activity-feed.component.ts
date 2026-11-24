@@ -11,6 +11,8 @@ import {
   faDownload,
   faKey,
   faLifeRing,
+  faServer,
+  faUserPlus,
 } from '@fortawesome/free-solid-svg-icons';
 import {RelativeDatePipe} from '../../../util/dates';
 import {never} from '../../../util/exhaust';
@@ -108,8 +110,14 @@ function icon({type}: ActivityFeedItem): IconDefinition {
       return faBox;
     case 'artifact_version_first_pulled':
       return faDownload;
+    case 'customer_created':
+      return faAddressBook;
+    case 'customer_user_joined':
+      return faUserPlus;
     case 'deployment_revision_created':
       return faDashboard;
+    case 'deployment_target_created':
+      return faServer;
     case 'license_key_created':
     case 'license_key_updated':
       return faKey;
@@ -136,7 +144,15 @@ function link(
     case 'artifact_version_created':
     case 'artifact_version_first_pulled':
       return {link: viewer === 'customer' ? `/artifacts/${resourceId}` : `/registry/${resourceId}`};
+    case 'customer_created':
+      return {link: `/customers/${resourceId}`};
+    case 'customer_user_joined':
+      if (viewer === 'customer') {
+        return {link: '/team'};
+      }
+      return {link: customer ? `/customers/${customer.id}/users` : '/customers'};
     case 'deployment_revision_created':
+    case 'deployment_target_created':
       return {link: `/deployments/${resourceId}`};
     case 'license_key_created':
     case 'license_key_updated':
@@ -166,7 +182,12 @@ function customerTabLink(
       return link(activity, viewer);
     case 'artifact_version_first_pulled':
       return {...tab('registry'), queryParams: {artifactId: activity.resourceId}};
+    case 'customer_created':
+      return tab('overview');
+    case 'customer_user_joined':
+      return tab('users');
     case 'deployment_revision_created':
+    case 'deployment_target_created':
       return {...tab('deployments'), queryParams: {search: activity.resourceName}};
     case 'license_key_created':
     case 'license_key_updated':
@@ -189,8 +210,14 @@ function action({type, subject, detail}: ActivityFeedItem): string {
       return `artifact ${subject}:${detail} published`;
     case 'artifact_version_first_pulled':
       return `artifact ${subject}:${detail} pulled for the first time`;
+    case 'customer_created':
+      return `customer ${subject} created`;
+    case 'customer_user_joined':
+      return `${subject} joined`;
     case 'deployment_revision_created':
       return `version ${detail} of ${subject} deployed`;
+    case 'deployment_target_created':
+      return `deployment ${subject} created`;
     case 'license_key_created':
       return `license key ${subject} issued`;
     case 'license_key_updated':

@@ -3,6 +3,7 @@
 package activityfeed
 
 import (
+	"cmp"
 	"slices"
 	"time"
 
@@ -21,7 +22,10 @@ const (
 	EntryTypeApplicationVersionCreated  EntryType = "application_version_created"
 	EntryTypeArtifactVersionCreated     EntryType = "artifact_version_created"
 	EntryTypeArtifactVersionFirstPulled EntryType = "artifact_version_first_pulled"
+	EntryTypeCustomerCreated            EntryType = "customer_created"
+	EntryTypeCustomerUserJoined         EntryType = "customer_user_joined"
 	EntryTypeDeploymentRevisionCreated  EntryType = "deployment_revision_created"
+	EntryTypeDeploymentTargetCreated    EntryType = "deployment_target_created"
 	EntryTypeLicenseKeyCreated          EntryType = "license_key_created"
 	EntryTypeLicenseKeyUpdated          EntryType = "license_key_updated"
 	EntryTypeSupportBundleCreated       EntryType = "support_bundle_created"
@@ -39,8 +43,8 @@ type Entry struct {
 	ID        uuid.UUID
 	CreatedAt time.Time
 	Type      EntryType
-	// ResourceID is the application, artifact, deployment target, license key or support bundle the
-	// entry is about, depending on its type.
+	// ResourceID is the application, artifact, customer organization, deployment target, license key, support
+	// bundle or user the entry is about, depending on its type.
 	ResourceID   uuid.UUID
 	ResourceName string
 	// Subject is what the entry is about in its text, which for a deployment revision names its application
@@ -159,6 +163,62 @@ func DeploymentRevisions(revisions []types.DeploymentRevisionEvent) []Entry {
 			Detail:                 new(revision.ApplicationVersionName),
 			User:                   newUser(revision.CreatedByName, revision.CreatedByImageID),
 			CustomerOrganizationID: revision.CustomerOrganizationID,
+		}
+	}
+	return result
+}
+
+// CustomerOrganizations returns an entry for every customer organization created after since.
+func CustomerOrganizations(customerOrgs []types.CustomerOrganization, since time.Time) []Entry {
+	var result []Entry
+	for _, customerOrg := range customerOrgs {
+		if customerOrg.CreatedAt.After(since) {
+			result = append(result, Entry{
+				ID:                     customerOrg.ID,
+				CreatedAt:              customerOrg.CreatedAt,
+				Type:                   EntryTypeCustomerCreated,
+				ResourceID:             customerOrg.ID,
+				ResourceName:           customerOrg.Name,
+				Subject:                customerOrg.Name,
+				CustomerOrganizationID: new(customerOrg.ID),
+			})
+		}
+	}
+	return result
+}
+
+// CustomerUsers returns an entry for every user who joined a customer organization after since, leaving out the
+// members of the vendor and of partners.
+func CustomerUsers(users []types.UserAccountWithUserRole, since time.Time) []Entry {
+	var result []Entry
+	for _, user := range users {
+		if user.CustomerOrganizationID != nil && user.JoinedOrgAt.After(since) {
+			name := cmp.Or(user.Name, user.Email)
+			result = append(result, Entry{
+				ID:                     user.ID,
+				CreatedAt:              user.JoinedOrgAt,
+				Type:                   EntryTypeCustomerUserJoined,
+				ResourceID:             user.ID,
+				ResourceName:           name,
+				Subject:                name,
+				CustomerOrganizationID: user.CustomerOrganizationID,
+			})
+		}
+	}
+	return result
+}
+
+func DeploymentTargets(targets []types.DeploymentTarget) []Entry {
+	result := make([]Entry, len(targets))
+	for i, target := range targets {
+		result[i] = Entry{
+			ID:                     target.ID,
+			CreatedAt:              target.CreatedAt,
+			Type:                   EntryTypeDeploymentTargetCreated,
+			ResourceID:             target.ID,
+			ResourceName:           target.Name,
+			Subject:                target.Name,
+			CustomerOrganizationID: target.CustomerOrganizationID,
 		}
 	}
 	return result

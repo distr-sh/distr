@@ -72,11 +72,15 @@ var organizationActivitySources = []activitySource{
 	applicationVersionActivity,
 	artifactTagActivity,
 	internalDeploymentRevisionActivity,
+	internalDeploymentTargetActivity,
 }
 
 // customerActivitySources return the activity of the customer organizations in the scope.
 var customerActivitySources = []activitySource{
+	customerCreatedActivity,
+	customerUserActivity,
 	customerDeploymentRevisionActivity,
+	customerDeploymentTargetActivity,
 	firstArtifactPullActivity,
 	licenseKeyActivity,
 	supportBundleActivity,
@@ -257,6 +261,73 @@ func internalDeploymentRevisionActivity(
 	}
 }
 
+// customerCreatedActivity returns the new customer organizations of the vendor or partner.
+func customerCreatedActivity(_ context.Context, scope activityScope, since time.Time) ([]activityfeed.Entry, error) {
+	if scope.customerOrg != nil {
+		return nil, nil
+	}
+	return activityfeed.CustomerOrganizations(scope.customerOrgs, since), nil
+}
+
+func customerUserActivity(ctx context.Context, scope activityScope, since time.Time) ([]activityfeed.Entry, error) {
+	auth := auth.Authentication.Require(ctx)
+	var users []types.UserAccountWithUserRole
+	var err error
+	switch {
+	case len(scope.customerOrgs) == 0:
+		return nil, nil
+	case len(scope.customerOrgs) == 1:
+		users, err = db.GetUserAccountsByCustomerOrgID(ctx, scope.customerOrgs[0].ID)
+	case scope.viewer.PartnerOrganizationID != nil:
+		users, err = db.GetUserAccountsByPartnerOrgID(ctx, *scope.viewer.PartnerOrganizationID)
+	default:
+		users, err = db.GetUserAccountsByOrgID(ctx, *auth.CurrentOrgID())
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get customer users: %w", err)
+	}
+	return activityfeed.CustomerUsers(users, since), nil
+}
+
+func customerDeploymentTargetActivity(
+	ctx context.Context,
+	scope activityScope,
+	since time.Time,
+) ([]activityfeed.Entry, error) {
+	auth := auth.Authentication.Require(ctx)
+	if customerOrgIDs := scope.customerOrgIDsWith(
+		types.CustomerOrganizationFeatureDeploymentTargets,
+	); len(customerOrgIDs) == 0 {
+		return nil, nil
+	} else if targets, err := db.GetDeploymentTargetsCreatedSince(
+		ctx, *auth.CurrentOrgID(), db.DeploymentTargetFilter{CustomerOrganizationIDs: customerOrgIDs},
+		since, activityfeed.Limit,
+	); err != nil {
+		return nil, fmt.Errorf("failed to get customer deployment targets: %w", err)
+	} else {
+		return activityfeed.DeploymentTargets(targets), nil
+	}
+}
+
+// internalDeploymentTargetActivity returns the new deployment targets that belong to no customer organization,
+// which only the vendor sees.
+func internalDeploymentTargetActivity(
+	ctx context.Context,
+	scope activityScope,
+	since time.Time,
+) ([]activityfeed.Entry, error) {
+	auth := auth.Authentication.Require(ctx)
+	if !scope.viewer.IsVendor {
+		return nil, nil
+	} else if targets, err := db.GetDeploymentTargetsCreatedSince(
+		ctx, *auth.CurrentOrgID(), db.DeploymentTargetFilter{Internal: true}, since, activityfeed.Limit,
+	); err != nil {
+		return nil, fmt.Errorf("failed to get internal deployment targets: %w", err)
+	} else {
+		return activityfeed.DeploymentTargets(targets), nil
+	}
+}
+
 // artifactTagActivity returns the new tags of the artifacts, to a customer organization only those it may pull.
 func artifactTagActivity(ctx context.Context, scope activityScope, since time.Time) ([]activityfeed.Entry, error) {
 	auth := auth.Authentication.Require(ctx)
@@ -301,16 +372,20 @@ func artifactIDsOf(artifacts []types.ArtifactWithDownloads) []uuid.UUID {
 	return ids
 }
 
+func customerOrgIDsOf(customerOrgs []types.CustomerOrganization) []uuid.UUID {
+	ids := make([]uuid.UUID, len(customerOrgs))
+	for i, customerOrg := range customerOrgs {
+		ids[i] = customerOrg.ID
+	}
+	return ids
+}
+
 func licenseKeyActivity(ctx context.Context, scope activityScope, since time.Time) ([]activityfeed.Entry, error) {
 	auth := auth.Authentication.Require(ctx)
-	customerOrgIDs := make([]uuid.UUID, len(scope.customerOrgs))
-	for i, customerOrg := range scope.customerOrgs {
-		customerOrgIDs[i] = customerOrg.ID
-	}
-	if !auth.CurrentOrg().HasFeature(types.FeatureLicensing) || len(customerOrgIDs) == 0 {
+	if !auth.CurrentOrg().HasFeature(types.FeatureLicensing) || len(scope.customerOrgs) == 0 {
 		return nil, nil
 	} else if keys, err := db.GetLicenseKeyEvents(
-		ctx, *auth.CurrentOrgID(), customerOrgIDs, since, activityfeed.Limit,
+		ctx, *auth.CurrentOrgID(), customerOrgIDsOf(scope.customerOrgs), since, activityfeed.Limit,
 	); err != nil {
 		return nil, fmt.Errorf("failed to get license keys: %w", err)
 	} else {
