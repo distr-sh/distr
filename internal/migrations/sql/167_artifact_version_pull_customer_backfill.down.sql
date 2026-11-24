@@ -1,0 +1,1 @@
+-- No-op: the backfilled rows cannot be told apart from pulls that recorded their customer
