@@ -25,6 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Delete all but the newest Go cache of each name
+        # only an explicit bash shell runs with pipefail, so a failing gh cache list fails the step
+        shell: bash
         run: |
           gh cache list --key go- --ref refs/heads/main --limit 1000 --json id,key,createdAt \
             --jq 'group_by(.key | sub("-[0-9a-f]+$"; "")) | map(sort_by(.createdAt) | .[:-1][]) | .[].id' |

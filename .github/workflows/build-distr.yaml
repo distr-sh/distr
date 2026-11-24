@@ -186,7 +186,8 @@ jobs:
             -X github.com/distr-sh/distr/internal/buildconfig.edition=${{ matrix.edition.name }}
             ${{ (matrix.edition.name == 'enterprise' && startsWith(github.ref, 'refs/tags/')) && format('-X github.com/distr-sh/distr/internal/license.organizationID={0}', secrets.LICENSE_ORGANIZATION_ID) || '' }}
 
-      # Both editions compile the same packages, so one of them is enough to save the cache.
+      # Both editions share every package except the ones that embed the frontend or the license key,
+      # so the community build saving the cache covers both.
       # Without the build, the prune would remove every entry and save an empty cache as the newest.
       - name: Save Go cache
         if: ${{ !cancelled() && steps.build-amd64.outcome != 'skipped' && github.ref == 'refs/heads/main' && matrix.edition.name == 'community' }}
