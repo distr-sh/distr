@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: Prune Go Caches
+
+on:
+  workflow_run:
+    workflows:
+      - Build Distr
+      - Build Controllers
+      - Build Support Collector
+    branches:
+      - main
+    types:
+      - completed
+
+concurrency:
+  group: ${{ github.workflow }}
+
+permissions:
+  actions: write
+
+jobs:
+  prune:
+    name: Prune
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete all but the newest Go cache of each name
+        run: |
+          gh cache list --key go- --ref refs/heads/main --limit 1000 --json id,key,createdAt \
+            --jq 'group_by(.key | sub("-[0-9a-f]+$"; "")) | map(sort_by(.createdAt) | .[:-1][]) | .[].id' |
+            xargs -r -n1 gh cache delete
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}

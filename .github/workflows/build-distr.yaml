@@ -22,6 +22,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_id || github.ref }}
   cancel-in-progress: true
 
+env:
+  CGO_ENABLED: '0'
+
 jobs:
   validate-migrations:
     name: Validate migrations
@@ -40,18 +43,23 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Go
-        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        uses: ./.github/actions/setup-go
         with:
-          go-version-file: 'go.mod'
-          check-latest: true
-          cache-dependency-path: |
-            go.sum
+          cache-name: test
+          # the module cache saved below would otherwise keep every module an older go.sum needed
+          module-cache-fallback: ${{ github.ref != 'refs/heads/main' }}
       - name: Run go tests
-        run: go test ./...
+        # golangci-lint runs govet below
+        run: go test -vet=off ./...
       - name: Lint with golangci-lint
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: 'v2.15.0' # renovate: datasource=github-releases depName=golangci/golangci-lint
+      - name: Save Go cache
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
+        uses: ./.github/actions/save-go-cache
+        with:
+          save-module-cache: 'true'
 
   lint-and-test-node:
     name: Lint and test (Node)
@@ -114,12 +122,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Go
-        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        uses: ./.github/actions/setup-go
         with:
-          go-version-file: 'go.mod'
-          check-latest: true
-          cache-dependency-path: |
-            go.sum
+          cache-name: distr
 
       - name: Install pnpm
         uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
@@ -170,9 +175,9 @@ jobs:
           } >> $GITHUB_OUTPUT
 
       - name: Build application (amd64)
+        id: build-amd64
         run: go build -ldflags="$LDFLAGS" -o dist/distr-amd64 ./cmd/distr/
         env:
-          CGO_ENABLED: '0'
           GOOS: linux
           GOARCH: amd64
           LDFLAGS: >-
@@ -181,11 +186,16 @@ jobs:
             -X github.com/distr-sh/distr/internal/buildconfig.edition=${{ matrix.edition.name }}
             ${{ (matrix.edition.name == 'enterprise' && startsWith(github.ref, 'refs/tags/')) && format('-X github.com/distr-sh/distr/internal/license.organizationID={0}', secrets.LICENSE_ORGANIZATION_ID) || '' }}
 
+      # Both editions compile the same packages, so one of them is enough to save the cache.
+      # Without the build, the prune would remove every entry and save an empty cache as the newest.
+      - name: Save Go cache
+        if: ${{ !cancelled() && steps.build-amd64.outcome != 'skipped' && github.ref == 'refs/heads/main' && matrix.edition.name == 'community' }}
+        uses: ./.github/actions/save-go-cache
+
       - name: Build application (arm64)
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
         run: go build -ldflags="$LDFLAGS" -o dist/distr-arm64 ./cmd/distr/
         env:
-          CGO_ENABLED: '0'
           GOOS: linux
           GOARCH: arm64
           LDFLAGS: >-
@@ -294,8 +304,6 @@ jobs:
           provenance: ${{ startsWith(github.ref, 'refs/tags/') && 'mode=max' || 'false' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Save Docker image for chart test
         if: ${{ matrix.edition.name == 'community' && !startsWith(github.ref, 'refs/tags/') }}
