@@ -4,7 +4,12 @@
     <ul class="distr-home-list class px-2">
       @for (entry of entries(); track entry.id) {
         <li>
-          <a [routerLink]="entry.link" [queryParams]="entry.queryParams" class="distr-home-row items-center">
+          <a
+            [routerLink]="entry.link ?? null"
+            [queryParams]="entry.queryParams"
+            [class.hover:bg-transparent]="!entry.link"
+            [class.dark:hover:bg-transparent]="!entry.link"
+            class="distr-home-row items-center">
             <fa-icon
               [icon]="entry.icon"
               class="distr-home-icon flex w-5 shrink-0 items-center justify-center text-lg" />

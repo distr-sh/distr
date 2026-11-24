@@ -1,5 +1,5 @@
 import {DatePipe} from '@angular/common';
-import {Component, computed, input, signal} from '@angular/core';
+import {Component, computed, inject, input, signal} from '@angular/core';
 import {Params, RouterLink} from '@angular/router';
 import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
 import {
@@ -17,6 +17,7 @@ import {
 import {RelativeDatePipe} from '../../../util/dates';
 import {never} from '../../../util/exhaust';
 import {CustomerHomeCollapsibleComponent} from '../../home/customer/customer-home-collapsible.component';
+import {AuthService} from '../../services/auth.service';
 import {AvatarComponent} from '../avatar.component';
 import {CardHeadingComponent} from '../card-heading.component';
 import {CustomerDetailTabId} from '../customer-organizations/detail/customer-detail-navigation';
@@ -27,7 +28,8 @@ interface ActivityEntry {
   createdAt: string;
   action: string;
   icon: IconDefinition;
-  link: string;
+  /** Missing for an entry whose page the viewer cannot open. */
+  link?: string;
   queryParams?: Params;
   user?: {name: string; imageUrl?: string; isVendor: boolean};
   customerName?: string;
@@ -52,6 +54,8 @@ interface ActivityEntry {
   },
 })
 export class ActivityFeedComponent {
+  private readonly auth = inject(AuthService);
+
   public readonly activity = input.required<ActivityFeedItem[]>();
   public readonly viewer = input.required<ActivityFeedViewer>();
   /** Shown as the author of what the vendor did, to a customer only. */
@@ -75,6 +79,7 @@ export class ActivityFeedComponent {
     const vendorName = this.vendorName();
     const customerOrganizationId = this.customerOrganizationId();
     const shouldShowCustomer = viewer !== 'customer' && customerOrganizationId === undefined;
+    const isAdmin = this.auth.hasRole('admin');
     return this.activity().map((activity) => {
       const byVendor =
         activity.type === 'application_version_created' ||
@@ -88,8 +93,8 @@ export class ActivityFeedComponent {
         action: action(activity),
         icon: icon(activity),
         ...(customerOrganizationId === undefined
-          ? link(activity, viewer)
-          : customerTabLink(activity, viewer, customerOrganizationId)),
+          ? link(activity, viewer, isAdmin)
+          : customerTabLink(activity, viewer, isAdmin, customerOrganizationId)),
         user:
           viewer === 'customer' && byVendor
             ? vendorName
@@ -133,7 +138,8 @@ function icon({type}: ActivityFeedItem): IconDefinition {
 
 function link(
   {type, resourceId, resourceName, customer}: ActivityFeedItem,
-  viewer: ActivityFeedViewer
+  viewer: ActivityFeedViewer,
+  isAdmin: boolean
 ): Pick<ActivityEntry, 'link' | 'queryParams'> {
   switch (type) {
     case 'application_version_created':
@@ -148,7 +154,7 @@ function link(
       return {link: `/customers/${resourceId}`};
     case 'customer_user_joined':
       if (viewer === 'customer') {
-        return {link: '/team'};
+        return isAdmin ? {link: '/team'} : {};
       }
       return {link: customer ? `/customers/${customer.id}/users` : '/customers'};
     case 'deployment_revision_created':
@@ -173,13 +179,14 @@ function link(
 function customerTabLink(
   activity: ActivityFeedItem,
   viewer: ActivityFeedViewer,
+  isAdmin: boolean,
   customerOrganizationId: string
 ): Pick<ActivityEntry, 'link' | 'queryParams'> {
   const tab = (tab: CustomerDetailTabId) => ({link: `/customers/${customerOrganizationId}/${tab}`});
   switch (activity.type) {
     case 'application_version_created':
     case 'artifact_version_created':
-      return link(activity, viewer);
+      return link(activity, viewer, isAdmin);
     case 'artifact_version_first_pulled':
       return {...tab('registry'), queryParams: {artifactId: activity.resourceId}};
     case 'customer_created':
