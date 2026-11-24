@@ -7,6 +7,7 @@ import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {CardHeadingComponent} from '../components/card-heading.component';
 import {SpinnerComponent} from '../components/spinner/spinner.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {ClickableRowDirective} from '../directives/clickable-row.directive';
@@ -23,6 +24,7 @@ import {ToastService} from '../services/toast.service';
     ReactiveFormsModule,
     DatePipe,
     AutotrimDirective,
+    CardHeadingComponent,
     ClickableRowDirective,
     SpinnerComponent,
   ],

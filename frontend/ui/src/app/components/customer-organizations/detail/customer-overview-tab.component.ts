@@ -1,10 +1,11 @@
 import {NgPlural, NgPluralCase} from '@angular/common';
 import {Component, computed, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
-import {ActivatedRoute} from '@angular/router';
-import {faBoxesStacked, faCircleArrowUp, faKey, faLifeRing, faSliders} from '@fortawesome/free-solid-svg-icons';
+import {ActivatedRoute, RouterLink} from '@angular/router';
+import {faBoxesStacked, faCircleArrowUp, faKey, faLifeRing, faUsers} from '@fortawesome/free-solid-svg-icons';
 import {EMPTY, firstValueFrom, map, of, switchMap} from 'rxjs';
 import {refreshInBackground} from '../../../../util/refresh';
+import {UserRoleLabelPipe} from '../../../../util/user-role';
 import {DeploymentStatusFilter} from '../../../deployments/deployment-target-card/deployment-status-text.component';
 import {QuickNavigationCardComponent, QuickNavigationCardType} from '../../../home/quick-navigation-card.component';
 import {DeploymentHealth} from '../../../home/vendor/vendor-home';
@@ -24,21 +25,24 @@ import {DeploymentTargetsService} from '../../../services/deployment-targets.ser
 import {FeatureFlagService} from '../../../services/feature-flag.service';
 import {LicensesService} from '../../../services/licenses.service';
 import {SupportBundlesService} from '../../../services/support-bundles.service';
+import {UsersService} from '../../../services/users.service';
 import {toActivityFeedItems} from '../../activity-feed/activity-feed';
 import {ActivityFeedComponent} from '../../activity-feed/activity-feed.component';
+import {AvatarComponent} from '../../avatar.component';
 import {CardHeadingComponent} from '../../card-heading.component';
 import {LoadingCardComponent} from '../../loading-card/loading-card.component';
 import {CustomerDetailTabId} from './customer-detail-navigation';
-import {CustomerFeaturesComponent} from './customer-features.component';
 import {
   CustomerOverviewLicense,
   CustomerOverviewUpdates,
   toAffectedTargetNames,
   toCustomerOverviewLicense,
   toCustomerOverviewUpdates,
+  toCustomerOverviewUsers,
 } from './customer-overview-mappers';
 
 const maxAffectedNames = 2;
+const maxUsers = 6;
 
 function deploymentsCardType(health: DeploymentHealth): QuickNavigationCardType {
   if (health.error > 0) {
@@ -92,11 +96,13 @@ function licenseCardCount(license: CustomerOverviewLicense, type: QuickNavigatio
   imports: [
     NgPlural,
     NgPluralCase,
+    RouterLink,
+    AvatarComponent,
     CardHeadingComponent,
-    CustomerFeaturesComponent,
     ActivityFeedComponent,
     LoadingCardComponent,
     QuickNavigationCardComponent,
+    UserRoleLabelPipe,
   ],
 })
 export class CustomerOverviewTabComponent {
@@ -108,15 +114,17 @@ export class CustomerOverviewTabComponent {
   private readonly licensesService = inject(LicensesService);
   private readonly supportBundlesService = inject(SupportBundlesService);
   private readonly activityFeedService = inject(ActivityFeedService);
+  private readonly usersService = inject(UsersService);
 
   protected readonly isVendor = inject(AuthService).isVendor();
+  protected readonly isUserRolesEnabled = this.featureFlags.isUserRolesEnabled;
   protected readonly activityViewer = this.isVendor ? 'vendor' : 'partner';
   protected readonly licenseExpiryWindowDays = licenseExpiryWindowDays;
   protected readonly faBoxesStacked = faBoxesStacked;
   protected readonly faCircleArrowUp = faCircleArrowUp;
   protected readonly faKey = faKey;
   protected readonly faLifeRing = faLifeRing;
-  protected readonly faSliders = faSliders;
+  protected readonly faUsers = faUsers;
   protected readonly deploymentAttentionQueryParams = {status: vendorHomeAttentionStatuses};
   protected readonly outdatedDeploymentsQueryParams = {status: ['outdated'] satisfies DeploymentStatusFilter[]};
 
@@ -136,6 +144,7 @@ export class CustomerOverviewTabComponent {
       registry: link('registry'),
       licenses: link('licenses'),
       support: link('support'),
+      users: link('users'),
     };
   });
 
@@ -228,6 +237,19 @@ export class CustomerOverviewTabComponent {
     return {open, total: bundles.length, isDisabled, type};
   });
 
+  private readonly allUsers = toSignal(this.usersService.getUsers());
+  protected readonly users = computed(() => {
+    const id = this.customerOrganizationId();
+    const users = this.allUsers();
+    return (
+      users &&
+      toCustomerOverviewUsers(
+        users.filter((user) => user.customerOrganizationId === id),
+        maxUsers
+      )
+    );
+  });
+
   protected readonly activity = toSignal(
     this.customerOrganizationId$.pipe(
       switchMap((id) => this.activityFeedService.listForCustomer(id)),
@@ -240,6 +262,7 @@ export class CustomerOverviewTabComponent {
       this.deploymentTargetsService.refresh(),
       this.applicationsService.refresh(),
       this.artifactPullsService.refreshLatest(),
+      this.usersService.refresh(),
       firstValueFrom(this.featureFlags.isLicensingEnabled$).then((enabled) =>
         enabled ? this.applicationEntitlementsService.refresh() : undefined
       )

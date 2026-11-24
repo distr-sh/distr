@@ -4,10 +4,12 @@ import {ActivatedRoute} from '@angular/router';
 import {EMPTY} from 'rxjs';
 import {CustomerControllerSettingsComponent} from '../../../customer-settings/customer-controller-settings.component';
 import {CustomerDomainAndSignInComponent} from '../../../customer-settings/customer-domain-and-sign-in.component';
+import {AuthService} from '../../../services/auth.service';
 import {CustomerOrganizationsService} from '../../../services/customer-organizations.service';
 import {FeatureFlagService} from '../../../services/feature-flag.service';
+import {SidebarLinksComponent} from '../../../sidebar-links/sidebar-links.component';
 import {CardHeadingComponent} from '../../card-heading.component';
-import {CustomerFeatureDisabledAlertComponent} from './customer-feature-disabled-alert.component';
+import {CustomerFeaturesComponent} from './customer-features.component';
 
 @Component({
   templateUrl: './customer-settings-tab.component.html',
@@ -15,18 +17,28 @@ import {CustomerFeatureDisabledAlertComponent} from './customer-feature-disabled
     CardHeadingComponent,
     CustomerControllerSettingsComponent,
     CustomerDomainAndSignInComponent,
-    CustomerFeatureDisabledAlertComponent,
+    CustomerFeaturesComponent,
+    SidebarLinksComponent,
   ],
 })
 export class CustomerSettingsTabComponent {
   private readonly featureFlags = inject(FeatureFlagService);
+  private readonly auth = inject(AuthService);
+  private readonly isAdmin = this.auth.isSuperAdmin() || this.auth.hasRole('admin');
 
   private readonly parentParams = toSignal(inject(ActivatedRoute).parent?.params ?? EMPTY);
+  protected readonly customerOrganizationId = computed(
+    () => this.parentParams()?.['customerOrganizationId'] as string | undefined
+  );
   private readonly customerOrganizations = toSignal(inject(CustomerOrganizationsService).getCustomerOrganizations());
   protected readonly customerOrganization = computed(() =>
-    this.customerOrganizations()?.find((it) => it.id === this.parentParams()?.['customerOrganizationId'])
+    this.customerOrganizations()?.find((it) => it.id === this.customerOrganizationId())
   );
 
+  private readonly isCustomerSettingsEnabled = toSignal(this.featureFlags.isCustomerSettingsEnabled$, {
+    initialValue: false,
+  });
+  protected readonly shouldShowCustomerSettings = computed(() => this.isAdmin && this.isCustomerSettingsEnabled());
   protected readonly settingsEnabled = computed(
     () => this.customerOrganization()?.features.includes('settings') ?? false
   );

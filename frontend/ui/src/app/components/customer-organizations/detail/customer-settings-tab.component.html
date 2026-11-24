@@ -1,29 +1,42 @@
 @if (customerOrganization(); as customer) {
-  @if (settingsEnabled()) {
-    <div class="distr-panel">
-      <h2 appCardHeading>Customer Settings</h2>
-      <p class="distr-text-muted mt-1 text-sm">The customer's admins can change these on their own settings page.</p>
-      <div class="mt-6 flex flex-col gap-8">
-        <section class="space-y-4">
-          <h3 class="text-base font-semibold text-gray-900 dark:text-white">Controllers</h3>
-          <app-customer-controller-settings [customerOrganizationId]="customer.id" />
-        </section>
-        @if (domainAndSignInEnabled()) {
-          <section class="space-y-4">
-            <h3 class="text-base font-semibold text-gray-900 dark:text-white">Domain &amp; Sign-in</h3>
-            <app-customer-domain-and-sign-in [customerOrganizationId]="customer.id" />
-          </section>
-        }
-      </div>
+  <div class="flex flex-col gap-4 xl:flex-row xl:items-start">
+    <div class="distr-panel xl:w-max xl:min-w-72 xl:shrink-0">
+      <h2 appCardHeading>Features</h2>
+      <app-customer-features [customerOrganization]="customer" class="mt-4" />
     </div>
-  } @else {
-    <app-customer-feature-disabled-alert
-      [customerOrganization]="customer"
-      feature="settings"
-      heading="Settings are disabled for this customer."
-      enableLabel="Enable settings"
-      enabledMessage="Settings have been enabled for this customer">
-      The customer's admins have no settings page until the feature is enabled.
-    </app-customer-feature-disabled-alert>
-  }
+
+    <div class="flex min-w-0 flex-1 flex-col gap-4">
+      <div class="distr-panel">
+        <app-sidebar-links [customerOrganizationId]="customer.id" />
+      </div>
+
+      @if (shouldShowCustomerSettings()) {
+        <div class="distr-panel">
+          <h2 appCardHeading>Advanced Settings</h2>
+          @if (settingsEnabled()) {
+            <p class="distr-text-muted mt-1 text-sm">
+              The customer's admins can change these on their own settings page.
+            </p>
+            <div class="mt-6 flex flex-col gap-8">
+              <section class="space-y-4">
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white">Controllers</h3>
+                <app-customer-controller-settings [customerOrganizationId]="customer.id" />
+              </section>
+              @if (domainAndSignInEnabled()) {
+                <section class="space-y-4">
+                  <h3 class="text-base font-semibold text-gray-900 dark:text-white">Domain &amp; Sign-in</h3>
+                  <app-customer-domain-and-sign-in [customerOrganizationId]="customer.id" />
+                </section>
+              }
+            </div>
+          } @else {
+            <p class="distr-text-muted mt-1 text-sm">
+              Enable Advanced Settings under Features to configure the customer's controllers and sign-in and to give
+              its admins a settings page of their own.
+            </p>
+          }
+        </div>
+      }
+    </div>
+  </div>
 }

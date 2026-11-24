@@ -38,7 +38,7 @@ export const customerFeatures: CustomerFeatureDefinition[] = [
   },
   {feature: 'support_bundles', label: 'Support'},
   {feature: 'vulnerabilities', label: 'Security'},
-  {feature: 'settings', label: 'Settings'},
+  {feature: 'settings', label: 'Advanced Settings'},
   {feature: 'oidc_providers', label: 'Identity Provider', requires: 'settings'},
 ];
 

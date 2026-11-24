@@ -200,13 +200,40 @@
         <app-loading-card layout="timeline" />
       }
     </div>
-    @if (customerOrganization(); as customer) {
-      <div class="distr-card h-auto self-start px-6 py-4">
-        <h2 appCardHeading [icon]="faSliders">Features</h2>
-        <app-customer-features [customerOrganization]="customer" class="mt-4" />
-      </div>
+
+    @if (users(); as users) {
+      <a [routerLink]="tabLinks().users" class="distr-card distr-card-clickable h-auto min-h-96 self-start p-4">
+        <h2 appCardHeading [icon]="faUsers" class="mb-3">
+          Users
+          @if (users.total > 0) {
+            <span class="distr-badge distr-badge-neutral ms-2">{{ users.total }}</span>
+          }
+        </h2>
+        @if (users.total === 0) {
+          <p class="distr-text-muted text-sm">No users yet. Invite the first one on the users tab.</p>
+        } @else {
+          <ul class="distr-home-list -mx-2">
+            @for (user of users.users; track user.id) {
+              <li class="flex items-center gap-3 p-2">
+                <app-avatar [image]="user.imageUrl" [name]="user.name || user.email" class="size-8 rounded-full" />
+                <div class="min-w-0 flex-1">
+                  <span class="distr-home-row-title block truncate" [title]="user.name || user.email">
+                    {{ user.name || user.email }}
+                  </span>
+                  @if (isUserRolesEnabled()) {
+                    <span class="distr-home-row-meta block truncate">{{ user.userRole | userRoleLabel }}</span>
+                  }
+                </div>
+                @if (!user.activated) {
+                  <span class="distr-badge distr-badge-warning shrink-0">Invitation pending</span>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </a>
     } @else {
-      <app-loading-card />
+      <app-loading-card class="min-h-96" />
     }
   </div>
 </div>
