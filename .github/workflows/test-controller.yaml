@@ -24,6 +24,8 @@ concurrency:
 
 jobs:
   test:
+    # The release pull request only bumps versions of what main has already checked.
+    if: ${{ github.head_ref != 'release-please--branches--main' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
