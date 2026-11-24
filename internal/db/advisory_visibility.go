@@ -451,11 +451,7 @@ func GetMarkedVersions(
 // keeps it proportional to the advisories on screen instead of the organization's pull history.
 // It costs nothing in accuracy: a pull of an unmarked version can never change the answer.
 //
-// The customer predicate cannot drive the query on its own, because coalescing the column
-// with the membership fallback makes it unindexable.
-//
-// Attribution matches GetAdvisoryImpactedPulls, including that fallback through the pulling
-// user's customer organization for pulls recorded before migration 71 added the column.
+// Attribution matches GetAdvisoryImpactedPulls.
 func getPulledArtifactVersionIDs(
 	ctx context.Context, orgID uuid.UUID, scope AdvisoryScope, versionIDs []uuid.UUID,
 ) ([]uuid.UUID, error) {
@@ -469,16 +465,11 @@ func getPulledArtifactVersionIDs(
 		FROM ArtifactVersionPull avpl
 			JOIN ArtifactVersion av ON av.id = avpl.artifact_version_id
 			JOIN Artifact a ON a.id = av.artifact_id
-			LEFT JOIN Organization_UserAccount oua
-				ON oua.user_account_id = avpl.useraccount_id
-					AND oua.organization_id = a.organization_id
-			LEFT JOIN CustomerOrganization co
-				ON co.id = coalesce(avpl.customer_organization_id, oua.customer_organization_id)
+			LEFT JOIN CustomerOrganization co ON co.id = avpl.customer_organization_id
 		WHERE avpl.artifact_version_id = any(@versionIds)
 			AND a.organization_id = @orgId
 			AND (@partnerOrgId::uuid IS NULL OR co.partner_organization_id = @partnerOrgId)
-			AND (@customerOrgId::uuid IS NULL
-				OR coalesce(avpl.customer_organization_id, oua.customer_organization_id) = @customerOrgId)`,
+			AND (@customerOrgId::uuid IS NULL OR avpl.customer_organization_id = @customerOrgId)`,
 		scope.bind(pgx.NamedArgs{"orgId": orgID, "versionIds": versionIDs}),
 	)
 	if err != nil {

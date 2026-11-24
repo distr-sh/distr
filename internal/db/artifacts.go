@@ -210,9 +210,6 @@ func GetArtifactByID(
 				ON a.id = av.artifact_id
 			LEFT JOIN ArtifactVersionPull avpl
 				ON @isVendorUser AND avpl.artifact_version_id = av.id
-			LEFT JOIN Organization_UserAccount oua_dl
-				ON oua_dl.organization_id = a.organization_id
-					AND oua_dl.user_account_id = avpl.useraccount_id
 			WHERE a.id = @id AND a.organization_id = @orgId
 			GROUP BY a.id, a.created_at, a.organization_id, a.name, o.slug`,
 		pgx.NamedArgs{
@@ -465,9 +462,6 @@ func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerO
 			) avp ON av.id = avp.base_av_id
 			LEFT JOIN ArtifactVersionPull avpl ON @isVendorUser AND avpl.artifact_version_id = avp.related_av_id
 			LEFT JOIN Artifact a ON a.id = av.artifact_id
-			LEFT JOIN Organization_UserAccount oua_dl
-				ON oua_dl.organization_id = a.organization_id
-					AND oua_dl.user_account_id = avpl.useraccount_id
 			WHERE av.artifact_id = @artifactId
 			AND `+artifactVersionIsDigestExpr("av")+`
 			AND `+artifactVersionVisibleExpr+`
