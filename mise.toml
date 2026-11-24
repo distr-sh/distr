@@ -208,10 +208,18 @@ depends = "build:distr:enterprise"
 run = 'cp dist/distr dist/distr-$(go env GOARCH) && docker build -f Dockerfile.distr --tag ghcr.io/distr-sh/distr:$VERSION .'
 
 [tasks."docker-build:controller:docker"]
-run = 'docker build -f Dockerfile.docker-controller --tag ghcr.io/distr-sh/distr/docker-controller:$VERSION --build-arg VERSION=$VERSION --build-arg COMMIT=$COMMIT --network host .'
+run = [
+  'GOOS=linux go build -ldflags="{{vars.ldflags}}" -o dist/docker-controller-$(go env GOARCH) ./cmd/controller/docker',
+  'docker build -f Dockerfile.docker-controller --tag ghcr.io/distr-sh/distr/docker-controller:$VERSION --network host .',
+]
+depends = ["go-tidy"]
 
 [tasks."docker-build:controller:kubernetes"]
-run = 'docker build -f Dockerfile.kubernetes-controller --tag ghcr.io/distr-sh/distr/kubernetes-controller:$VERSION --build-arg VERSION=$VERSION --build-arg COMMIT=$COMMIT --network host .'
+run = [
+  'GOOS=linux go build -ldflags="{{vars.ldflags}}" -o dist/kubernetes-controller-$(go env GOARCH) ./cmd/controller/kubernetes',
+  'docker build -f Dockerfile.kubernetes-controller --tag ghcr.io/distr-sh/distr/kubernetes-controller:$VERSION --network host .',
+]
+depends = ["go-tidy"]
 
 [tasks."docker-build:docker-autoheal"]
 run = 'docker build --tag ghcr.io/distr-sh/distr/docker-autoheal:$VERSION --network host docker-autoheal'
