@@ -66,6 +66,7 @@ export class TimeseriesTableComponent {
   private readonly range = computed(() => this.sourceWithStatus().range);
   protected readonly newestFirst = computed(() => this.range().order === 'DESC');
   protected readonly live = computed(() => isLiveRange(this.range()));
+  protected readonly filtered = computed(() => !!this.range().filter || !!this.range().exclusionFilter);
   protected readonly paginateForward = computed(() => paginatesForward(this.range()));
 
   private readonly toastService = inject(ToastService);

@@ -41,10 +41,13 @@ type Entry struct {
 	Type      EntryType
 	// ResourceID is the application, artifact, deployment target, license key or support bundle the
 	// entry is about, depending on its type.
-	ResourceID uuid.UUID
-	Subject    string
-	Detail     *string
-	User       *User
+	ResourceID   uuid.UUID
+	ResourceName string
+	// Subject is what the entry is about in its text, which for a deployment revision names its application
+	// besides the deployment target.
+	Subject string
+	Detail  *string
+	User    *User
 	// CustomerOrganizationID is nil for activity of the vendor that concerns no particular customer
 	// organization, such as a new application version.
 	CustomerOrganizationID   *uuid.UUID
@@ -88,12 +91,13 @@ func ApplicationVersions(versions []types.ApplicationVersionEvent) []Entry {
 	result := make([]Entry, len(versions))
 	for i, version := range versions {
 		result[i] = Entry{
-			ID:         version.ID,
-			CreatedAt:  version.CreatedAt,
-			Type:       EntryTypeApplicationVersionCreated,
-			ResourceID: version.ApplicationID,
-			Subject:    version.ApplicationName,
-			Detail:     new(version.Name),
+			ID:           version.ID,
+			CreatedAt:    version.CreatedAt,
+			Type:         EntryTypeApplicationVersionCreated,
+			ResourceID:   version.ApplicationID,
+			ResourceName: version.ApplicationName,
+			Subject:      version.ApplicationName,
+			Detail:       new(version.Name),
 		}
 	}
 	return result
@@ -108,13 +112,14 @@ func ArtifactTags(artifacts []types.ArtifactWithDownloads, tags []types.Artifact
 	result := make([]Entry, len(tags))
 	for i, tag := range tags {
 		result[i] = Entry{
-			ID:         tag.ID,
-			CreatedAt:  tag.CreatedAt,
-			Type:       EntryTypeArtifactVersionCreated,
-			ResourceID: tag.ArtifactID,
-			Subject:    names[tag.ArtifactID],
-			Detail:     new(tag.Name),
-			User:       newUser(tag.CreatedByName, tag.CreatedByImageID),
+			ID:           tag.ID,
+			CreatedAt:    tag.CreatedAt,
+			Type:         EntryTypeArtifactVersionCreated,
+			ResourceID:   tag.ArtifactID,
+			ResourceName: names[tag.ArtifactID],
+			Subject:      names[tag.ArtifactID],
+			Detail:       new(tag.Name),
+			User:         newUser(tag.CreatedByName, tag.CreatedByImageID),
 		}
 	}
 	return result
@@ -129,6 +134,7 @@ func FirstPulls(pulls []types.ArtifactVersionPull) []Entry {
 			CreatedAt:              pull.CreatedAt,
 			Type:                   EntryTypeArtifactVersionFirstPulled,
 			ResourceID:             pull.Artifact.ID,
+			ResourceName:           pull.Artifact.Name,
 			Subject:                pull.Artifact.Name,
 			Detail:                 new(pull.ArtifactVersion.Name),
 			CustomerOrganizationID: new(pull.CustomerOrganization.ID),
@@ -148,6 +154,7 @@ func DeploymentRevisions(revisions []types.DeploymentRevisionEvent) []Entry {
 			CreatedAt:              revision.CreatedAt,
 			Type:                   EntryTypeDeploymentRevisionCreated,
 			ResourceID:             revision.DeploymentTargetID,
+			ResourceName:           revision.DeploymentTargetName,
 			Subject:                revision.ApplicationName + " (" + revision.DeploymentTargetName + ")",
 			Detail:                 new(revision.ApplicationVersionName),
 			User:                   newUser(revision.CreatedByName, revision.CreatedByImageID),
@@ -172,6 +179,7 @@ func LicenseKeys(keys []types.LicenseKeyEvent) []Entry {
 			CreatedAt:              key.LastRevisedAt,
 			Type:                   entryType,
 			ResourceID:             key.ID,
+			ResourceName:           key.Name,
 			Subject:                key.Name,
 			CustomerOrganizationID: new(key.CustomerOrganizationID),
 		}
@@ -201,6 +209,7 @@ func SupportBundles(events []types.CustomerSupportBundleEvent) []Entry {
 			CreatedAt:              event.CreatedAt,
 			Type:                   entryType,
 			ResourceID:             event.SupportBundleID,
+			ResourceName:           event.Title,
 			Subject:                event.Title,
 			User:                   newUser(event.UserName, event.UserImageID),
 			CustomerOrganizationID: new(event.CustomerOrganizationID),
