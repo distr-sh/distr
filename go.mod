@@ -59,7 +59,7 @@ require (
 	github.com/stripe/stripe-go/v87 v87.2.0
 	go.opentelemetry.io/collector/component v1.72.0
 	go.opentelemetry.io/collector/confmap v1.71.0
-	go.opentelemetry.io/collector/consumer v1.71.0
+	go.opentelemetry.io/collector/consumer v1.72.0
 	go.opentelemetry.io/collector/pdata v1.72.0
 	go.opentelemetry.io/collector/receiver v1.71.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws v0.71.0
