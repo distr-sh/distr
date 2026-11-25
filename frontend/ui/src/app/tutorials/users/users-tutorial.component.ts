@@ -14,6 +14,7 @@ import {PageComponent} from '../../components/page.component';
 import {UserRoleSelectComponent} from '../../components/user-role-select.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {PlaceholderDirective} from '../../directives/placeholder.directive';
+import {FeatureFlagService} from '../../services/feature-flag.service';
 import {ToastService} from '../../services/toast.service';
 import {TutorialsService} from '../../services/tutorials.service';
 import {isInviteMailNotSentError, UsersService} from '../../services/users.service';
@@ -67,6 +68,7 @@ export class UsersTutorialComponent implements OnInit {
   protected readonly toast = inject(ToastService);
   protected readonly usersService = inject(UsersService);
   protected readonly tutorialsService = inject(TutorialsService);
+  protected readonly isUserRolesEnabled = inject(FeatureFlagService).isUserRolesEnabled;
 
   protected progress?: TutorialProgress;
   private readonly invitedEmails: string[] = [];
@@ -167,7 +169,7 @@ export class UsersTutorialComponent implements OnInit {
       for (const group of toInvite) {
         const email = group.get('email')!.value as string;
         const name = (group.get('name')!.value as string) || undefined;
-        const userRole = group.get('userRole')!.value as UserRole;
+        const userRole: UserRole = this.isUserRolesEnabled() ? group.get('userRole')!.value : 'admin';
         try {
           await lastValueFrom(this.usersService.addUser({email, name, userRole}));
         } catch (e) {
