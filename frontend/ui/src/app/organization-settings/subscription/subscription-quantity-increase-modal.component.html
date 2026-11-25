@@ -1,8 +1,9 @@
-@if (pendingUpdate(); as update) {
+@if (!isClosing()) {
   <app-subscription-update-modal
     animate.enter="animate-fly-in-top"
     animate.leave="animate-fly-out-top"
-    [pendingUpdate]="update"
+    (animationend)="animationComplete()"
+    [pendingUpdate]="pendingUpdate"
     (closed)="dismiss()"
     (confirmed)="confirm()" />
 }
