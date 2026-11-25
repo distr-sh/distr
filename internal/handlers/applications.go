@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"regexp"
 	"slices"
+	"strings"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
@@ -128,6 +129,13 @@ func ApplicationsRouter(r chiopenapi.Router) {
 						api.UpdateApplicationVersionRequest
 					}{})).
 					With(option.Response(http.StatusOK, api.ApplicationVersionResponse{}))
+				r.With(middleware.RequireVendor).
+					With(middleware.RequireReadWriteOrAdmin).
+					With(middleware.BlockSuperAdmin).
+					With(respond.Middleware(applicationMiddleware)).
+					Delete("/", respond.Handler(deleteApplicationVersion)).
+					With(option.Description("Delete an application version that no deployment uses")).
+					With(option.Request(ApplicationVersionRequest{}))
 				r.Get("/compose-file", respond.Handler(getApplicationVersionComposeFile)).
 					With(option.Description("Get application version compose file")).
 					With(option.Request(ApplicationVersionRequest{})).
@@ -682,6 +690,44 @@ func deleteApplication(r *http.Request) (respond.Responder, error) {
 		} else {
 			return nil, fmt.Errorf("error deleting application: %w", err)
 		}
+	} else {
+		return respond.NoContent(), nil
+	}
+}
+
+func deleteApplicationVersion(r *http.Request) (respond.Responder, error) {
+	ctx := r.Context()
+	application := internalctx.GetApplication(ctx)
+	if versionID, err := uuid.Parse(r.PathValue("applicationVersionId")); err != nil {
+		return applicationVersionNotFound, nil
+	} else if !slices.ContainsFunc(application.Versions, func(v types.ApplicationVersion) bool {
+		return v.ID == versionID
+	}) {
+		return applicationVersionNotFound, nil
+	} else if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
+		// Entitlement edits take the same lock, so none can remove the other versions of an entitlement
+		// between the check and the delete.
+		if err := db.LockApplicationExclusive(ctx, application.ID); err != nil {
+			return nil, err
+		} else if names, err := db.GetApplicationEntitlementNamesRestrictedToVersion(ctx, versionID); err != nil {
+			return nil, fmt.Errorf("failed to get application entitlements: %w", err)
+		} else if len(names) > 0 {
+			return respond.Conflict(fmt.Sprintf(
+				"This version is the only version of these entitlements: %s. "+
+					"Add another version to them or delete them first.",
+				strings.Join(names, ", "),
+			)), nil
+		} else if err := db.DeleteApplicationVersion(ctx, versionID); errors.Is(err, distrerr.ErrConflict) {
+			return respond.Conflict("This version cannot be deleted because a deployment uses it."), nil
+		} else if errors.Is(err, distrerr.ErrNotFound) {
+			return applicationVersionNotFound, nil
+		} else if err != nil {
+			return nil, fmt.Errorf("could not delete application version: %w", err)
+		} else {
+			return nil, nil
+		}
+	}); resp != nil || err != nil {
+		return resp, err
 	} else {
 		return respond.NoContent(), nil
 	}

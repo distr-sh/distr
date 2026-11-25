@@ -400,6 +400,25 @@ func UpdateApplicationVersion(ctx context.Context, applicationVersion *types.App
 	}
 }
 
+// DeleteApplicationVersion fails with distrerr.ErrConflict while a deployment revision references the version.
+func DeleteApplicationVersion(ctx context.Context, id uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	cmd, err := db.Exec(ctx, `DELETE FROM ApplicationVersion WHERE id = @id`, pgx.NamedArgs{"id": id})
+	if err != nil {
+		if isStillReferencedError(err) {
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
+		}
+	} else if cmd.RowsAffected() == 0 {
+		err = distrerr.ErrNotFound
+	}
+
+	if err != nil {
+		return fmt.Errorf("could not delete ApplicationVersion: %w", err)
+	}
+
+	return nil
+}
+
 func GetApplicationVersion(ctx context.Context, applicationVersionID uuid.UUID) (*types.ApplicationVersion, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(

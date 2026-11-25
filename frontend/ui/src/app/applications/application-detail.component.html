@@ -98,24 +98,28 @@
                 <tr>
                   @if (auth.hasAnyRole('read_write', 'admin')) {
                     <td class="px-1 py-3">
-                      @let versions = this.visibleVersions$ | async;
-                      @let all = isAllVersionsSelected(versions ?? []);
                       <input
                         type="checkbox"
                         class="distr-checkbox"
-                        [checked]="all"
-                        [indeterminate]="!all && selectedVersionIds().size > 0"
-                        (change)="toggleAllVersionsSelected(versions ?? [])" />
+                        [checked]="isAllVersionsSelected()"
+                        [indeterminate]="!isAllVersionsSelected() && selectedVersions().length > 0"
+                        (change)="toggleAllVersionsSelected()" />
                     </td>
                   }
-                  @if (selectedVersionIds().size > 0) {
+                  @if (selectedVersions().length > 0) {
                     <td class="px-3 text-sm normal-case" [attr.colspan]="versionColumnCount()">
-                      {{ selectedVersionIds().size }} selected
+                      {{ selectedVersions().length }} selected
                       <button
                         (click)="bulkArchiveVersions(application)"
                         class="distr-btn-secondary ms-2 items-center px-3 py-1 text-center text-sm font-medium">
                         <fa-icon [icon]="faArchive" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
                         Archive
+                      </button>
+                      <button
+                        (click)="bulkDeleteVersions(application)"
+                        class="distr-btn-danger ms-2 items-center px-3 py-1 text-center text-sm font-medium">
+                        <fa-icon [icon]="faTrash" class="h-4 w-4" />
+                        Delete
                       </button>
                     </td>
                   } @else {
@@ -139,13 +143,11 @@
                   <tr appClickableRow (rowActivate)="openVersionDetails(application, version)" class="distr-table-row">
                     @if (auth.hasAnyRole('read_write', 'admin')) {
                       <td class="px-1 py-4">
-                        @if (!archived) {
-                          <input
-                            type="checkbox"
-                            class="distr-checkbox"
-                            [checked]="isVersionSelected(version)"
-                            (change)="toggleVersionSelected(version)" />
-                        }
+                        <input
+                          type="checkbox"
+                          class="distr-checkbox"
+                          [checked]="isVersionSelected(version)"
+                          (change)="toggleVersionSelected(version)" />
                       </td>
                     }
                     <th
@@ -208,6 +210,13 @@
                             Unarchive
                           </button>
                         }
+                        <button
+                          type="button"
+                          (click)="deleteVersion(application, version)"
+                          class="distr-btn-danger mr-4 items-center px-3 py-2 text-center text-sm font-medium"
+                          title="Delete version">
+                          <fa-icon [icon]="faTrash" class="h-4 w-4" />
+                        </button>
                         <button type="button" class="distr-link" (click)="fillVersionFormWith(application, version)">
                           Copy from
                         </button>

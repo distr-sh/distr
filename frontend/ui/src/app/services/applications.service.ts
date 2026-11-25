@@ -6,7 +6,7 @@ import {
   ApplicationVersionResource,
   PatchApplicationRequest,
 } from '@distr-sh/distr-sdk';
-import {catchError, map, Observable, of, switchMap, tap, throwError} from 'rxjs';
+import {catchError, firstValueFrom, map, Observable, of, switchMap, tap, throwError} from 'rxjs';
 import {DefaultReactiveList} from './cache';
 import {CrudService} from './interfaces';
 
@@ -135,6 +135,32 @@ export class ApplicationsService implements CrudService<Application> {
     return this.httpClient
       .put<ApplicationVersion>(`${this.applicationsUrl}/${app.id}/versions/${version.id}`, version)
       .pipe(switchMap((it) => this.get(app.id!).pipe(map(() => it))));
+  }
+
+  deleteApplicationVersion(app: Application, version: ApplicationVersion): Observable<void> {
+    return this.httpClient
+      .delete<void>(`${this.applicationsUrl}/${app.id}/versions/${version.id}`)
+      .pipe(switchMap(() => this.get(app.id!).pipe(map(() => undefined))));
+  }
+
+  /**
+   * Deletes the versions one after another, skipping those the server refuses to delete, and returns them with the
+   * error the server gave.
+   */
+  async deleteApplicationVersions(
+    app: Application,
+    versions: ApplicationVersion[]
+  ): Promise<{version: ApplicationVersion; error: unknown}[]> {
+    const failed: {version: ApplicationVersion; error: unknown}[] = [];
+    for (const version of versions) {
+      try {
+        await firstValueFrom(this.httpClient.delete<void>(`${this.applicationsUrl}/${app.id}/versions/${version.id}`));
+      } catch (error) {
+        failed.push({version, error});
+      }
+    }
+    await firstValueFrom(this.get(app.id!));
+    return failed;
   }
 
   public patchImage(artifactsId: string, imageId: string) {

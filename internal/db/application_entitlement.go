@@ -397,6 +397,35 @@ func SetApplicationEntitlementVersions(ctx context.Context, entitlementID uuid.U
 	return nil
 }
 
+// GetApplicationEntitlementNamesRestrictedToVersion returns the entitlements that list no version other than the
+// given one, which deleting it would widen to every version of the application.
+func GetApplicationEntitlementNamesRestrictedToVersion(ctx context.Context, versionID uuid.UUID) ([]string, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT ae.name
+		FROM ApplicationEntitlement ae
+		WHERE EXISTS (
+				SELECT FROM ApplicationEntitlement_ApplicationVersion aeav
+				WHERE aeav.application_entitlement_id = ae.id AND aeav.application_version_id = @versionId
+			)
+			AND NOT EXISTS (
+				SELECT FROM ApplicationEntitlement_ApplicationVersion aeav
+				WHERE aeav.application_entitlement_id = ae.id AND aeav.application_version_id <> @versionId
+			)
+		ORDER BY ae.name`,
+		pgx.NamedArgs{"versionId": versionID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query application entitlements: %w", err)
+	}
+	names, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		return nil, fmt.Errorf("could not collect application entitlements: %w", err)
+	}
+	return names, nil
+}
+
 func GetDeploymentsUsingVersionsNotInList(
 	ctx context.Context,
 	entitlementID uuid.UUID,
