@@ -26,8 +26,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_id || github.ref }}
   cancel-in-progress: true
 
+env:
+  CGO_ENABLED: '0'
+
 jobs:
   build-controller:
+    # The release pull request only bumps versions of what main has already checked.
+    if: ${{ github.head_ref != 'release-please--branches--main' }}
     timeout-minutes: 30
     runs-on: ${{ matrix.platform.runner }}
     permissions:
@@ -40,17 +45,35 @@ jobs:
           - kubernetes-controller
         platform:
           - arch: linux/amd64
+            goarch: amd64
             runner: ubuntu-latest
           - arch: linux/arm64
+            goarch: arm64
             runner: ubuntu-24.04-arm
     env:
       REGISTRY_IMAGE: ghcr.io/distr-sh/distr/${{ matrix.controller }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Go
+        uses: ./.github/actions/setup-go
+        with:
+          cache-name: ${{ matrix.controller }}
       - name: Generate commit hash
         id: generate
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      - name: Build controller
+        run: go build -ldflags="$LDFLAGS" -o "dist/$CONTROLLER-$GOARCH" "./cmd/controller/${CONTROLLER%-controller}/"
+        env:
+          CONTROLLER: ${{ matrix.controller }}
+          GOARCH: ${{ matrix.platform.goarch }}
+          LDFLAGS: >-
+            -s -w
+            -X github.com/distr-sh/distr/internal/buildconfig.version=${{ github.ref_name }}
+            -X github.com/distr-sh/distr/internal/buildconfig.commit=${{ steps.generate.outputs.sha_short }}
+      - name: Save Go cache
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
+        uses: ./.github/actions/save-go-cache
       - name: Get current date
         id: date
         run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
@@ -77,17 +100,14 @@ jobs:
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           platforms: ${{ matrix.platform.arch }}
+          context: .
           file: Dockerfile.${{ matrix.controller }}
           build-args: |
-            COMMIT=${{ steps.generate.outputs.sha_short }}
-            VERSION=${{ github.ref_name }}
             APK_UPGRADE_DATE=${{ steps.date.outputs.date }}
           tags: ${{ env.REGISTRY_IMAGE }}
           labels: ${{ steps.meta.outputs.labels }}
           annotations: ${{ steps.meta.outputs.annotations }}
           outputs: type=image,push-by-digest=true,name-canonical=true,push=${{ startsWith(github.ref, 'refs/tags/') }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           sbom: true
           provenance: mode=max
       - name: Prepare for export

@@ -33,25 +33,24 @@ func main() {
 	versionIDs := util.Require(pgx.CollectRows(rows, pgx.RowTo[uuid.UUID]))
 	fmt.Printf("Found %d artifact versions\n", len(versionIDs))
 
-	// Fetch user IDs that have pulled from this org before
+	type puller struct {
+		UserID        uuid.UUID  `db:"user_account_id"`
+		CustomerOrgID *uuid.UUID `db:"customer_organization_id"`
+	}
+
+	// Fetch members of this org that have pulled from it before, with their customer organization
 	rows, err = db.Query(ctx,
-		`SELECT DISTINCT ua.id FROM UserAccount ua
-		 JOIN ArtifactVersionPull avp ON avp.useraccount_id = ua.id
+		`SELECT DISTINCT oua.user_account_id, oua.customer_organization_id
+		 FROM Organization_UserAccount oua
+		 JOIN ArtifactVersionPull avp ON avp.useraccount_id = oua.user_account_id
 		 JOIN ArtifactVersion av ON av.id = avp.artifact_version_id
-		 JOIN Artifact a ON a.id = av.artifact_id
-		 WHERE a.organization_id = $1`, orgID)
+		 JOIN Artifact a ON a.id = av.artifact_id AND a.organization_id = oua.organization_id
+		 WHERE oua.organization_id = $1`, orgID)
 	util.Must(err)
-	userIDs := util.Require(pgx.CollectRows(rows, pgx.RowTo[uuid.UUID]))
-	fmt.Printf("Found %d users\n", len(userIDs))
+	pullers := util.Require(pgx.CollectRows(rows, pgx.RowToStructByName[puller]))
+	fmt.Printf("Found %d users\n", len(pullers))
 
-	// Fetch customer org IDs for this org
-	rows, err = db.Query(ctx,
-		`SELECT id FROM CustomerOrganization WHERE organization_id = $1`, orgID)
-	util.Must(err)
-	customerOrgIDs := util.Require(pgx.CollectRows(rows, pgx.RowTo[uuid.UUID]))
-	fmt.Printf("Found %d customer organizations\n", len(customerOrgIDs))
-
-	if len(versionIDs) == 0 || len(userIDs) == 0 || len(customerOrgIDs) == 0 {
+	if len(versionIDs) == 0 || len(pullers) == 0 {
 		panic("not enough data to generate pulls")
 	}
 
@@ -70,10 +69,7 @@ func main() {
 	inserted := 0
 	for inserted < totalCount {
 		remaining := totalCount - inserted
-		currentBatch := batchSize
-		if remaining < currentBatch {
-			currentBatch = remaining
-		}
+		currentBatch := min(remaining, batchSize)
 
 		count, err := db.CopyFrom(
 			ctx,
@@ -85,17 +81,10 @@ func main() {
 				createdAt := startTime.Add(offset)
 
 				versionID := versionIDs[rand.Intn(len(versionIDs))]
-				userID := userIDs[rand.Intn(len(userIDs))]
+				p := pullers[rand.Intn(len(pullers))]
 				addr := remoteAddresses[rand.Intn(len(remoteAddresses))]
 
-				// ~80% of pulls have a customer org, ~20% are nil
-				var customerOrgID *uuid.UUID
-				if rand.Float32() < 0.8 {
-					id := customerOrgIDs[rand.Intn(len(customerOrgIDs))]
-					customerOrgID = &id
-				}
-
-				return []any{createdAt, versionID, userID, &addr, customerOrgID}, nil
+				return []any{createdAt, versionID, p.UserID, &addr, p.CustomerOrgID}, nil
 			}),
 		)
 		util.Must(err)

@@ -29,6 +29,8 @@ concurrency:
 jobs:
   build-chart:
     name: Build
+    # The release pull request only bumps versions of what main has already checked.
+    if: ${{ github.head_ref != 'release-please--branches--main' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -38,7 +40,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install mise
-        uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+        uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
         with:
           install_args: 'helm github:losisin/helm-values-schema-json'
       - name: Check that the values schema is up to date

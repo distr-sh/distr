@@ -42,9 +42,9 @@ require (
 	github.com/lestrrat-go/jwx/v4 v4.6.0
 	github.com/moby/moby/api v1.57.0
 	github.com/moby/moby/client v0.6.3
-	github.com/oaswrap/spec v0.5.2
+	github.com/oaswrap/spec v0.5.3
 	github.com/oaswrap/spec-ui v0.2.2
-	github.com/oaswrap/spec/adapter/chiopenapi v0.5.2
+	github.com/oaswrap/spec/adapter/chiopenapi v0.5.3
 	github.com/onsi/gomega v1.44.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.165.1
 	github.com/opencontainers/go-digest v1.0.0

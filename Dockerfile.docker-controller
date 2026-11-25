@@ -1,28 +1,8 @@
-FROM golang:1.27.4-alpine3.24 AS builder
-ARG TARGETOS
-ARG TARGETARCH
-ARG VERSION
-ARG COMMIT
-
-WORKDIR /workspace
-COPY go.mod go.mod
-COPY go.sum go.sum
-RUN go mod download
-
-COPY api/ api/
-COPY cmd/controller/docker/ cmd/controller/docker/
-# doesn't exist (yet?)
-# COPY pkg/ pkg/
-COPY internal/ internal/
-RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} \
-  go build -a -o controller \
-  -ldflags="-s -w -X github.com/distr-sh/distr/internal/buildconfig.version=${VERSION:-snapshot} -X github.com/distr-sh/distr/internal/buildconfig.commit=${COMMIT}" \
-  ./cmd/controller/docker/
-
 FROM docker:29.10.0-cli-alpine3.24
+ARG TARGETARCH
 WORKDIR /
 COPY LICENSE NOTICE /usr/share/doc/distr/
-COPY --from=builder /workspace/controller .
+COPY dist/docker-controller-${TARGETARCH} /controller
 
 # Changes daily, so BuildKit reruns the upgrade instead of reusing a cached layer.
 ARG APK_UPGRADE_DATE

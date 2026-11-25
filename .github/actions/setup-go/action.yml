@@ -1,0 +1,48 @@
+name: Setup Go
+description: Installs Go and restores the module cache and the build cache that save-go-cache saved on main
+inputs:
+  cache-name:
+    description: Name of the build cache, shared by the jobs that compile the same packages for the same target
+    required: true
+  module-cache-fallback:
+    description: Whether to restore the module cache of an older go.sum when none exists for the current one
+    default: 'true'
+runs:
+  using: composite
+  steps:
+    - name: Install Go
+      uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    - name: Locate Go caches
+      shell: bash
+      run: |
+        {
+          echo "GOCACHE=$(go env GOCACHE)"
+          echo "GOMODCACHE=$(go env GOMODCACHE)"
+          echo "GO_BUILD_CACHE_KEY=go-build-${RUNNER_OS}-${RUNNER_ARCH}-${{ inputs.cache-name }}-${GITHUB_SHA}"
+          echo "GO_JOB_STARTED_AT=$(date +%s)"
+          # The trailing slash makes the second entry a retry of proxy.golang.org with its own error cache.
+          echo "GOPROXY=https://proxy.golang.org|https://proxy.golang.org/|direct"
+        } >> "$GITHUB_ENV"
+
+    - name: Restore Go module cache
+      id: module-cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ env.GOMODCACHE }}
+        key: go-mod-${{ runner.os }}-${{ hashFiles('go.sum') }}
+        restore-keys: ${{ inputs.module-cache-fallback == 'true' && format('go-mod-{0}-', runner.os) || '' }}
+
+    - name: Restore Go build cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ env.GOCACHE }}
+        key: ${{ env.GO_BUILD_CACHE_KEY }}
+        restore-keys: go-build-${{ runner.os }}-${{ runner.arch }}-${{ inputs.cache-name }}-
+
+    - name: Remember module cache hit
+      shell: bash
+      run: echo "GO_MODULE_CACHE_HIT=${{ steps.module-cache.outputs.cache-hit }}" >> "$GITHUB_ENV"

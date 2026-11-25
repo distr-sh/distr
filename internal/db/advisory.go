@@ -986,10 +986,7 @@ func GetAdvisoryImpactedDeployments(
 //
 // A pull is recorded against whichever ArtifactVersion row the client referenced, tag or
 // digest, so the selected version is expanded to every row sharing its manifest digest;
-// otherwise selecting a digest would miss all tag-based pulls. And
-// ArtifactVersionPull.customer_organization_id only exists since migration 71 and was never
-// backfilled, so older pulls are attributed through the pulling user's customer organization
-// membership instead.
+// otherwise selecting a digest would miss all tag-based pulls.
 func GetAdvisoryImpactedPulls(
 	ctx context.Context, advisoryID, orgID uuid.UUID, scope AdvisoryScope,
 ) ([]types.AdvisoryImpactedPull, error) {
@@ -1009,8 +1006,7 @@ func GetAdvisoryImpactedPulls(
 				AND v.organization_id = @orgId
 		)
 		SELECT
-			coalesce(avpl.customer_organization_id, oua.customer_organization_id)
-				AS customer_organization_id,
+			avpl.customer_organization_id,
 			co.name AS customer_organization_name,
 			a.id AS artifact_id,
 			a.name AS artifact_name,
@@ -1022,17 +1018,11 @@ func GetAdvisoryImpactedPulls(
 			JOIN affected ON affected.artifact_version_id = avpl.artifact_version_id
 			JOIN ArtifactVersion av ON av.id = avpl.artifact_version_id
 			JOIN Artifact a ON a.id = av.artifact_id
-			LEFT JOIN Organization_UserAccount oua
-				ON oua.user_account_id = avpl.useraccount_id
-					AND oua.organization_id = a.organization_id
-			LEFT JOIN CustomerOrganization co
-				ON co.id = coalesce(avpl.customer_organization_id, oua.customer_organization_id)
+			LEFT JOIN CustomerOrganization co ON co.id = avpl.customer_organization_id
 		WHERE a.organization_id = @orgId
 			AND (@partnerOrgId::uuid IS NULL OR co.partner_organization_id = @partnerOrgId)
-			AND (@customerOrgId::uuid IS NULL
-				OR coalesce(avpl.customer_organization_id, oua.customer_organization_id) = @customerOrgId)
-		GROUP BY coalesce(avpl.customer_organization_id, oua.customer_organization_id),
-			co.name, a.id, a.name, av.id, av.name
+			AND (@customerOrgId::uuid IS NULL OR avpl.customer_organization_id = @customerOrgId)
+		GROUP BY avpl.customer_organization_id, co.name, a.id, a.name, av.id, av.name
 		ORDER BY co.name NULLS LAST, a.name, av.name`,
 		scope.bind(pgx.NamedArgs{"id": advisoryID, "orgId": orgID}),
 	)
