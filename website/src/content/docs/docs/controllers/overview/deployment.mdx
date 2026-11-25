@@ -76,7 +76,7 @@ After selecting a customer, choose the Docker application you want to deploy. Yo
 
 Give your deployment a descriptive name. This name will help you identify and manage the deployment later.
 
-The same step sets up the Distr controller: autoheal for unhealthy containers, cleanup of old container images, a custom Docker endpoint, [log collection](/docs/controllers/logs-and-metrics/#container-logs) and [automatic controller updates](/docs/controllers/deployment-controllers/#controller-updates).
+The same step sets up the Distr controller: autoheal for unhealthy containers, cleanup of old container images, a custom Docker endpoint, [log collection](/docs/controllers/logs-and-metrics/#container-logs) and [automatic controller updates](/docs/controllers/#controller-updates).
 
 <ThemedImage
   lightSrc={dockerDeploymentConfigLight}
@@ -159,7 +159,7 @@ Give your deployment a descriptive name and specify the Kubernetes namespace whe
 
 You can also enable cluster-scoped permissions. When enabled, the controller will have cluster-wide access; otherwise, it will be limited to a specific namespace. See [Kubernetes Controller](/docs/controllers/kubernetes-controller/) for more details about cluster-scoped vs namespace-scoped controllers.
 
-The same step lets you set custom resource requirements for the Distr controller and turn [log collection](/docs/controllers/logs-and-metrics/#container-logs) and [automatic controller updates](/docs/controllers/deployment-controllers/#controller-updates) on or off.
+The same step lets you set custom resource requirements for the Distr controller and turn [log collection](/docs/controllers/logs-and-metrics/#container-logs) and [automatic controller updates](/docs/controllers/#controller-updates) on or off.
 
 <ThemedImage
   lightSrc={helmDeploymentConfigLight}

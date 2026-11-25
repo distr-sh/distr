@@ -189,7 +189,7 @@ Notes on this job:
 
 - `needs: build` ensures the container images exist in the source registry before Zarf tries to pull them into the package.
 - `DISTR_TOKEN` is a repository secret containing your Distr [Personal Access Token](/docs/integrations/personal-access-token/).
-- The job builds one package per CPU architecture (`-a amd64` and `-a arm64`). Publishing both to the same OCI reference creates a multi-arch index, so `zarf package deploy` automatically selects the right package for the target cluster. Note that publishing the second architecture updates the already existing tag, which requires mutable tags. By default, the Distr registry uses [immutable tags](/docs/registry/), so enable "Artifact versions are mutable" on the organization settings page for this to work.
+- The job builds one package per CPU architecture (`-a amd64` and `-a arm64`). Publishing both to the same OCI reference creates a multi-arch index, so `zarf package deploy` automatically selects the right package for the target cluster. Note that publishing the second architecture updates the already existing tag, which requires mutable tags. By default, the Distr registry uses [immutable tags](/docs/registry/), so enable **Artifact versions are mutable** in **Settings** under **General** for this to work.
 - `--set VERSION="${{ github.ref_name }}"` wires the release tag into the `###ZARF_PKG_TMPL_VERSION###` template.
 
 ## Step 5: Customer Deployment
