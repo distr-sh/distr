@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"maps"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -24,14 +23,25 @@ import (
 )
 
 const (
-	dir                    = "hack/third-party-licenses"
-	ownModule              = "github.com/distr-sh/distr"
-	spdxLicenseListVersion = "3.29.0"
+	dir       = "hack/third-party-licenses"
+	ownModule = "github.com/distr-sh/distr"
 	// copied into the Distr image, too large to commit
 	licenseTextsFile = "dist/third-party-licenses.txt"
 )
 
 var (
+	allowedLicenses = []string{
+		"0BSD",
+		"Apache-2.0",
+		"BSD-2-Clause",
+		"BSD-3-Clause",
+		"ISC",
+		"MIT",
+		"MPL-2.0",
+		"OFL-1.1",
+		"PostgreSQL",
+	}
+
 	ownImages      = regexp.MustCompile(`^(ghcr\.io/distr-sh/|registry\.distr\.sh/)`)
 	noticeFile     = regexp.MustCompile(`(?i)^NOTICE(\.txt|\.md)?$`)
 	licenseFile    = regexp.MustCompile(`(?i)^(LICEN[CS]E|COPYING)([.-].*)?$`)
@@ -118,7 +128,6 @@ type generator struct {
 	// Apache-2.0 requires redistributions to carry the attribution notices of a dependency's NOTICE file.
 	notices        *textCollection
 	licenses       *textCollection
-	osiApproved    []string
 	exceptions     map[string]licenseException
 	usedExceptions map[string]bool
 }
@@ -151,9 +160,6 @@ func run(npmReport string) error {
 		notices:        newTextCollection(noticeFile),
 		licenses:       newTextCollection(licenseFile),
 		usedExceptions: map[string]bool{},
-	}
-	if g.osiApproved, err = osiApprovedLicenses(context.Background()); err != nil {
-		return fmt.Errorf("failed to load the OSI approved licenses: %w", err)
 	}
 	if err := readJSON("license-exceptions.json", &g.exceptions); err != nil {
 		return err
@@ -198,49 +204,15 @@ func (g *generator) errorf(format string, args ...any) {
 	g.errors = append(g.errors, fmt.Sprintf(format, args...))
 }
 
-func osiApprovedLicenses(ctx context.Context) ([]string, error) {
-	url := fmt.Sprintf(
-		"https://raw.githubusercontent.com/spdx/license-list-data/v%s/json/licenses.json", spdxLicenseListVersion)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("GET %s: %s", url, resp.Status)
-	}
-	var list struct {
-		Licenses []struct {
-			LicenseID     string `json:"licenseId"`
-			IsOsiApproved bool   `json:"isOsiApproved"`
-		} `json:"licenses"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
-		return nil, err
-	}
-	var ids []string
-	for _, license := range list.Licenses {
-		// spdxexp.Satisfies rejects the whole list if it contains an ID that its own copy of the list lacks
-		if valid, _ := spdxexp.ValidateLicenses([]string{license.LicenseID}); license.IsOsiApproved && valid {
-			ids = append(ids, license.LicenseID)
-		}
-	}
-	return ids, nil
-}
-
 func (g *generator) checkLicense(kind, name, expression string) {
-	if ok, err := spdxexp.Satisfies(expression, g.osiApproved); err != nil {
+	if ok, err := spdxexp.Satisfies(expression, allowedLicenses); err != nil {
 		g.errorf("the license %q of %s %s is not a valid SPDX expression", expression, kind, name)
 	} else if ok {
 		return
 	} else if exception, found := g.exceptions[name]; !found {
-		g.errorf("the license %s of %s %s is not OSI approved", expression, kind, name)
-	} else if ok, _ := spdxexp.Satisfies(expression, slices.Concat(g.osiApproved, exception.Licenses)); !ok {
-		g.errorf("the license %s of %s %s is not OSI approved and exceeds its exception", expression, kind, name)
+		g.errorf("the license %s of %s %s is not allowed", expression, kind, name)
+	} else if ok, _ := spdxexp.Satisfies(expression, slices.Concat(allowedLicenses, exception.Licenses)); !ok {
+		g.errorf("the license %s of %s %s is not allowed and exceeds its exception", expression, kind, name)
 	} else {
 		g.usedExceptions[name] = true
 	}
