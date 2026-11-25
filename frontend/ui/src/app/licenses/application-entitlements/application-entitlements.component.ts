@@ -47,7 +47,7 @@ export class ApplicationEntitlementsComponent {
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
 
-  private readonly entitlements = toSignal(this.applicationEntitlementsService.list());
+  protected readonly entitlements = toSignal(this.applicationEntitlementsService.list());
   protected readonly loaded = computed(() => this.entitlements() !== undefined);
 
   protected readonly filteredEntitlements = computed(() => {
@@ -60,7 +60,6 @@ export class ApplicationEntitlementsComponent {
     );
   });
 
-  applications$ = this.applicationsService.list();
   private readonly customers = toSignal(this.customerOrganizationsService.getCustomerOrganizations().pipe(first()));
   protected readonly customerName = computed(() => {
     const customerOrganizationId = this.customerOrganizationId();

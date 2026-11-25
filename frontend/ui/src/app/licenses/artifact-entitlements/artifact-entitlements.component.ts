@@ -59,7 +59,7 @@ export class ArtifactEntitlementsComponent {
   protected readonly faXmark = faXmark;
   protected readonly isExpired = isExpired;
 
-  private readonly entitlements = toSignal(this.artifactEntitlementsService.list());
+  protected readonly entitlements = toSignal(this.artifactEntitlementsService.list());
   protected readonly loaded = computed(() => this.entitlements() !== undefined);
 
   protected readonly filteredEntitlements = computed(() => {

@@ -152,7 +152,7 @@
         <app-spinner class="size-8" />
       </div>
     } @else {
-      @if (filteredEntitlements()?.length === 0) {
+      @if (entitlements()?.length === 0) {
         <app-alert
           type="warning"
           heading="Creating your first entitlement will restrict what all your customers see."
