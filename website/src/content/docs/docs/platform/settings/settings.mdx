@@ -1,0 +1,32 @@
+---
+title: Settings
+description: Find the configuration of your vendor organization in the Settings page of the Vendor Portal, from the organization name and team to secrets, domains, sign-in and your subscription.
+slug: docs/platform/settings
+sidebar:
+  label: Overview
+  order: 0
+---
+
+import {Aside} from '@astrojs/starlight/components';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import settingsLight from '~/assets/docs/platform/settings/settings/settings-light.webp';
+import settingsDark from '~/assets/docs/platform/settings/settings/settings-dark.webp';
+
+**Settings** in the [Vendor Portal](/docs/vendor-portal/) holds the configuration of your vendor organization. Open it from the sidebar or press `G` `S`.
+
+<ThemedImage
+  lightSrc={settingsLight}
+  darkSrc={settingsDark}
+  alt="Organization settings with the General tab open"
+/>
+
+- **General**: the organization name and registry [slug](/docs/registry/configuration/#1-set-your-registry-slug), registry and controller settings and deleting the organization.
+- **Team**: the members of your vendor organization and their [roles](/docs/platform/rbac/).
+- **Secrets**: the [secrets of your internal deployments](/docs/platform/internal-deployment-secrets/), the ones on deployment targets without a customer. A customer's secrets are on [its page](/docs/platform/customer-secrets/).
+- **Domains & Sign-in**: [custom domains](/docs/platform/branding/#custom-domains), [identity providers](/docs/platform/custom-identity-provider/) and a custom email sender.
+- **Subscription**: your plan, usage limits and billing information, see [Subscription Management](/docs/subscription-management/).
+- **Billing**: license templates and the Stripe webhook, with vendor billing enabled.
+
+<Aside type="note">
+  Only admins see every tab. Other members see the **Secrets** tab.
+</Aside>

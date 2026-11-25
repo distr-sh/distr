@@ -1,20 +1,17 @@
 ---
 title: Vendor Portal
-description: Find your way around the Distr Vendor Portal, from the home page and the navigation to the command palette, keyboard shortcuts and organization settings.
+description: Find your way around the Distr Vendor Portal, from the home page and the navigation to the command palette and keyboard shortcuts.
 slug: docs/vendor-portal
 sidebar:
   label: Vendor Portal
   order: 1
 ---
 
-import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
 import homeLight from '~/assets/docs/platform/vendor-portal/home-light.webp';
 import homeDark from '~/assets/docs/platform/vendor-portal/home-dark.webp';
 import commandPaletteLight from '~/assets/docs/platform/vendor-portal/command-palette-light.webp';
 import commandPaletteDark from '~/assets/docs/platform/vendor-portal/command-palette-dark.webp';
-import settingsLight from '~/assets/docs/platform/vendor-portal/settings-light.webp';
-import settingsDark from '~/assets/docs/platform/vendor-portal/settings-dark.webp';
 
 The Vendor Portal is the part of Distr your team works in. You publish [applications](/docs/controllers/application/) and [artifacts](/docs/registry/) there, manage your customers and their licenses, and follow every deployment in your customers' environments. Your customers work in the [Customer Portal](/docs/platform/customer-portal/), a simpler white-labeled interface that shows them only what you enable.
 
@@ -50,7 +47,7 @@ The sidebar is split into the areas you work in every day and the configuration 
 | **[Support](/docs/platform/support-bundles/)**           | Answer support requests and review the diagnostic data customers attach                                           | `G` `B`  |
 | **[Security](/docs/platform/vulnerability-management/)** | Triage, draft and publish security advisories for your customers                                                  | `G` `V`  |
 | **[Customer Portal](/docs/platform/branding/)**          | Brand the Customer Portal and set up its domain and sign-in                                                       | `G` `O`  |
-| **Settings**                                             | Configure your organization, team, secrets and subscription                                                       | `G` `S`  |
+| **[Settings](/docs/platform/settings/)**                 | Configure your organization, team, secrets and subscription                                                       | `G` `S`  |
 
 Each customer has a page of its own, described in [Customer Management](/docs/platform/customer-management/), and [Customer Lens](/docs/platform/customer-lens/) opens its Customer Portal with your own role.
 
@@ -76,27 +73,6 @@ Type to search across applications, customers, deployments and artifacts, or jum
 | `/`                   | Focus the search field of the current list          |
 
 Press the second key within one and a half seconds after `G`. Shortcuts do nothing while you type in a form field.
-
-## Settings
-
-**Settings** holds the configuration of your vendor organization.
-
-<ThemedImage
-  lightSrc={settingsLight}
-  darkSrc={settingsDark}
-  alt="Organization settings with the General tab open"
-/>
-
-- **General**: the organization name, the registry [slug](/docs/registry/configuration/#1-set-your-registry-slug), registry and controller settings, and deleting the organization.
-- **Team**: the members of your vendor organization and their [roles](/docs/platform/rbac/).
-- **Secrets**: the [secrets of your internal deployments](/docs/platform/internal-deployment-secrets/), the ones on deployment targets without a customer. A customer's secrets are on [its page](/docs/platform/customer-secrets/).
-- **Domains & Sign-in**: [custom domains](/docs/platform/branding/#custom-domains), [identity providers](/docs/platform/custom-identity-provider/) and a custom email sender.
-- **Subscription**: your plan, usage limits and billing information, see [Subscription Management](/docs/subscription-management/).
-- **Billing**: license templates and the Stripe webhook, with vendor billing enabled.
-
-<Aside type="note">
-  Only admins see every tab. Other members see the **Secrets** tab.
-</Aside>
 
 ## Account menu
 
