@@ -317,7 +317,7 @@ published by their authors and verified against the checksums in [`go.sum`](go.s
 | go.opentelemetry.io/auto/sdk | v1.2.1 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/auto/sdk@v1.2.1?tab=licenses) |
 | go.opentelemetry.io/collector/component | v1.72.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/component@v1.72.0?tab=licenses) |
 | go.opentelemetry.io/collector/confmap | v1.71.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/confmap@v1.71.0?tab=licenses) |
-| go.opentelemetry.io/collector/consumer | v1.71.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/consumer@v1.71.0?tab=licenses) |
+| go.opentelemetry.io/collector/consumer | v1.72.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/consumer@v1.72.0?tab=licenses) |
 | go.opentelemetry.io/collector/consumer/consumererror | v0.165.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/consumer/consumererror@v0.165.0?tab=licenses) |
 | go.opentelemetry.io/collector/consumer/xconsumer | v0.165.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/consumer/xconsumer@v0.165.0?tab=licenses) |
 | go.opentelemetry.io/collector/featuregate | v1.72.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/featuregate@v1.72.0?tab=licenses) |
