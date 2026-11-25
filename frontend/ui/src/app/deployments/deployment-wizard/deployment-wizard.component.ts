@@ -49,6 +49,8 @@ import {OrganizationService} from '../../services/organization.service';
 import {ToastService} from '../../services/toast.service';
 import {UNLIMITED_QTY} from '../../types/subscription';
 import {DeploymentFormComponent, mapToDeploymentRequest} from '../deployment-form/deployment-form.component';
+import {podSchedulingFormGroup, podSchedulingFromForm} from '../pod-scheduling-fields/pod-scheduling';
+import {PodSchedulingFieldsComponent} from '../pod-scheduling-fields/pod-scheduling-fields.component';
 import {DeploymentQuotaComponent} from './deployment-quota.component';
 import {DeploymentWizardStepperComponent} from './deployment-wizard-stepper.component';
 
@@ -68,6 +70,7 @@ import {DeploymentWizardStepperComponent} from './deployment-wizard-stepper.comp
     DeploymentFormComponent,
     DeploymentTypeBadgeComponent,
     SpinnerComponent,
+    PodSchedulingFieldsComponent,
     DeploymentQuotaComponent,
   ],
 })
@@ -142,6 +145,8 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
         validators: [Validators.required, Validators.pattern(RESOURCE_QUANTITY_REGEX)],
       }),
     }),
+    customPodScheduling: new FormControl<boolean>(false, {nonNullable: true}),
+    podScheduling: podSchedulingFormGroup(),
     scope: new FormControl<DeploymentTargetScope>('cluster', {nonNullable: true}),
   });
 
@@ -338,6 +343,16 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
         }
       });
 
+    this.deploymentTargetForm.controls.customPodScheduling.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => {
+        if (value) {
+          this.deploymentTargetForm.controls.podScheduling.enable();
+        } else {
+          this.deploymentTargetForm.controls.podScheduling.disable();
+        }
+      });
+
     this.deploymentTargetForm.controls.customDockerEndpoint.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((value) => {
@@ -362,6 +377,12 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
       } else {
         this.deploymentTargetForm.controls.resources.disable();
       }
+      this.deploymentTargetForm.controls.customPodScheduling.enable();
+      if (this.deploymentTargetForm.controls.customPodScheduling.value) {
+        this.deploymentTargetForm.controls.podScheduling.enable();
+      } else {
+        this.deploymentTargetForm.controls.podScheduling.disable();
+      }
       this.deploymentTargetForm.controls.customDockerEndpoint.disable();
       this.deploymentTargetForm.controls.dockerEndpoint.disable();
     } else if (type === 'docker') {
@@ -372,6 +393,8 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
       this.deploymentTargetForm.controls.imageCleanupEnabled.enable();
       this.deploymentTargetForm.controls.customResources.disable();
       this.deploymentTargetForm.controls.resources.disable();
+      this.deploymentTargetForm.controls.customPodScheduling.disable();
+      this.deploymentTargetForm.controls.podScheduling.disable();
       this.deploymentTargetForm.controls.customDockerEndpoint.enable();
       if (this.deploymentTargetForm.controls.customDockerEndpoint.value) {
         this.deploymentTargetForm.controls.dockerEndpoint.enable();
@@ -486,6 +509,9 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
                   memoryRequest: this.deploymentTargetForm.value.resources?.memoryRequest!,
                 }
               : undefined,
+            ...(this.deploymentTargetForm.value.customPodScheduling
+              ? podSchedulingFromForm(this.deploymentTargetForm.controls.podScheduling)
+              : {}),
             dockerEndpoint: this.deploymentTargetForm.value.customDockerEndpoint
               ? this.deploymentTargetForm.value.dockerEndpoint
               : undefined,

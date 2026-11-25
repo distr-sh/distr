@@ -541,7 +541,7 @@
     animate.enter="animate-fly-in-right"
     animate.leave="animate-fly-out-right"
     id="manage-deployment-target-drawer"
-    class="h-screen w-80 overflow-y-auto bg-white p-4 dark:bg-gray-800"
+    class="h-screen w-160 overflow-y-auto bg-white p-4 dark:bg-gray-800"
     tabindex="-1"
     aria-labelledby="drawer-right-label">
     <h5
@@ -608,10 +608,7 @@
               Metrics reporting is not available for a namespace scoped controller.
             </p>
           }
-          <p class="text-xs text-gray-500 dark:text-gray-400">
-            Changing metrics reporting requires the controller to reconnect. Metrics reporting is not supported on
-            macOS.
-          </p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Metrics reporting is not supported on macOS.</p>
         </div>
 
         <div class="space-y-1">
@@ -737,10 +734,6 @@
               </p>
             }
           </div>
-
-          @if (editForm.controls.dockerEndpoint.dirty) {
-            <app-alert type="info">Changes to the Docker endpoint are only applied after a reconnect!</app-alert>
-          }
         }
 
         @if (editForm.controls.customResources.enabled) {
@@ -753,7 +746,9 @@
         }
 
         @if (editForm.controls.resources.enabled) {
-          <ng-container formGroupName="resources">
+          <div
+            formGroupName="resources"
+            class="grid grid-cols-2 gap-4 rounded-md border border-gray-300 p-4 dark:border-gray-700">
             <div>
               <label for="cpuRequest" class="distr-label mb-2">CPU Request</label>
               <input type="text" id="cpuRequest" formControlName="cpuRequest" class="distr-input" />
@@ -805,11 +800,36 @@
                 </p>
               }
             </div>
-          </ng-container>
+          </div>
+        }
 
-          @if (editForm.controls.resources.dirty) {
-            <app-alert type="info">Changes in the resource requirements are only applied after a reconnect!</app-alert>
-          }
+        @if (editForm.controls.customPodScheduling.enabled) {
+          <div class="flex items-center">
+            <input
+              id="custom-pod-scheduling"
+              type="checkbox"
+              formControlName="customPodScheduling"
+              class="distr-checkbox" />
+            <label for="custom-pod-scheduling" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+              Set pod annotations, node selector and tolerations for the Distr controller
+            </label>
+          </div>
+        }
+
+        @if (editForm.controls.podScheduling.enabled) {
+          <app-pod-scheduling-fields [group]="editForm.controls.podScheduling" />
+        }
+
+        @if (
+          (deploymentTarget().type === 'docker' && editForm.controls.metricsEnabled.dirty) ||
+          editForm.controls.customDockerEndpoint.dirty ||
+          editForm.controls.dockerEndpoint.dirty ||
+          editForm.controls.customResources.dirty ||
+          editForm.controls.resources.dirty ||
+          editForm.controls.customPodScheduling.dirty ||
+          editForm.controls.podScheduling.dirty
+        ) {
+          <app-alert type="info">Some of your changes are only applied after the controller reconnects.</app-alert>
         }
       </div>
       <div class="mt-8 flex w-full justify-center space-x-4 pb-4 sm:mt-0">

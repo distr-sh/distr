@@ -45,7 +45,10 @@ const (
 			dt.resources_cpu_limit,
 			dt.resources_memory_limit
 		) END,
-		dt.docker_endpoint
+		dt.docker_endpoint,
+		dt.pod_annotations,
+		dt.node_selector,
+		dt.tolerations
 	`
 	deploymentTargetOutputExpr = deploymentTargetOutputExprBase +
 		", CASE WHEN co.id IS NOT NULL THEN (" + customerOrganizationOutputExpr + ") END AS customer_organization"
@@ -291,6 +294,9 @@ func CreateDeploymentTarget(
 		"automaticUpdates":      dt.AutomaticUpdatesEnabled,
 		"customerOrgId":         customerOrgID,
 		"dockerEndpoint":        dt.DockerEndpoint,
+		"podAnnotations":        dt.PodAnnotations,
+		"nodeSelector":          dt.NodeSelector,
+		"tolerations":           dt.Tolerations,
 	}
 
 	if dt.Resources != nil {
@@ -307,11 +313,12 @@ func CreateDeploymentTarget(
 			(name, type, organization_id, namespace, scope, controller_version_id, metrics_enabled,
 				image_cleanup_enabled, deployment_logs_enabled, deployment_logs_after, autoheal_enabled,
 				automatic_updates_enabled, customer_organization_id, resources_cpu_request, resources_memory_request,
-				resources_cpu_limit, resources_memory_limit, docker_endpoint)
+				resources_cpu_limit, resources_memory_limit, docker_endpoint, pod_annotations, node_selector,
+				tolerations)
 			VALUES (@name, @type, @orgId, @namespace, @scope, @controllerVersionId, @metricsEnabled, @imageCleanupEnabled,
 				@deploymentLogsEnabled, @deploymentLogsAfter, @autohealEnabled, @automaticUpdates,
 				@customerOrgId, @resourcesCpuRequest, @resourcesMemoryRequest, @resourcesCpuLimit,
-				@resourcesMemoryLimit, @dockerEndpoint)
+				@resourcesMemoryLimit, @dockerEndpoint, @podAnnotations, @nodeSelector, @tolerations)
 			RETURNING *
 		)
 		SELECT `+deploymentTargetFullOutputExpr+` FROM inserted dt`+deploymentTargetJoinExpr,
@@ -342,6 +349,9 @@ func UpdateDeploymentTarget(ctx context.Context, dt *types.DeploymentTargetFull,
 		"deploymentLogsAfter":   dt.DeploymentLogsAfter,
 		"automaticUpdates":      dt.AutomaticUpdatesEnabled,
 		"dockerEndpoint":        dt.DockerEndpoint,
+		"podAnnotations":        dt.PodAnnotations,
+		"nodeSelector":          dt.NodeSelector,
+		"tolerations":           dt.Tolerations,
 	}
 	if dt.ControllerVersionID != nil {
 		args["controllerVersionId"] = dt.ControllerVersionID
@@ -366,7 +376,10 @@ func UpdateDeploymentTarget(ctx context.Context, dt *types.DeploymentTargetFull,
 				resources_cpu_limit = @cpuLimit,
 				resources_memory_request = @memoryRequest,
 				resources_memory_limit = @memoryLimit,
-				docker_endpoint = @dockerEndpoint `+controllerUpdateStr+`
+				docker_endpoint = @dockerEndpoint,
+				pod_annotations = @podAnnotations,
+				node_selector = @nodeSelector,
+				tolerations = @tolerations `+controllerUpdateStr+`
 			WHERE id = @id AND organization_id = @orgId RETURNING *
 		)
 		SELECT `+deploymentTargetFullOutputExpr+` FROM updated dt`+deploymentTargetJoinExpr,

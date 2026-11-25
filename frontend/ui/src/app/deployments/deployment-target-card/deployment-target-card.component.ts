@@ -76,6 +76,13 @@ import {DeploymentTargetLatestMetrics} from '../../types/deployment-target-metri
 import {DeploymentModalComponent} from '../deployment-modal.component';
 import {DeploymentRevisionDetailsComponent} from '../deployment-revisions/deployment-revision-details.component';
 import {DeploymentRevisionsTimelineComponent} from '../deployment-revisions/deployment-revisions-timeline.component';
+import {
+  hasPodScheduling,
+  podSchedulingFormGroup,
+  podSchedulingFromForm,
+  podSchedulingToForm,
+} from '../pod-scheduling-fields/pod-scheduling';
+import {PodSchedulingFieldsComponent} from '../pod-scheduling-fields/pod-scheduling-fields.component';
 import {DeploymentAppNameComponent} from './deployment-app-name.component';
 import {DeploymentResourceMetricsComponent} from './deployment-resource-metrics.component';
 import {DeploymentStatusTextComponent} from './deployment-status-text.component';
@@ -105,6 +112,7 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
     RouterLink,
     SpinnerComponent,
     AlertComponent,
+    PodSchedulingFieldsComponent,
     AsyncPipe,
     SecureImagePipe,
   ],
@@ -213,6 +221,8 @@ export class DeploymentTargetCardComponent {
         validators: [Validators.required, Validators.pattern(RESOURCE_QUANTITY_REGEX)],
       }),
     }),
+    customPodScheduling: new FormControl<boolean>(false, {nonNullable: true}),
+    podScheduling: podSchedulingFormGroup(),
   });
   protected editFormLoading = false;
 
@@ -350,6 +360,13 @@ export class DeploymentTargetCardComponent {
         this.editForm.controls.resources.disable();
       }
     });
+    this.editForm.controls.customPodScheduling.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {
+      if (value) {
+        this.editForm.controls.podScheduling.enable();
+      } else {
+        this.editForm.controls.podScheduling.disable();
+      }
+    });
     this.editForm.controls.customDockerEndpoint.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {
       if (value) {
         this.editForm.controls.dockerEndpoint.enable();
@@ -389,6 +406,7 @@ export class DeploymentTargetCardComponent {
           memoryLimit: val.resources.memoryLimit!,
         },
         dockerEndpoint: val.dockerEndpoint,
+        ...(val.customPodScheduling ? podSchedulingFromForm(this.editForm.controls.podScheduling) : {}),
       };
 
       try {
@@ -568,6 +586,9 @@ export class DeploymentTargetCardComponent {
               automaticUpdatesEnabled: this.controllerUpdateAutomaticUpdatesEnabled.value,
               resources: dt.resources,
               dockerEndpoint: dt.dockerEndpoint,
+              podAnnotations: dt.podAnnotations,
+              nodeSelector: dt.nodeSelector,
+              tolerations: dt.tolerations,
               controllerVersionId: targetVersion.id,
             })
           );
@@ -755,6 +776,8 @@ export class DeploymentTargetCardComponent {
       customResources: !!dt.resources,
       customDockerEndpoint: !!dt.dockerEndpoint,
       dockerEndpoint: dt.dockerEndpoint ?? '',
+      customPodScheduling: hasPodScheduling(dt),
+      podScheduling: podSchedulingToForm(dt),
     });
     if (dt.scope === 'namespace') {
       this.editForm.controls.metricsEnabled.disable();
@@ -764,12 +787,15 @@ export class DeploymentTargetCardComponent {
     if (dt.type === 'kubernetes') {
       this.editForm.controls.imageCleanupEnabled.disable();
       this.editForm.controls.customResources.enable();
+      this.editForm.controls.customPodScheduling.enable();
       this.editForm.controls.customDockerEndpoint.setValue(false);
       this.editForm.controls.customDockerEndpoint.disable();
     } else {
       this.editForm.controls.imageCleanupEnabled.enable();
       this.editForm.controls.customResources.setValue(false);
       this.editForm.controls.customResources.disable();
+      this.editForm.controls.customPodScheduling.setValue(false);
+      this.editForm.controls.customPodScheduling.disable();
       this.editForm.controls.customDockerEndpoint.enable();
     }
   }

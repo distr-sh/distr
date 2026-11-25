@@ -55,6 +55,24 @@
 
 ---
 
+### nodeSelector?
+
+> `optional` **nodeSelector?**: `Record`\<`string`, `string`\>
+
+---
+
+### podAnnotations?
+
+> `optional` **podAnnotations?**: `Record`\<`string`, `string`\>
+
+---
+
 ### resources?
 
 > `optional` **resources?**: [`DeploymentTargetResources`](DeploymentTargetResources.md)
+
+---
+
+### tolerations?
+
+> `optional` **tolerations?**: [`DeploymentTargetToleration`](DeploymentTargetToleration.md)[]
