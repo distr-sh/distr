@@ -22,4 +22,6 @@ type ActivityFeedEntry struct {
 
 	CustomerOrganizationID   *uuid.UUID `json:"customerOrganizationId,omitempty"`
 	CustomerOrganizationName *string    `json:"customerOrganizationName,omitempty"`
+	PartnerOrganizationID    *uuid.UUID `json:"partnerOrganizationId,omitempty"`
+	PartnerOrganizationName  *string    `json:"partnerOrganizationName,omitempty"`
 }

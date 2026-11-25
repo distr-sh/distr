@@ -4,7 +4,12 @@
     <ul class="distr-home-list class px-2">
       @for (entry of entries(); track entry.id) {
         <li>
-          <a [routerLink]="entry.link" [queryParams]="entry.queryParams" class="distr-home-row items-center">
+          <a
+            [routerLink]="entry.link ?? null"
+            [queryParams]="entry.queryParams"
+            [class.hover:bg-transparent]="!entry.link"
+            [class.dark:hover:bg-transparent]="!entry.link"
+            class="distr-home-row items-center">
             <fa-icon
               [icon]="entry.icon"
               class="distr-home-icon flex w-5 shrink-0 items-center justify-center text-lg" />
@@ -18,7 +23,7 @@
                   {{ entry.createdAt | relativeDate }}
                 </time>
               </div>
-              @if (entry.customerName || entry.user) {
+              @if (entry.customerName || entry.partnerName || entry.user) {
                 <p class="distr-home-row-meta flex flex-wrap items-center gap-1.5">
                   @if (entry.customerName; as customerName) {
                     <span class="flex items-center gap-1">
@@ -28,6 +33,12 @@
                     @if (entry.user) {
                       <span aria-hidden="true">&middot;</span>
                     }
+                  }
+                  @if (entry.partnerName; as partnerName) {
+                    <span class="flex items-center gap-1">
+                      <fa-icon [icon]="faBuilding" />
+                      {{ partnerName }}
+                    </span>
                   }
                   @if (entry.user; as user) {
                     <app-avatar

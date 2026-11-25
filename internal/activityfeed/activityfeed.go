@@ -3,6 +3,7 @@
 package activityfeed
 
 import (
+	"cmp"
 	"slices"
 	"time"
 
@@ -21,13 +22,17 @@ const (
 	EntryTypeApplicationVersionCreated  EntryType = "application_version_created"
 	EntryTypeArtifactVersionCreated     EntryType = "artifact_version_created"
 	EntryTypeArtifactVersionFirstPulled EntryType = "artifact_version_first_pulled"
+	EntryTypeCustomerCreated            EntryType = "customer_created"
+	EntryTypeCustomerUserAdded          EntryType = "customer_user_added"
 	EntryTypeDeploymentRevisionCreated  EntryType = "deployment_revision_created"
+	EntryTypeDeploymentTargetCreated    EntryType = "deployment_target_created"
 	EntryTypeLicenseKeyCreated          EntryType = "license_key_created"
 	EntryTypeLicenseKeyUpdated          EntryType = "license_key_updated"
 	EntryTypeSupportBundleCreated       EntryType = "support_bundle_created"
 	EntryTypeSupportBundleUploaded      EntryType = "support_bundle_uploaded"
 	EntryTypeSupportBundleResolved      EntryType = "support_bundle_resolved"
 	EntryTypeSupportBundleCanceled      EntryType = "support_bundle_canceled"
+	EntryTypeTeamMemberAdded            EntryType = "team_member_added"
 )
 
 type User struct {
@@ -39,8 +44,8 @@ type Entry struct {
 	ID        uuid.UUID
 	CreatedAt time.Time
 	Type      EntryType
-	// ResourceID is the application, artifact, deployment target, license key or support bundle the
-	// entry is about, depending on its type.
+	// ResourceID is the application, artifact, customer organization, deployment target, license key, support
+	// bundle or user the entry is about, depending on its type.
 	ResourceID   uuid.UUID
 	ResourceName string
 	// Subject is what the entry is about in its text, which for a deployment revision names its application
@@ -52,6 +57,8 @@ type Entry struct {
 	// organization, such as a new application version.
 	CustomerOrganizationID   *uuid.UUID
 	CustomerOrganizationName *string
+	PartnerOrganizationID    *uuid.UUID
+	PartnerOrganizationName  *string
 }
 
 func newUser(name *string, imageID *uuid.UUID) *User {
@@ -159,6 +166,99 @@ func DeploymentRevisions(revisions []types.DeploymentRevisionEvent) []Entry {
 			Detail:                 new(revision.ApplicationVersionName),
 			User:                   newUser(revision.CreatedByName, revision.CreatedByImageID),
 			CustomerOrganizationID: revision.CustomerOrganizationID,
+		}
+	}
+	return result
+}
+
+// CustomerOrganizations returns an entry for every customer organization created after since.
+func CustomerOrganizations(customerOrgs []types.CustomerOrganization, since time.Time) []Entry {
+	var result []Entry
+	for _, customerOrg := range customerOrgs {
+		if customerOrg.CreatedAt.After(since) {
+			result = append(result, Entry{
+				ID:                     customerOrg.ID,
+				CreatedAt:              customerOrg.CreatedAt,
+				Type:                   EntryTypeCustomerCreated,
+				ResourceID:             customerOrg.ID,
+				ResourceName:           customerOrg.Name,
+				Subject:                customerOrg.Name,
+				CustomerOrganizationID: new(customerOrg.ID),
+			})
+		}
+	}
+	return result
+}
+
+// CustomerUsers returns an entry for every user added to a customer organization after since, leaving out the
+// members of the vendor and of partners. A user is added when invited, whether or not the invitation is ever
+// accepted.
+func CustomerUsers(users []types.UserAccountWithUserRole, since time.Time) []Entry {
+	var result []Entry
+	for _, user := range users {
+		if user.CustomerOrganizationID != nil && user.JoinedOrgAt.After(since) {
+			name := cmp.Or(user.Name, user.Email)
+			result = append(result, Entry{
+				ID:                     user.ID,
+				CreatedAt:              user.JoinedOrgAt,
+				Type:                   EntryTypeCustomerUserAdded,
+				ResourceID:             user.ID,
+				ResourceName:           name,
+				Subject:                name,
+				CustomerOrganizationID: user.CustomerOrganizationID,
+			})
+		}
+	}
+	return result
+}
+
+// TeamMembers returns an entry for every user added to the vendor or a partner after since, leaving out the
+// members of customer organizations. A partner member is named with its partner organization if it is among
+// partnerOrgs.
+func TeamMembers(
+	users []types.UserAccountWithUserRole,
+	partnerOrgs []types.PartnerOrganizationWithUsage,
+	since time.Time,
+) []Entry {
+	partnerNames := make(map[uuid.UUID]string, len(partnerOrgs))
+	for _, partnerOrg := range partnerOrgs {
+		partnerNames[partnerOrg.ID] = partnerOrg.Name
+	}
+	var result []Entry
+	for _, user := range users {
+		if user.CustomerOrganizationID == nil && user.JoinedOrgAt.After(since) {
+			name := cmp.Or(user.Name, user.Email)
+			entry := Entry{
+				ID:                    user.ID,
+				CreatedAt:             user.JoinedOrgAt,
+				Type:                  EntryTypeTeamMemberAdded,
+				ResourceID:            user.ID,
+				ResourceName:          name,
+				Subject:               name,
+				PartnerOrganizationID: user.PartnerOrganizationID,
+			}
+			if user.PartnerOrganizationID != nil {
+				if partnerName, ok := partnerNames[*user.PartnerOrganizationID]; ok {
+					entry.PartnerOrganizationName = &partnerName
+				}
+			}
+			result = append(result, entry)
+		}
+	}
+	return result
+}
+
+func DeploymentTargets(targets []types.DeploymentTarget) []Entry {
+	result := make([]Entry, len(targets))
+	for i, target := range targets {
+		result[i] = Entry{
+			ID:                     target.ID,
+			CreatedAt:              target.CreatedAt,
+			Type:                   EntryTypeDeploymentTargetCreated,
+			ResourceID:             target.ID,
+			ResourceName:           target.Name,
+			Subject:                target.Name,
+			CustomerOrganizationID: target.CustomerOrganizationID,
 		}
 	}
 	return result
