@@ -30,14 +30,14 @@
             class="distr-dropdown-item not-aria-selected:hover:bg-transparent aria-selected:bg-gray-100 dark:not-aria-selected:hover:bg-transparent dark:not-aria-selected:hover:text-gray-200 dark:aria-selected:bg-gray-600 dark:aria-selected:text-white"
             (mousemove)="activeIndex.set(command.index)"
             (click)="run(command)">
-            <fa-icon [icon]="command.icon" class="w-5 text-gray-500 dark:text-gray-400" />
-            <span class="grow">{{ command.label }}</span>
+            <fa-icon [icon]="command.icon" class="w-5 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span class="min-w-0 grow truncate">{{ command.label }}</span>
             @if (command.detail) {
-              <span class="text-xs text-gray-500 dark:text-gray-400">{{ command.detail }}</span>
+              <span class="max-w-1/3 truncate text-xs text-gray-500 dark:text-gray-400">{{ command.detail }}</span>
             }
             @if (command.shortcut) {
-              <kbd class="distr-kbd uppercase">g</kbd>
-              <kbd class="distr-kbd uppercase">{{ command.shortcut }}</kbd>
+              <kbd class="distr-kbd shrink-0 uppercase">g</kbd>
+              <kbd class="distr-kbd shrink-0 uppercase">{{ command.shortcut }}</kbd>
             }
           </button>
         </li>
