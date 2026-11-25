@@ -8,15 +8,15 @@ sidebar:
 ---
 
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import compatibilityMatrixReportLight from '~/assets/docs/platform/support/distr-compatibility-matrix-report-light.png';
-import compatibilityMatrixReportDark from '~/assets/docs/platform/support/distr-compatibility-matrix-report-dark.png';
+import compatibilityMatrixReportLight from '~/assets/docs/platform/support/distr-compatibility-matrix-report-light.webp';
+import compatibilityMatrixReportDark from '~/assets/docs/platform/support/distr-compatibility-matrix-report-dark.webp';
 import compatibilityMatrixGithubAction from '~/assets/docs/platform/support/distr-compatibility-matrix-github-action-new.png';
 import {Image} from 'astro:assets';
 
 <ThemedImage
   lightSrc={compatibilityMatrixReportLight}
   darkSrc={compatibilityMatrixReportDark}
-  alt="Compatibility matrix report in the Distr vendor portal"
+  alt="Compatibility matrix report attached to an application version in the Distr Vendor Portal"
 />
 
 When you distribute a Kubernetes application to enterprise customers, you rarely control which Kubernetes version they run. A single cluster fleet can span three or four minor versions at once, and every Kubernetes release deprecates or removes APIs. A Helm chart that installs cleanly on 1.33 might fail on 1.35 because a beta API it relies on has graduated or been removed. The first person to discover that is usually a customer filing a support ticket.
