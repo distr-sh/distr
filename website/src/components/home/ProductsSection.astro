@@ -60,9 +60,9 @@ const products = [
       </p>
     </div>
 
-    {products.map(product => (
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:gap-12 mb-12 md:mb-16 lg:mb-20 items-start">
-        <div class="lg:col-span-4 lg:sticky lg:top-24">
+    {products.map((product, i) => (
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:gap-12 mb-12 md:mb-16 lg:mb-24 last:mb-0 lg:items-center">
+        <div class:list={['lg:col-span-4', {'lg:order-2': i % 2 === 1}]}>
           <h3 class="text-xl md:text-2xl lg:text-3xl font-bold mb-3 md:mb-4 border-l-4 border-accent-600 pl-3 md:pl-4">
             {product.title}
           </h3>
@@ -73,12 +73,13 @@ const products = [
             <SignupButton />
           </div>
         </div>
-        <div class="lg:col-span-8">
+        <div class:list={['lg:col-span-8', {'lg:order-1': i % 2 === 1}]}>
           <div class="rounded-xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.15)] bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
             <ThemedImage
               lightSrc={product.lightImage}
               darkSrc={product.darkImage}
               alt={product.alt}
+              dropShadow={false}
             />
           </div>
         </div>
