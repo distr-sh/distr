@@ -608,11 +608,12 @@
               Metrics reporting is not available for a namespace scoped controller.
             </p>
           }
-          <p class="text-xs text-gray-500 dark:text-gray-400">
-            Changing metrics reporting requires the controller to reconnect. Metrics reporting is not supported on
-            macOS.
-          </p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Metrics reporting is not supported on macOS.</p>
         </div>
+
+        @if (deploymentTarget().type === 'docker' && editForm.controls.metricsEnabled.dirty) {
+          <app-alert type="info">Changes to metrics reporting are only applied after a reconnect!</app-alert>
+        }
 
         <div class="space-y-1">
           <div class="flex items-center">
@@ -753,7 +754,9 @@
         }
 
         @if (editForm.controls.resources.enabled) {
-          <ng-container formGroupName="resources">
+          <div
+            formGroupName="resources"
+            class="grid grid-cols-2 gap-4 rounded-md border border-gray-300 p-4 dark:border-gray-700">
             <div>
               <label for="cpuRequest" class="distr-label mb-2">CPU Request</label>
               <input type="text" id="cpuRequest" formControlName="cpuRequest" class="distr-input" />
@@ -805,7 +808,7 @@
                 </p>
               }
             </div>
-          </ng-container>
+          </div>
 
           @if (editForm.controls.resources.dirty) {
             <app-alert type="info">Changes in the resource requirements are only applied after a reconnect!</app-alert>
