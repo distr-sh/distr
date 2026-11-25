@@ -7,7 +7,7 @@ toolchain go1.27.4
 require (
 	github.com/github/go-spdx/v2 v2.8.0
 	github.com/google/go-licenses/v2 v2.0.1
-	github.com/spf13/pflag v1.0.10
+	github.com/spf13/pflag v1.1.0
 	golang.org/x/text v0.44.0
 	k8s.io/klog/v2 v2.90.1
 )
