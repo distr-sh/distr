@@ -29,18 +29,18 @@ instances.
 Every container image contains further software, such as the packages of its base operating system, under the licenses
 documented for that image.
 
-{{components}}
+{{.components}}
 
 ## Backend
 
 The Go modules compiled into Distr, the Distr Controllers and the support collector. They are used unmodified, as
 published by their authors and verified against the checksums in [`go.sum`](go.sum).
 
-{{backend}}
+{{.backend}}
 
 ## Frontend
 
 The npm packages bundled into the Distr web interface. They are used unmodified, as published to the npm registry and
 pinned in [`pnpm-lock.yaml`](pnpm-lock.yaml).
 
-{{frontend}}
+{{.frontend}}

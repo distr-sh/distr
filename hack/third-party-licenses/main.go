@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -14,6 +15,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"text/template"
 
 	"github.com/github/go-spdx/v2/spdxexp"
 	"github.com/google/go-licenses/v2/licenses"
@@ -25,11 +27,26 @@ import (
 const (
 	dir       = "hack/third-party-licenses"
 	ownModule = "github.com/distr-sh/distr"
+
+	componentsFile         = "components.json"
+	goLicenseOverridesFile = "go-license-overrides.json"
+	licenseExceptionsFile  = "license-exceptions.json"
+	npmLicenseSourcesFile  = "npm-license-sources.json"
+
+	thirdPartyLicensesOutput = "THIRD_PARTY_LICENSES.md"
+	noticeOutput             = "NOTICE"
 	// copied into the Distr image, too large to commit
-	licenseTextsFile = "dist/third-party-licenses.txt"
+	licenseTextsOutput = "dist/third-party-licenses.txt"
 )
 
+// Each template is named after the file it renders.
+//
+//go:embed templates
+var templateFS embed.FS
+
 var (
+	templates = template.Must(template.New("").Option("missingkey=error").ParseFS(templateFS, "templates/*"))
+
 	allowedLicenses = []string{
 		"0BSD",
 		"Apache-2.0",
@@ -50,7 +67,6 @@ var (
 	dockerfileFrom = regexp.MustCompile(`(?m)^FROM\s+(?:--\S+\s+)*(\S+)`)
 	chartDeps      = regexp.MustCompile(`(?m)^dependencies:\n((?:[ -].*\n?)*)`)
 	chartDepName   = regexp.MustCompile(`(?m)^\s*-\s+name:\s*(\S+)`)
-	placeholder    = regexp.MustCompile(`\{\{(\w+)\}\}`)
 	trailingSpace  = regexp.MustCompile(`(?m)[ \t]+$`)
 	blankLines     = regexp.MustCompile(`\n{3,}`)
 	imageDigest    = regexp.MustCompile(`@sha256:.*$`)
@@ -161,7 +177,7 @@ func run(npmReport string) error {
 		licenses:       newTextCollection(licenseFile),
 		usedExceptions: map[string]bool{},
 	}
-	if err := readJSON("license-exceptions.json", &g.exceptions); err != nil {
+	if err := readJSON(licenseExceptionsFile, &g.exceptions); err != nil {
 		return err
 	}
 
@@ -177,7 +193,7 @@ func run(npmReport string) error {
 	}
 	for _, name := range slices.Sorted(maps.Keys(g.exceptions)) {
 		if !g.usedExceptions[name] {
-			g.errorf("license-exceptions.json lists %s, which no longer needs an exception", name)
+			g.errorf("%s lists %s, which no longer needs an exception", licenseExceptionsFile, name)
 		}
 	}
 
@@ -188,16 +204,16 @@ func run(npmReport string) error {
 		os.Exit(1)
 	}
 
-	if err := render("template.md", "THIRD_PARTY_LICENSES.md", sections); err != nil {
+	if err := render(thirdPartyLicensesOutput, sections); err != nil {
 		return err
 	}
-	if err := render("notice.txt", "NOTICE", map[string]string{"notices": g.notices.section()}); err != nil {
+	if err := render(noticeOutput, map[string]string{"notices": g.notices.section()}); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(licenseTextsFile), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(licenseTextsOutput), 0o755); err != nil {
 		return err
 	}
-	return render("license-texts.txt", licenseTextsFile, map[string]string{"licenses": g.licenses.section()})
+	return render(licenseTextsOutput, map[string]string{"licenses": g.licenses.section()})
 }
 
 func (g *generator) errorf(format string, args ...any) {
@@ -296,7 +312,7 @@ func (g *generator) components() (string, error) {
 		return "", err
 	}
 	var components []component
-	if err := readJSON("components.json", &components); err != nil {
+	if err := readJSON(componentsFile, &components); err != nil {
 		return "", err
 	}
 	listedImages := map[string]bool{}
@@ -328,12 +344,12 @@ func (g *generator) components() (string, error) {
 	}
 	for _, image := range images.order {
 		if !listedImages[image] {
-			g.errorf("image %s is shipped but missing from components.json", image)
+			g.errorf("image %s is shipped but missing from %s", image, componentsFile)
 		}
 	}
 	for _, chart := range charts {
 		if !listedCharts[chart] {
-			g.errorf("chart %s is a dependency of the Helm chart but missing from components.json", chart)
+			g.errorf("chart %s is a dependency of the Helm chart but missing from %s", chart, componentsFile)
 		}
 	}
 	return table([]string{"Component", "License", "Shipped as", "Source"}, rows), nil
@@ -400,7 +416,7 @@ func findShippedCharts() ([]string, error) {
 
 func (g *generator) backend(ctx context.Context) (string, error) {
 	var overrides map[string]licenseOverride
-	if err := readJSON("go-license-overrides.json", &overrides); err != nil {
+	if err := readJSON(goLicenseOverridesFile, &overrides); err != nil {
 		return "", err
 	}
 	usedOverrides := map[string]bool{}
@@ -432,7 +448,7 @@ func (g *generator) backend(ctx context.Context) (string, error) {
 		if len(lib.Licenses) == 0 {
 			key := overrideFor(overrides, name)
 			if key == "" {
-				g.errorf("go-licenses cannot identify the license of %s, add it to go-license-overrides.json", name)
+				g.errorf("go-licenses cannot identify the license of %s, add it to %s", name, goLicenseOverridesFile)
 				continue
 			}
 			if !usedOverrides[key] {
@@ -475,7 +491,7 @@ func (g *generator) backend(ctx context.Context) (string, error) {
 	}
 	for _, key := range slices.Sorted(maps.Keys(overrides)) {
 		if !usedOverrides[key] {
-			g.errorf("go-license-overrides.json lists %s, which go-licenses no longer needs", key)
+			g.errorf("%s lists %s, which go-licenses no longer needs", goLicenseOverridesFile, key)
 		}
 	}
 
@@ -546,7 +562,7 @@ func (g *generator) frontend(npmReport string) (string, error) {
 	}
 	slices.SortFunc(packages, func(a, b npmPackage) int { return collator.CompareString(a.Name, b.Name) })
 	var licenseSources map[string]npmLicenseSource
-	if err := readJSON("npm-license-sources.json", &licenseSources); err != nil {
+	if err := readJSON(npmLicenseSourcesFile, &licenseSources); err != nil {
 		return "", err
 	}
 	usedLicenseSources := map[string]bool{}
@@ -574,7 +590,7 @@ func (g *generator) frontend(npmReport string) (string, error) {
 	}
 	for _, name := range slices.Sorted(maps.Keys(licenseSources)) {
 		if !usedLicenseSources[name] {
-			g.errorf("npm-license-sources.json lists %s, which no longer needs it", name)
+			g.errorf("%s lists %s, which no longer needs it", npmLicenseSourcesFile, name)
 		}
 	}
 	return table([]string{"Package", "Version", "License"}, rows), nil
@@ -597,31 +613,34 @@ func (g *generator) collectNpmLicenseSource(
 ) error {
 	source, ok := sources[name]
 	if !ok {
-		g.errorf("npm package %s contains no license file, add it to npm-license-sources.json", name)
+		g.errorf("npm package %s contains no license file, add it to %s", name, npmLicenseSourcesFile)
 		return nil
 	}
 	i := slices.IndexFunc(packages, func(p npmPackage) bool { return p.Name == source.Package })
 	if i < 0 {
-		g.errorf("npm-license-sources.json takes the license of %s from %s, which is not a dependency", name, source.Package)
+		g.errorf("%s takes the license of %s from %s, which is not a dependency",
+			npmLicenseSourcesFile, name, source.Package)
 		return nil
 	}
 	if found, err := g.collectNpmLicenses(name, packages[i].Paths); err != nil {
 		return err
 	} else if found == 0 {
-		g.errorf("npm-license-sources.json takes the license of %s from %s, which has no license file", name, source.Package)
+		g.errorf("%s takes the license of %s from %s, which has no license file",
+			npmLicenseSourcesFile, name, source.Package)
 	}
 	return nil
 }
 
-func render(template, output string, sections map[string]string) error {
-	data, err := os.ReadFile(filepath.Join(dir, template))
+func render(output string, sections map[string]string) error {
+	f, err := os.Create(output)
 	if err != nil {
 		return err
 	}
-	rendered := placeholder.ReplaceAllStringFunc(string(data), func(match string) string {
-		return sections[placeholder.FindStringSubmatch(match)[1]]
-	})
-	return os.WriteFile(output, []byte(rendered), 0o644)
+	if err := templates.ExecuteTemplate(f, filepath.Base(output), sections); err != nil {
+		_ = f.Close()
+		return fmt.Errorf("failed to render %s: %w", output, err)
+	}
+	return f.Close()
 }
 
 func readJSON(file string, v any) error {
