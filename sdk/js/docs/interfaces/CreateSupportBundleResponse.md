@@ -38,6 +38,26 @@
 
 ---
 
+### createdByCustomerOrganizationId?
+
+> `optional` **createdByCustomerOrganizationId?**: `string`
+
+#### Inherited from
+
+[`SupportBundle`](SupportBundle.md).[`createdByCustomerOrganizationId`](SupportBundle.md#createdbycustomerorganizationid)
+
+---
+
+### createdByDeleted?
+
+> `optional` **createdByDeleted?**: `boolean`
+
+#### Inherited from
+
+[`SupportBundle`](SupportBundle.md).[`createdByDeleted`](SupportBundle.md#createdbydeleted)
+
+---
+
 ### createdByImageUrl?
 
 > `optional` **createdByImageUrl?**: `string`
@@ -45,6 +65,16 @@
 #### Inherited from
 
 [`SupportBundle`](SupportBundle.md).[`createdByImageUrl`](SupportBundle.md#createdbyimageurl)
+
+---
+
+### createdByPartnerOrganizationId?
+
+> `optional` **createdByPartnerOrganizationId?**: `string`
+
+#### Inherited from
+
+[`SupportBundle`](SupportBundle.md).[`createdByPartnerOrganizationId`](SupportBundle.md#createdbypartnerorganizationid)
 
 ---
 
@@ -158,6 +188,26 @@
 
 ---
 
+### statusChangedByCustomerOrganizationId?
+
+> `optional` **statusChangedByCustomerOrganizationId?**: `string`
+
+#### Inherited from
+
+[`SupportBundle`](SupportBundle.md).[`statusChangedByCustomerOrganizationId`](SupportBundle.md#statuschangedbycustomerorganizationid)
+
+---
+
+### statusChangedByDeleted?
+
+> `optional` **statusChangedByDeleted?**: `boolean`
+
+#### Inherited from
+
+[`SupportBundle`](SupportBundle.md).[`statusChangedByDeleted`](SupportBundle.md#statuschangedbydeleted)
+
+---
+
 ### statusChangedByImageUrl?
 
 > `optional` **statusChangedByImageUrl?**: `string`
@@ -165,6 +215,16 @@
 #### Inherited from
 
 [`SupportBundle`](SupportBundle.md).[`statusChangedByImageUrl`](SupportBundle.md#statuschangedbyimageurl)
+
+---
+
+### statusChangedByPartnerOrganizationId?
+
+> `optional` **statusChangedByPartnerOrganizationId?**: `string`
+
+#### Inherited from
+
+[`SupportBundle`](SupportBundle.md).[`statusChangedByPartnerOrganizationId`](SupportBundle.md#statuschangedbypartnerorganizationid)
 
 ---
 

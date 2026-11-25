@@ -32,6 +32,18 @@
 
 ---
 
+### userCustomerOrganizationId?
+
+> `optional` **userCustomerOrganizationId?**: `string`
+
+---
+
+### userDeleted?
+
+> `optional` **userDeleted?**: `boolean`
+
+---
+
 ### userImageUrl?
 
 > `optional` **userImageUrl?**: `string`
@@ -41,3 +53,9 @@
 ### userName?
 
 > `optional` **userName?**: `string`
+
+---
+
+### userPartnerOrganizationId?
+
+> `optional` **userPartnerOrganizationId?**: `string`

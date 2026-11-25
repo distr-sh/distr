@@ -217,13 +217,9 @@ export function toCustomerHomeSupportBundles(bundles: SupportBundle[]): Customer
       title: bundle.title,
       status: bundle.status,
       updatedAt: bundle.statusChangedAt ?? bundle.createdAt,
-      // Only the vendor resolves a bundle, and the customer must not see who of the vendor did.
-      updatedBy:
-        bundle.status === 'resolved'
-          ? undefined
-          : bundle.statusChangedAt
-            ? user(bundle.statusChangedByUserName, bundle.statusChangedByImageUrl)
-            : user(bundle.createdByUserName, bundle.createdByImageUrl),
+      updatedBy: bundle.statusChangedAt
+        ? user(bundle.statusChangedByUserName, bundle.statusChangedByImageUrl)
+        : user(bundle.createdByUserName, bundle.createdByImageUrl),
     }))
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
