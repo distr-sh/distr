@@ -24,6 +24,8 @@ concurrency:
 jobs:
   build:
     name: Build
+    # The release pull request only bumps versions of what main has already checked.
+    if: ${{ github.head_ref != 'release-please--branches--main' }}
     runs-on: ubuntu-latest
     defaults:
       run:

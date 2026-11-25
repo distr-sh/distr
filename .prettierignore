@@ -7,3 +7,5 @@ deploy/charts/**/*.gotmpl
 internal/resources/*
 website/
 sdk/js/docs/
+*.go
+*.sql

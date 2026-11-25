@@ -1,0 +1,220 @@
+<ng-template #preflightConfirmTemplate>
+  @for (deploymentType of newlyWrappedDeploymentTypes(); track deploymentType) {
+    <p class="text-base leading-relaxed text-gray-500 dark:text-gray-200">
+      @switch (deploymentType) {
+        @case ('docker') {
+          This changes how Docker controllers are installed. All customers will receive a shell script instead of a
+          plain docker compose command. The install command will change from
+          <code class="rounded-sm bg-gray-100 px-1 py-0.5 font-mono text-sm dark:bg-gray-600"
+            >curl ... | docker compose -f - up -d</code
+          >
+          to
+          <code class="rounded-sm bg-gray-100 px-1 py-0.5 font-mono text-sm dark:bg-gray-600">curl ... | sh</code>,
+          which wraps docker compose with pre- and post-connect scripts.
+        }
+        @case ('kubernetes') {
+          This changes how Kubernetes controllers are installed. All customers will receive a shell script instead of a
+          plain kubectl command. The install command will change from
+          <code class="rounded-sm bg-gray-100 px-1 py-0.5 font-mono text-sm dark:bg-gray-600">kubectl apply ...</code>
+          to
+          <code class="rounded-sm bg-gray-100 px-1 py-0.5 font-mono text-sm dark:bg-gray-600">curl ... | sh</code>,
+          which wraps kubectl with pre- and post-connect scripts and requires curl and a POSIX shell.
+        }
+      }
+    </p>
+  }
+</ng-template>
+
+<form [formGroup]="form" (ngSubmit)="save()">
+  <div class="grid gap-4">
+    <div class="space-y-4">
+      <h2 class="text-xl font-bold dark:text-white">General</h2>
+      <div>
+        <label for="name" class="distr-label mb-2">Name *</label>
+        <input
+          formControlName="name"
+          autotrim
+          type="text"
+          name="name"
+          id="name"
+          class="distr-input"
+          placeholder="Name"
+          required />
+        <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
+          The name will be used in invitation mails.
+        </p>
+        @if (form.controls.name.invalid && form.controls.name.touched) {
+          <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
+        }
+      </div>
+
+      <div>
+        <label for="slug" class="distr-label mb-2">Slug</label>
+        <input
+          formControlName="slug"
+          autotrim
+          type="text"
+          name="slug"
+          id="slug"
+          class="distr-input"
+          placeholder="slug" />
+        <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
+          The slug is part of the URLs that belong to your organization: your artifact registry repositories and the
+          login and callback URL of every identity provider you configure. It has to start with a lowercase letter or
+          digit and may otherwise contain lowercase letters, digits and the characters ".", "_", "__" and "-".
+        </p>
+        @if (form.controls.slug.invalid && form.controls.slug.touched) {
+          <p class="mt-1 text-sm text-red-600 dark:text-red-500">Slug must be url safe.</p>
+        }
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <h2 class="text-xl font-bold dark:text-white">Artifact registry</h2>
+      <div>
+        <input
+          formControlName="artifactVersionMutable"
+          id="artifactVersionMutable"
+          type="checkbox"
+          class="distr-checkbox" />
+        <label for="artifactVersionMutable" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+          Artifact versions are mutable
+        </label>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <h2 class="text-xl font-bold dark:text-white">Controllers</h2>
+      <div>
+        <input
+          formControlName="controllerImageRepositoryEnabled"
+          id="controllerImageRepositoryEnabled"
+          type="checkbox"
+          class="distr-checkbox" />
+        <label for="controllerImageRepositoryEnabled" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+          Use an external controller repository
+        </label>
+        @if (currentOrganization(); as org) {
+          <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
+            By default, controller images are pulled from
+            <code class="font-mono">{{ org.defaultControllerImageRepository }}</code>.
+            <a [href]="controllerRepositoryDocsUrl" target="_blank" rel="noopener noreferrer" class="distr-link"
+              >Learn more</a
+            >
+          </p>
+        }
+        @if (isControllerImageRepositoryEnabled()) {
+          <input
+            formControlName="controllerImageRepository"
+            autotrim
+            type="text"
+            id="controllerImageRepository"
+            aria-label="Controller repository"
+            placeholder="registry.example.com/distr"
+            class="distr-input" />
+        }
+      </div>
+
+      <div>
+        <input
+          formControlName="prePostScriptsEnabled"
+          id="prePostScriptsEnabled"
+          type="checkbox"
+          class="distr-checkbox" />
+        <label for="prePostScriptsEnabled" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+          Enable Pre- and Post-Connect Scripts (Pre-Flight Checks)
+        </label>
+        <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
+          When enabled, controller install commands use a shell script that wraps docker compose or kubectl, so that
+          pre- and post-connect scripts can run during controller setup. Install commands only change for a platform
+          once a script is configured for it, or for Docker when it should run with sudo.
+        </p>
+      </div>
+
+      @if (isPrePostScriptEnabled()) {
+        <div class="space-y-4">
+          <h3 class="text-lg font-bold dark:text-white">Pre-/post-connect scripts</h3>
+          <app-pill-tab-bar [tabs]="connectScriptTabs" [(active)]="connectScriptTab" />
+
+          @switch (connectScriptTab()) {
+            @case ('docker') {
+              <div>
+                <label #dockerPreConnectScriptLabel class="distr-label mb-2 grow">Pre-connect script</label>
+                <app-editor
+                  [label]="dockerPreConnectScriptLabel"
+                  language="shell"
+                  formControlName="dockerPreConnectScript"
+                  class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [--editor-min-height:--spacing(40)]" />
+              </div>
+
+              <div>
+                <label #dockerPostConnectScriptLabel class="distr-label mb-2 grow">Post-connect script</label>
+                <app-editor
+                  [label]="dockerPostConnectScriptLabel"
+                  language="shell"
+                  formControlName="dockerPostConnectScript"
+                  class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [--editor-min-height:--spacing(40)]" />
+              </div>
+
+              <div>
+                <div class="flex items-center">
+                  <input
+                    formControlName="dockerConnectScriptIsSudo"
+                    id="dockerConnectScriptIsSudo"
+                    type="checkbox"
+                    class="distr-checkbox" />
+                  <label
+                    for="dockerConnectScriptIsSudo"
+                    class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                    Script should be run with sudo
+                  </label>
+                </div>
+              </div>
+            }
+            @case ('kubernetes') {
+              <div>
+                <label #kubernetesPreConnectScriptLabel class="distr-label mb-2 grow">Pre-connect script</label>
+                <app-editor
+                  [label]="kubernetesPreConnectScriptLabel"
+                  language="shell"
+                  formControlName="kubernetesPreConnectScript"
+                  class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [--editor-min-height:--spacing(40)]" />
+              </div>
+
+              <div>
+                <label #kubernetesPostConnectScriptLabel class="distr-label mb-2 grow">Post-connect script</label>
+                <app-editor
+                  [label]="kubernetesPostConnectScriptLabel"
+                  language="shell"
+                  formControlName="kubernetesPostConnectScript"
+                  class="distr-input block max-h-96 w-full min-w-0 overflow-auto p-0 [--editor-min-height:--spacing(40)]" />
+              </div>
+
+              <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+                The scripts run in a POSIX shell with the customer's kubeconfig. The namespace of the deployment target
+                is available as <code>$DISTR_NAMESPACE</code>.
+              </p>
+            }
+          }
+        </div>
+      }
+    </div>
+
+    @if (!auth.isSuperAdmin()) {
+      <div class="mt-4 flex w-full justify-center space-x-4">
+        <button
+          type="submit"
+          [disabled]="formLoading() || form.invalid"
+          class="distr-btn-primary inline-flex w-full items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-60">
+          <fa-icon [icon]="faFloppyDisk" size="lg" class="mr-2 mb-1 -ml-0.5 h-4 w-4" />
+          Save
+        </button>
+      </div>
+    }
+  </div>
+</form>
+
+@if (!auth.isSuperAdmin()) {
+  <h2 class="mt-8 mb-2 text-xl font-bold dark:text-white">Danger Zone</h2>
+  <app-delete-organization />
+}

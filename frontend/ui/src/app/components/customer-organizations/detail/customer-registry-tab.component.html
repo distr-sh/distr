@@ -1,0 +1,14 @@
+@if (isArtifactsDisabled() && customerOrganization(); as customer) {
+  <app-customer-feature-disabled-alert
+    [customerOrganization]="customer"
+    feature="artifacts"
+    heading="Artifacts are disabled for this customer."
+    enableLabel="Enable artifacts"
+    enabledMessage="Artifacts have been enabled for this customer"
+    class="mb-4">
+    The customer portal shows no artifacts until the feature is enabled.
+  </app-customer-feature-disabled-alert>
+}
+<app-artifact-pulls
+  [customerOrganizationId]="customerOrganizationId()"
+  [customerFeatureDisabled]="isArtifactsDisabled()" />

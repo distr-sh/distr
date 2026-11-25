@@ -61,15 +61,16 @@ type SupportBundle struct {
 }
 
 // CustomerSupportBundleEvent is the creation of a support bundle of a customer organization, or the latest
-// change of its status when Status is set. UserName and UserImageID are only set for a member of the
-// customer organization, since a customer must not learn who works for the vendor.
+// change of its status when Status is set. UserName and UserImageID are only set for a user the viewer may
+// know, see ActivityViewer, since a customer must not learn who works for the vendor.
 type CustomerSupportBundleEvent struct {
-	SupportBundleID uuid.UUID            `db:"support_bundle_id"`
-	CreatedAt       time.Time            `db:"created_at"`
-	Title           string               `db:"title"`
-	Status          *SupportBundleStatus `db:"status"`
-	UserName        *string              `db:"user_name"`
-	UserImageID     *uuid.UUID           `db:"user_image_id"`
+	SupportBundleID        uuid.UUID            `db:"support_bundle_id"`
+	CustomerOrganizationID uuid.UUID            `db:"customer_organization_id"`
+	CreatedAt              time.Time            `db:"created_at"`
+	Title                  string               `db:"title"`
+	Status                 *SupportBundleStatus `db:"status"`
+	UserName               *string              `db:"user_name"`
+	UserImageID            *uuid.UUID           `db:"user_image_id"`
 }
 
 type SupportBundleWithDetails struct {

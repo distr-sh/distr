@@ -1,82 +1,24 @@
 <app-page variant="narrow">
   <div class="flex flex-col gap-6">
-    <div class="distr-panel">
-      <nav class="flex justify-between" aria-label="Breadcrumb">
-        <ol class="mb-3 inline-flex items-center sm:mb-0">
-          <li class="flex items-center">
-            <a
-              [routerLink]="['/', 'settings', 'access-tokens']"
-              class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
-              <fa-icon class="mr-2" [icon]="faKey" />
-              Personal Access Tokens
-            </a>
-          </li>
-          @if (token()) {
-            <span class="mx-2 text-gray-400">/</span>
-            <li aria-current="page">
-              <div class="flex items-center">
-                <button
-                  cdkOverlayOrigin
-                  #dropdownTrigger="cdkOverlayOrigin"
-                  #dropdownTriggerButton
-                  (click)="toggleBreadcrumbDropdown()"
-                  class="inline-flex items-center rounded-lg px-3 py-2 text-center text-sm font-normal text-gray-700 hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 focus:outline-none dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white dark:focus:ring-gray-700">
-                  <span class="block max-w-64 overflow-hidden text-ellipsis whitespace-nowrap" [title]="name()">
-                    {{ name() }}
-                  </span>
-                  <fa-icon class="ml-2" [icon]="faChevronDown" />
-                </button>
-                <ng-template
-                  cdkConnectedOverlay
-                  [cdkConnectedOverlayHasBackdrop]="true"
-                  (backdropClick)="breadcrumbDropdown.set(false)"
-                  [cdkConnectedOverlayBackdropClass]="'transparent'"
-                  [cdkConnectedOverlayOrigin]="dropdownTrigger"
-                  [cdkConnectedOverlayMinWidth]="breadcrumbDropdownWidth() + 'px'"
-                  [cdkConnectedOverlayOpen]="breadcrumbDropdown()">
-                  <div
-                    animate.enter="animate-flip-in-top"
-                    animate.leave="animate-flip-out-top"
-                    class="distr-dropdown-panel w-full max-w-80">
-                    <ul>
-                      @for (sibling of siblings(); track sibling.id) {
-                        <li>
-                          <a
-                            class="distr-dropdown-item"
-                            [routerLink]="['/', 'settings', 'access-tokens', sibling.id]"
-                            [title]="sibling.name"
-                            (click)="breadcrumbDropdown.set(false)">
-                            <span class="truncate">{{ sibling.name }}</span>
-                          </a>
-                        </li>
-                      }
-                    </ul>
-                  </div>
-                </ng-template>
-              </div>
-            </li>
-          }
-        </ol>
-        @if (token()) {
-          <button type="button" (click)="deleteAccessToken()" class="distr-btn-danger px-3 py-2">
+    @if (token(); as token) {
+      <div class="distr-panel">
+        <div class="flex items-start justify-between gap-4">
+          <app-inline-edit
+            class="block min-w-0"
+            tag="h3"
+            size="lg"
+            [value]="token.label ?? ''"
+            [required]="false"
+            placeholder="Token label"
+            emptyLabel="No label"
+            textClass="block max-w-lg overflow-hidden text-ellipsis whitespace-nowrap text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
+            [loading]="savingLabel()"
+            (save)="saveLabel($event)" />
+          <button type="button" (click)="deleteAccessToken()" class="distr-btn-danger shrink-0 px-3 py-2">
             <fa-icon [icon]="faTrash" class="mr-2 h-4 w-4" />
             Delete Token
           </button>
-        }
-      </nav>
-
-      @if (token(); as token) {
-        <app-inline-edit
-          class="mt-4 block"
-          tag="h3"
-          size="lg"
-          [value]="token.label ?? ''"
-          [required]="false"
-          placeholder="Token label"
-          emptyLabel="No label"
-          textClass="block max-w-lg overflow-hidden text-ellipsis whitespace-nowrap text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
-          [loading]="savingLabel()"
-          (save)="saveLabel($event)" />
+        </div>
 
         <dl class="mt-4 grid grid-cols-3 gap-6 text-sm">
           @if (!legacy()) {
@@ -102,12 +44,14 @@
             <dd class="text-gray-900 dark:text-white">{{ roleLabel() }}</dd>
           </div>
         </dl>
-      } @else if (!loading()) {
-        <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">
+      </div>
+    } @else if (!loading()) {
+      <div class="distr-panel">
+        <p class="text-sm text-gray-500 dark:text-gray-400">
           This token does not exist. It may have been deleted in the meantime.
         </p>
-      }
-    </div>
+      </div>
+    }
 
     @if (token()) {
       <div class="distr-table-panel">

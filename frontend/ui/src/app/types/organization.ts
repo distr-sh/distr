@@ -1,19 +1,12 @@
 import {BaseModel, Named, UserRole} from '@distr-sh/distr-sdk';
-import {isExpiredSubscription, SubscriptionType} from './subscription';
+import {isExpiredSubscription, PlanManagedFeature, SubscriptionType} from './subscription';
 
+/**
+ * Mirrors the Feature constants in internal/types/types.go. A plan-managed feature belongs in FEATURE_UPGRADE_PLANS,
+ * every other one is granted out of band and listed here.
+ */
 export type Feature =
-  | 'licensing'
-  | 'pre_post_scripts'
-  | 'artifact_version_mutable'
-  | 'vendor_billing'
-  | 'deployment_logs_after'
-  | 'partner_management'
-  | 'custom_domains'
-  | 'vulnerabilities'
-  | 'custom_emails'
-  | 'custom_oidc_providers'
-  | 'auto_updates'
-  | 'customer_settings';
+  PlanManagedFeature | 'pre_post_scripts' | 'artifact_version_mutable' | 'vendor_billing' | 'deployment_logs_after';
 
 export interface SubscriptionLimits {
   maxCustomerOrganizations: number;

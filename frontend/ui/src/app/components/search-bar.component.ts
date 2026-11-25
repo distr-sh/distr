@@ -2,17 +2,11 @@ import {Component, ElementRef, input, viewChild} from '@angular/core';
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faMagnifyingGlass} from '@fortawesome/free-solid-svg-icons';
+import {isEditable} from '../../util/keyboard';
 import {AutofocusDirective} from '../directives/autofocus.directive';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 
 let nextId = 0;
-
-function isEditable(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
-  );
-}
 
 function isBehindOverlay(element: Element): boolean {
   const backdrops = document.querySelectorAll('.cdk-overlay-backdrop');
@@ -46,16 +40,19 @@ function isBehindOverlay(element: Element): boolean {
         [placeholder]="placeholder()"
         [autofocus]="autofocus()"
         [attr.aria-keyshortcuts]="hotkey() ? '/' : null"
+        [attr.role]="listboxId() ? 'combobox' : null"
+        [attr.aria-controls]="listboxId() ?? null"
+        [attr.aria-expanded]="listboxId() ? true : null"
+        [attr.aria-autocomplete]="listboxId() ? 'list' : null"
+        [attr.aria-activedescendant]="activeOptionId() ?? null"
+        (keydown.escape)="$event.preventDefault(); input.blur()"
         autotrim
         type="search"
         class="peer distr-input p-2 pl-10 placeholder-shown:pr-10" />
       @if (hotkey()) {
         <div
           class="pointer-events-none absolute inset-y-0 right-0 hidden items-center pr-3 peer-placeholder-shown:flex peer-focus:hidden">
-          <kbd
-            class="rounded-sm border border-gray-200 bg-gray-100 px-1.5 font-sans text-xs text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
-            /
-          </kbd>
+          <kbd class="distr-kbd">/</kbd>
         </div>
       }
     </div>
@@ -66,12 +63,19 @@ export class SearchBarComponent {
   public readonly placeholder = input.required<string>();
   public readonly autofocus = input(false);
   public readonly hotkey = input(true);
+  /** Makes the input a combobox for the listbox with this id, whose options the user moves through from the input. */
+  public readonly listboxId = input<string>();
+  public readonly activeOptionId = input<string>();
 
   private readonly input = viewChild.required<ElementRef<HTMLInputElement>>('input');
 
   // the label needs an id to point at, and more than one search bar can be on the page at a time
   protected readonly id = `search-bar-${nextId++}`;
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
+
+  public focus(): void {
+    this.input().nativeElement.focus();
+  }
 
   /** Focuses the first visible search bar of the topmost layer when "/" is pressed outside of a text field. */
   protected onDocumentKeydown(event: KeyboardEvent): void {

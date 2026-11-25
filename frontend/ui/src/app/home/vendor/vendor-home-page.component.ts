@@ -1,0 +1,364 @@
+import {NgPlural, NgPluralCase} from '@angular/common';
+import {Component, computed, inject, signal} from '@angular/core';
+import {toObservable, toSignal} from '@angular/core/rxjs-interop';
+import {RouterLink} from '@angular/router';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
+import {
+  faAddressBook,
+  faBoxesStacked,
+  faCircleArrowUp,
+  faKey,
+  faLifeRing,
+  faListCheck,
+  faShieldHalved,
+} from '@fortawesome/free-solid-svg-icons';
+import {combineLatest, firstValueFrom, map, of, switchMap} from 'rxjs';
+import {refreshInBackground} from '../../../util/refresh';
+import {toActivityFeedItems} from '../../components/activity-feed/activity-feed';
+import {ActivityFeedComponent} from '../../components/activity-feed/activity-feed.component';
+import {AvatarComponent} from '../../components/avatar.component';
+import {CardHeadingComponent} from '../../components/card-heading.component';
+import {CustomerUpdateStatus} from '../../components/customer-organizations/customer-list-display';
+import {CustomerLicenseStatus} from '../../components/customer-organizations/customer-list-mappers';
+import {LoadingCardComponent} from '../../components/loading-card/loading-card.component';
+import {PageComponent} from '../../components/page.component';
+import {ActivityFeedService} from '../../services/activity-feed.service';
+import {AdvisoriesService} from '../../services/advisories.service';
+import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
+import {ApplicationsService} from '../../services/applications.service';
+import {ArtifactPullsService} from '../../services/artifact-pulls.service';
+import {AuthService} from '../../services/auth.service';
+import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
+import {DeploymentTargetsService} from '../../services/deployment-targets.service';
+import {FeatureFlagService} from '../../services/feature-flag.service';
+import {LicensesService} from '../../services/licenses.service';
+import {OrganizationService} from '../../services/organization.service';
+import {SupportBundlesService} from '../../services/support-bundles.service';
+import {TutorialsService} from '../../services/tutorials.service';
+import {QuickNavigationCardComponent, QuickNavigationCardType} from '../quick-navigation-card.component';
+import {DeploymentHealth, VendorHomeLicenses, VendorHomeUpdates} from './vendor-home';
+import {
+  filterOpenSupportBundles,
+  licenseExpiryWindowDays,
+  toAffectedCustomerNames,
+  toDeploymentHealth,
+  toVendorHomeAdvisoryCounts,
+  toVendorHomeCustomers,
+  toVendorHomeLicenses,
+  toVendorHomeUpdates,
+  vendorHomeAttentionStatuses,
+  vendorHomeOpenAdvisoryStatuses,
+} from './vendor-home-mappers';
+import {VendorHomeTutorialsComponent} from './vendor-home-tutorials.component';
+
+const vendorHomeMaxCustomers = 10;
+const vendorHomeMaxAffectedNames = 2;
+
+function toAffectedSummary(names: string[]) {
+  return {
+    names: names.slice(0, vendorHomeMaxAffectedNames),
+    more: Math.max(names.length - vendorHomeMaxAffectedNames, 0),
+  };
+}
+
+function deploymentHealthType(health: DeploymentHealth): QuickNavigationCardType {
+  if (health.error > 0) {
+    return 'error';
+  } else if (health.stale > 0) {
+    return 'warning';
+  } else if (health.healthy + health.running > 0) {
+    return 'success';
+  } else {
+    return 'neutral';
+  }
+}
+
+function updatesCardType(updates: VendorHomeUpdates): QuickNavigationCardType {
+  if (updates.outdatedCustomers > 0) {
+    return 'warning';
+  } else if (updates.hasDeploymentsOrPulls) {
+    return 'success';
+  } else {
+    return 'neutral';
+  }
+}
+
+function licensesCardType(licenses: VendorHomeLicenses): QuickNavigationCardType {
+  if (licenses.expiredCustomerIds.length > 0) {
+    return 'error';
+  } else if (licenses.expiringCustomerIds.length + licenses.unlicensedCustomerIds.length > 0) {
+    return 'warning';
+  } else if (licenses.isLicensingInUse) {
+    return 'success';
+  } else {
+    return 'neutral';
+  }
+}
+
+function supportCardType(open: number, isConfigured: boolean): QuickNavigationCardType {
+  if (open > 0) {
+    return 'warning';
+  } else if (isConfigured) {
+    return 'success';
+  } else {
+    return 'neutral';
+  }
+}
+
+@Component({
+  selector: 'app-vendor-home-page',
+  templateUrl: './vendor-home-page.component.html',
+  imports: [
+    NgPlural,
+    NgPluralCase,
+    RouterLink,
+    FaIconComponent,
+    PageComponent,
+    AvatarComponent,
+    CardHeadingComponent,
+    LoadingCardComponent,
+    QuickNavigationCardComponent,
+    ActivityFeedComponent,
+    QuickNavigationCardComponent,
+    VendorHomeTutorialsComponent,
+  ],
+})
+export class VendorHomePageComponent {
+  private readonly auth = inject(AuthService);
+  private readonly organizationService = inject(OrganizationService);
+  private readonly tutorialsService = inject(TutorialsService);
+  private readonly artifactPullsService = inject(ArtifactPullsService);
+  private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
+  private readonly deploymentTargetsService = inject(DeploymentTargetsService);
+  private readonly applicationsService = inject(ApplicationsService);
+  private readonly activityFeedService = inject(ActivityFeedService);
+  private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
+  private readonly featureFlags = inject(FeatureFlagService);
+
+  private readonly licensesService = inject(LicensesService);
+
+  private readonly supportBundlesService = inject(SupportBundlesService);
+
+  private readonly advisoriesService = inject(AdvisoriesService);
+
+  protected readonly isVendor = this.auth.isVendor();
+  protected readonly activityViewer = this.isVendor ? 'vendor' : 'partner';
+  private readonly canConfigureSupport = this.isVendor && this.auth.hasAnyRole('read_write', 'admin');
+  protected readonly canCreateCustomers = this.auth.hasAnyRole('read_write', 'admin');
+  protected readonly faAddressBook = faAddressBook;
+  protected readonly faBoxesStacked = faBoxesStacked;
+  protected readonly faCircleArrowUp = faCircleArrowUp;
+  protected readonly faKey = faKey;
+  protected readonly faLifeRing = faLifeRing;
+  protected readonly faListCheck = faListCheck;
+  protected readonly faShieldHalved = faShieldHalved;
+
+  private readonly tutorialsAvailable = computed(
+    () => this.isVendor && this.auth.hasRole('admin') && !this.organizationService.hasSubscription()
+  );
+  /** `null` while the user cannot take the tutorials. */
+  private readonly tutorials = toSignal(
+    toObservable(this.tutorialsAvailable).pipe(
+      switchMap((available) => (available ? this.tutorialsService.tutorialsProgress$ : of(null)))
+    )
+  );
+  private readonly tutorialsHiddenKey = `home.tutorialsHidden.${this.auth.getClaims()?.org ?? 'none'}.${this.auth.getClaims()?.sub ?? 'none'}`;
+  private readonly tutorialsHidden = signal(localStorage.getItem(this.tutorialsHiddenKey) === 'true');
+  protected readonly visibleTutorials = computed(() => (this.tutorialsHidden() ? undefined : this.tutorials()));
+  protected readonly tutorialsRestorable = computed(() => !!this.tutorials() && this.tutorialsHidden());
+
+  private readonly customers = toSignal(this.customerOrganizationsService.getCustomerOrganizations());
+  protected readonly customerCount = computed(() => this.customers()?.length);
+  private readonly deploymentTargets = toSignal(this.deploymentTargetsService.list());
+  protected readonly deploymentHealth = computed(() => {
+    const targets = this.deploymentTargets();
+    if (targets === undefined) {
+      return undefined;
+    }
+    const health = toDeploymentHealth(targets);
+    const type = deploymentHealthType(health);
+    const affected = toAffectedCustomerNames(targets, type === 'error' ? 'error' : 'stale');
+    return {...health, type, affected: toAffectedSummary(affected)};
+  });
+  private readonly deploymentCount = computed(() => this.deploymentHealth()?.total);
+  protected readonly deploymentAttentionQueryParams = {status: vendorHomeAttentionStatuses};
+  protected readonly outdatedCustomersQueryParams = {updates: ['outdated'] satisfies CustomerUpdateStatus[]};
+  private readonly applications = toSignal(this.applicationsService.list());
+  private readonly applicationCount = computed(() => {
+    const applications = this.applications();
+    // Partners have no applications page, so their summary leaves the applications out.
+    return applications === undefined ? undefined : this.isVendor ? applications.length : null;
+  });
+  private readonly applicationEntitlements = toSignal(
+    this.featureFlags.isLicensingEnabled$.pipe(
+      switchMap((enabled) => (enabled ? this.applicationEntitlementsService.list() : of([])))
+    )
+  );
+
+  protected readonly licenseExpiryWindowDays = licenseExpiryWindowDays;
+  /** `null` while the organization has no licensing. */
+  private readonly licenseCustomers = toSignal(
+    this.featureFlags.isLicensingEnabled$.pipe(
+      switchMap((enabled) =>
+        enabled
+          ? combineLatest([
+              this.customerOrganizationsService.getCustomerOrganizations(),
+              this.licensesService.list(),
+            ]).pipe(map(([customers, licenses]) => toVendorHomeLicenses(customers, licenses)))
+          : of(null)
+      )
+    )
+  );
+  protected readonly licenseCard = computed(() => {
+    const licenses = this.licenseCustomers();
+    if (licenses === undefined || licenses === null) {
+      return licenses;
+    }
+    const expired = licenses.expiredCustomerIds.length;
+    const expiring = licenses.expiringCustomerIds.length;
+    const unlicensed = licenses.unlicensedCustomerIds.length;
+    const statuses: CustomerLicenseStatus[] = [
+      ...(expired > 0 ? ['expired' as const] : []),
+      ...(expiring > 0 ? ['expiring' as const] : []),
+      ...(unlicensed > 0 ? ['no_license' as const] : []),
+    ];
+    return {
+      customers: expired + expiring + unlicensed,
+      expired,
+      expiring,
+      unlicensed,
+      statusCount: statuses.length,
+      type: licensesCardType(licenses),
+      link: '/customers',
+      queryParams: statuses.length > 0 ? {license: statuses} : undefined,
+    };
+  });
+
+  /** `null` while the organization's plan has no support bundles. */
+  private readonly supportState = toSignal(
+    this.featureFlags.isSupportBundlesEnabled$.pipe(
+      switchMap((enabled) =>
+        enabled
+          ? combineLatest([
+              this.supportBundlesService.list(),
+              // Partners cannot read the configuration, and the support page shows them no banner about it either.
+              this.isVendor ? this.supportBundlesService.hasConfiguration() : of(true),
+            ]).pipe(map(([bundles, isConfigured]) => ({openBundles: filterOpenSupportBundles(bundles), isConfigured})))
+          : of(null)
+      )
+    )
+  );
+  private readonly latestArtifactPulls = toSignal(this.artifactPullsService.listLatest());
+
+  protected readonly updates = computed(() => {
+    const customers = this.customers();
+    const targets = this.deploymentTargets();
+    const applications = this.applications();
+    const entitlements = this.applicationEntitlements();
+    const pulls = this.latestArtifactPulls();
+    if (
+      customers === undefined ||
+      targets === undefined ||
+      applications === undefined ||
+      entitlements === undefined ||
+      pulls === undefined
+    ) {
+      return undefined;
+    }
+    const updates = toVendorHomeUpdates(customers, targets, applications, entitlements, pulls);
+    return {...updates, type: updatesCardType(updates)};
+  });
+
+  protected readonly homeCustomers = computed(() => {
+    const customers = this.customers();
+    const targets = this.deploymentTargets();
+    const applications = this.applications();
+    const entitlements = this.applicationEntitlements();
+    const pulls = this.latestArtifactPulls();
+    const licenses = this.licenseCustomers();
+    const support = this.supportState();
+    if (
+      customers === undefined ||
+      targets === undefined ||
+      applications === undefined ||
+      entitlements === undefined ||
+      pulls === undefined ||
+      licenses === undefined ||
+      support === undefined
+    ) {
+      return undefined;
+    }
+    return toVendorHomeCustomers(
+      customers,
+      targets,
+      applications,
+      entitlements,
+      pulls,
+      licenses,
+      support?.openBundles ?? null
+    ).slice(0, vendorHomeMaxCustomers);
+  });
+
+  protected readonly supportCard = computed(() => {
+    const state = this.supportState();
+    if (state === undefined || state === null) {
+      return state;
+    }
+    const open = state.openBundles.length;
+    const isConfigured = state.isConfigured;
+    const shouldConfigure = open === 0 && !isConfigured && this.canConfigureSupport;
+    return {
+      open,
+      shouldConfigure,
+      type: supportCardType(open, isConfigured),
+      link: shouldConfigure ? '/support/settings' : '/support',
+    };
+  });
+
+  /** `null` while the organization's plan has no vulnerabilities. */
+  protected readonly advisoryCounts = toSignal(
+    this.isVendor
+      ? this.featureFlags.isVulnerabilitiesEnabled$.pipe(
+          switchMap((enabled) =>
+            enabled ? this.advisoriesService.list().pipe(map(toVendorHomeAdvisoryCounts)) : of(null)
+          )
+        )
+      : of(null)
+  );
+
+  protected readonly openAdvisoryQueryParams = {status: vendorHomeOpenAdvisoryStatuses};
+
+  protected readonly counts = computed(() => {
+    const customers = this.customerCount();
+    const deployments = this.deploymentCount();
+    const applications = this.applicationCount();
+    return customers === undefined || deployments === undefined || applications === undefined
+      ? undefined
+      : {customers, deployments, applications};
+  });
+
+  protected readonly activity = toSignal(this.activityFeedService.list().pipe(map(toActivityFeedItems)));
+
+  protected setTutorialsHidden(hidden: boolean) {
+    if (hidden) {
+      localStorage.setItem(this.tutorialsHiddenKey, 'true');
+    } else {
+      localStorage.removeItem(this.tutorialsHiddenKey);
+    }
+    this.tutorialsHidden.set(hidden);
+  }
+
+  constructor() {
+    this.tutorialsService.refreshList();
+    refreshInBackground(
+      this.customerOrganizationsService.refresh(),
+      this.deploymentTargetsService.refresh(),
+      this.activityFeedService.refresh(),
+      this.applicationsService.refresh(),
+      this.artifactPullsService.refreshLatest(),
+      firstValueFrom(this.featureFlags.isLicensingEnabled$).then((enabled) =>
+        enabled ? this.applicationEntitlementsService.refresh() : undefined
+      )
+    );
+  }
+}

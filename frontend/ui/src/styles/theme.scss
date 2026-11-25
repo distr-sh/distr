@@ -55,6 +55,21 @@
     @apply text-gray-500 dark:text-gray-400;
   }
 
+  // a placeholder bar standing in for content that is still loading
+  .distr-skeleton {
+    @apply animate-pulse rounded-sm bg-gray-200 dark:bg-gray-700;
+  }
+
+  // an inline text link in running text
+  .distr-link {
+    @apply font-medium text-primary-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:no-underline dark:text-primary-500;
+  }
+
+  // a link inside an `app-alert` or `distr-hint-warning`, in the text color of its surroundings
+  .distr-link-inherit {
+    @apply font-semibold underline;
+  }
+
   // the track of a toggle switch, following a `<input type="checkbox" class="sr-only peer">`
   .distr-toggle {
     @apply relative h-6 w-11 rounded-full bg-gray-200 peer-checked:bg-blue-600 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-blue-300 after:absolute after:inset-s-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white rtl:peer-checked:after:-translate-x-full dark:border-gray-600 dark:bg-gray-700 dark:peer-checked:bg-blue-600 dark:peer-focus-visible:ring-blue-800;
@@ -65,14 +80,27 @@
     @apply h-4 w-7 after:h-3 after:w-3;
   }
 
+  // a `<label>` wrapping a `distr-toggle` and its text, dimmed as a whole while the toggle is disabled
+  .distr-toggle-label {
+    @apply inline-flex cursor-pointer items-center gap-3 text-sm font-medium text-gray-900 has-disabled:cursor-not-allowed has-disabled:opacity-60 dark:text-white;
+  }
+
   .distr-input {
     @apply block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 placeholder-gray-500 focus:border-primary-600 focus:ring-primary-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500;
+
+    &:is(select, button) {
+      @apply not-disabled:hover:bg-gray-100 dark:not-disabled:hover:bg-gray-600;
+    }
   }
 
   // for a `distr-input` on a surface that is `dark:bg-gray-700` itself, where the default fill would
   // be the same color as the surface in dark mode. Must stay below `.distr-input` to override it.
   .distr-input-raised {
     @apply dark:border-gray-500 dark:bg-gray-600;
+
+    &:is(select, button) {
+      @apply dark:not-disabled:hover:bg-gray-500;
+    }
   }
 
   // a `distr-input` in a compact filter row, next to a button of the same height
@@ -176,6 +204,11 @@
     @apply rounded-lg border border-gray-200 bg-white p-3 text-sm font-medium text-gray-900 shadow-lg dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200;
   }
 
+  // a key of a keyboard shortcut, on a `<kbd>`
+  .distr-kbd {
+    @apply rounded-sm border border-gray-200 bg-gray-100 px-1.5 font-sans text-xs text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400;
+  }
+
   // the white surface of a page. `distr-panel` is padded for prose and forms, `distr-table-panel`
   // is flush so that a table or list can span its full width.
   // No `overflow-hidden` here, unlike `distr-table-panel`: a padded panel has nothing to clip at its
@@ -201,7 +234,7 @@
 
   // for cards whose content is too wide for the columns of `distr-card-grid`
   .distr-card-grid-wide {
-    @apply grid grid-cols-1 items-stretch gap-4 2xl:grid-cols-2;
+    @apply grid grid-cols-[repeat(auto-fill,minmax(min(32rem,100%),1fr))] items-stretch gap-4;
   }
 
   .distr-card {
@@ -210,6 +243,24 @@
 
   .distr-card-clickable {
     @apply cursor-pointer transition-shadow hover:bg-gray-100 hover:shadow-md dark:hover:bg-gray-700;
+  }
+
+  // the colors of an `app-alert`, for a notice in a layout of its own such as a `distr-card`. Must
+  // stay below `.distr-card` to override it.
+  .distr-alert-success {
+    @apply border border-current text-green-800 not-dark:bg-green-50 dark:text-green-400;
+  }
+
+  .distr-alert-info {
+    @apply border border-current text-blue-800 not-dark:bg-blue-50 dark:text-blue-400;
+  }
+
+  .distr-alert-warning {
+    @apply border border-current text-yellow-800 not-dark:bg-yellow-50 dark:text-yellow-300;
+  }
+
+  .distr-alert-error {
+    @apply border border-current text-red-800 not-dark:bg-red-50 dark:text-red-400;
   }
 
   // the row above a table or card grid that holds `app-search-bar` and the page actions. Inside a

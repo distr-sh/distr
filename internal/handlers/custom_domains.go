@@ -174,8 +174,7 @@ func deleteCustomDomainHandler(r *http.Request) (respond.Responder, error) {
 		return customDomainNotFound, nil
 	} else if errors.Is(err, distrerr.ErrConflict) {
 		return respond.Conflict(
-			"this domain still has an identity provider configured, please delete it on the " +
-				"Custom Domains & Identity Provider tab first"), nil
+			"this domain still has an identity provider configured, please delete it first"), nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to delete custom domain: %w", err)
 	} else {

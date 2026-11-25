@@ -5,26 +5,14 @@
       <fa-icon size="lg" [icon]="faCircleExclamation" class="mt-1 mr-3 hidden h-6 w-6 lg:flex" />
       <p class="text-sm">
         Your <span class="font-semibold uppercase">{{ organization().subscriptionType }}</span> subscription has expired
-        on <span class="font-semibold">{{ organization().subscriptionEndsAt | date: 'longDate' }}</span
-        >.
-        <span class="hidden md:inline">
-          @if (isTrial()) {
-            <br />Please choose a plan to continue using Distr.
-          } @else {
-            <br />Please review your payment information in the <strong>Manage Subscription</strong> section.
-          }
-        </span>
+        on <span class="font-semibold">{{ organization().subscriptionEndsAt | date: 'longDate' }}</span>.
+        <span class="hidden md:inline"> <br />Please choose a plan to continue using Distr. </span>
       </p>
     </div>
     <div class="hidden md:flex">
       @if (isVendorAdmin()) {
         <div class="flex shrink-0 items-center space-x-4 lg:pl-10">
-          <a
-            [href]="websiteUrl + '/contact/'"
-            target="_blank"
-            class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-500"
-            >Contact Sales</a
-          >
+          <a [href]="websiteUrl + '/contact/'" target="_blank" class="distr-link text-sm">Contact Sales</a>
         </div>
       }
       @if (isVendorNonAdmin()) {
@@ -42,8 +30,7 @@
           You are currently on the Distr Pro Unlimited trial. Your trial will expire on
           <span class="font-semibold text-gray-900 dark:text-white">{{
             organization().subscriptionEndsAt | date: 'longDate'
-          }}</span
-          >.
+          }}</span>.
           <span class="hidden md:inline">
             @if (isVendorNonAdmin()) {
               <br />Please contact your administrator to upgrade.
@@ -54,14 +41,9 @@
     </div>
     @if (isVendorAdmin()) {
       <div class="hidden shrink-0 items-center space-x-4 md:flex lg:pl-10">
+        <a [href]="websiteUrl + '/contact/'" target="_blank" class="distr-link text-sm">Contact Sales</a>
         <a
-          [href]="websiteUrl + '/contact/'"
-          target="_blank"
-          class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-500"
-          >Contact Sales</a
-        >
-        <a
-          routerLink="/subscription"
+          routerLink="/settings/organization/subscription"
           class="rounded-lg bg-blue-700 px-4 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 focus:outline-none dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
           >Upgrade Now</a
         >

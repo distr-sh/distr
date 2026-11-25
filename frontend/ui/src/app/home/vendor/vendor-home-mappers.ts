@@ -1,0 +1,236 @@
+import {
+  Advisory,
+  AdvisoryStatus,
+  Application,
+  CustomerOrganization,
+  CustomerOrganizationWithUsage,
+  DeploymentTarget,
+} from '@distr-sh/distr-sdk';
+import dayjs, {Dayjs} from 'dayjs';
+import {isDeploymentOutdated} from '../../../util/versions';
+import {
+  DeploymentDisplayStatus,
+  deploymentDisplayStatus,
+} from '../../deployments/deployment-target-card/deployment-status-text.component';
+import {ApplicationEntitlement} from '../../types/application-entitlement';
+import {LatestArtifactPull} from '../../types/artifact-version-pull';
+import {License} from '../../types/license';
+import {SupportBundle, SupportBundleStatus} from '../../types/support-bundle';
+import {
+  DeploymentHealth,
+  VendorHomeAdvisoryCounts,
+  VendorHomeCustomer,
+  VendorHomeLicenses,
+  VendorHomeUpdates,
+} from './vendor-home';
+
+/** The status filter the deployments card links to, which has to show exactly the error and stale deployments. */
+export const vendorHomeAttentionStatuses: readonly DeploymentDisplayStatus[] = ['error', 'stale'];
+
+export const licenseExpiryWindowDays = 30;
+
+const openSupportBundleStatuses: readonly SupportBundleStatus[] = ['initialized', 'created'];
+
+/**
+ * The customers with an expired license key or entitlement, those without one but with one that expires within the
+ * window and, once some customer has a license, those without one, so that every customer counts once.
+ */
+export function toVendorHomeLicenses(
+  customers: CustomerOrganization[],
+  licenses: License[],
+  now: Dayjs = dayjs()
+): VendorHomeLicenses {
+  const threshold = now.add(licenseExpiryWindowDays, 'day');
+  const licenseByCustomer = new Map(licenses.map((license) => [license.customerOrganization.id, license]));
+  const grants = (license: License | undefined) =>
+    license ? [...license.licenseKeys, ...license.applicationEntitlements, ...license.artifactEntitlements] : [];
+  const isLicensingInUse = licenses.some((license) => grants(license).length > 0);
+  const result: VendorHomeLicenses = {
+    isLicensingInUse,
+    expiredCustomerIds: [],
+    expiringCustomerIds: [],
+    unlicensedCustomerIds: [],
+  };
+  for (const customer of customers) {
+    const customerGrants = grants(licenseByCustomer.get(customer.id));
+    const dates = customerGrants.map((it) => it.expiresAt).filter((expiresAt) => expiresAt !== undefined);
+    if (customerGrants.length === 0) {
+      if (isLicensingInUse) {
+        result.unlicensedCustomerIds.push(customer.id);
+      }
+    } else if (dates.some((expiresAt) => !now.isBefore(expiresAt))) {
+      result.expiredCustomerIds.push(customer.id);
+    } else if (dates.some((expiresAt) => !threshold.isBefore(expiresAt))) {
+      result.expiringCustomerIds.push(customer.id);
+    }
+  }
+  return result;
+}
+
+export function filterOpenSupportBundles(bundles: SupportBundle[]): SupportBundle[] {
+  return bundles.filter((bundle) => openSupportBundleStatuses.includes(bundle.status));
+}
+
+/** The advisory statuses the advisories card counts and links to. */
+export const vendorHomeOpenAdvisoryStatuses: AdvisoryStatus[] = ['triage', 'draft', 'published'];
+
+export function toVendorHomeAdvisoryCounts(advisories: Advisory[]): VendorHomeAdvisoryCounts {
+  const count = (status: AdvisoryStatus) => advisories.reduce((c, it) => (it.status === status ? c + 1 : c), 0);
+  return {
+    total: advisories.length,
+    open: advisories.filter((it) => vendorHomeOpenAdvisoryStatuses.includes(it.status)).length,
+    triage: count('triage'),
+    draft: count('draft'),
+    published: count('published'),
+  };
+}
+
+export function toDeploymentHealth(targets: DeploymentTarget[]): DeploymentHealth {
+  const statuses = targets.flatMap((target) => target.deployments.map(deploymentDisplayStatus));
+  const count = (status: DeploymentDisplayStatus) => statuses.reduce((c, it) => (it === status ? c + 1 : c), 0);
+  return {
+    total: statuses.length,
+    healthy: count('healthy'),
+    running: count('running'),
+    error: count('error'),
+    stale: count('stale'),
+    progressing: count('progressing'),
+  };
+}
+
+/** The customers with a deployment in `status`, each once, named by the target where it belongs to no customer. */
+export function toAffectedCustomerNames(targets: DeploymentTarget[], status: DeploymentDisplayStatus): string[] {
+  const names = new Map<string | undefined, string>();
+  for (const target of targets) {
+    if (target.deployments.some((it) => deploymentDisplayStatus(it) === status)) {
+      const key = target.customerOrganization?.id ?? target.id;
+      names.set(key, target.customerOrganization?.name ?? target.name);
+    }
+  }
+  return [...names.values()];
+}
+
+function customerTargets(customer: CustomerOrganization, targets: DeploymentTarget[]): DeploymentTarget[] {
+  return targets.filter((target) => target.customerOrganization?.id === customer.id);
+}
+
+export interface CustomerUpdates {
+  hasDeploymentsOrPulls: boolean;
+  isOutdated: boolean;
+  outdatedDeployments: number;
+}
+
+/**
+ * A customer is outdated when one of its deployments is. A customer without deployments is outdated when it
+ * pulled an artifact it may pull a newer tag of.
+ */
+export function toCustomerUpdates(
+  customer: CustomerOrganization,
+  targets: DeploymentTarget[],
+  applications: Application[],
+  entitlements: ApplicationEntitlement[],
+  pulls: LatestArtifactPull[]
+): CustomerUpdates {
+  const deployments = customerTargets(customer, targets).flatMap((target) => target.deployments);
+  const customerPulls = pulls.filter((pull) => pull.customerOrganizationId === customer.id);
+  const outdatedDeployments = deployments.filter((it) => isDeploymentOutdated(it, applications, entitlements)).length;
+  const isOutdated =
+    deployments.length > 0 ? outdatedDeployments > 0 : customerPulls.some((pull) => pull.availableUpdate !== undefined);
+  return {hasDeploymentsOrPulls: deployments.length + customerPulls.length > 0, isOutdated, outdatedDeployments};
+}
+
+export function toVendorHomeUpdates(
+  customers: CustomerOrganization[],
+  targets: DeploymentTarget[],
+  applications: Application[],
+  entitlements: ApplicationEntitlement[],
+  pulls: LatestArtifactPull[]
+): VendorHomeUpdates {
+  let hasDeploymentsOrPulls = false;
+  let outdatedCustomers = 0;
+  for (const customer of customers) {
+    const updates = toCustomerUpdates(customer, targets, applications, entitlements, pulls);
+    hasDeploymentsOrPulls ||= updates.hasDeploymentsOrPulls;
+    if (updates.isOutdated) {
+      outdatedCustomers++;
+    }
+  }
+  return {totalCustomers: customers.length, hasDeploymentsOrPulls, outdatedCustomers};
+}
+
+function toCustomerUsage(
+  customer: CustomerOrganizationWithUsage,
+  deployments: number,
+  pulls: LatestArtifactPull[]
+): VendorHomeCustomer['usage'] {
+  if (customer.features.includes('deployment_targets')) {
+    return {type: 'deployments', count: deployments};
+  } else if (customer.features.includes('artifacts')) {
+    const artifactIds = new Set(
+      pulls.filter((pull) => pull.customerOrganizationId === customer.id).map((pull) => pull.artifactId)
+    );
+    return {type: 'downloads', count: artifactIds.size};
+  } else {
+    return {type: 'users', count: customer.userCount};
+  }
+}
+
+/**
+ * Counts as open items of a customer every deployment in error or stale, every outdated deployment (or the outdated
+ * artifact pulls of a customer without deployments, as one item), a license that needs attention and every open
+ * support request. Customers with open items come first, the most first, and the rest follow alphabetically.
+ * `licenses` and `openSupportBundles` are `null` while the organization lacks the feature.
+ */
+export function toVendorHomeCustomers(
+  customers: CustomerOrganizationWithUsage[],
+  targets: DeploymentTarget[],
+  applications: Application[],
+  entitlements: ApplicationEntitlement[],
+  pulls: LatestArtifactPull[],
+  licenses: VendorHomeLicenses | null,
+  openSupportBundles: SupportBundle[] | null
+): VendorHomeCustomer[] {
+  const licenseCustomerIds = new Set([
+    ...(licenses?.expiredCustomerIds ?? []),
+    ...(licenses?.expiringCustomerIds ?? []),
+    ...(licenses?.unlicensedCustomerIds ?? []),
+  ]);
+  return customers
+    .map((customer) => {
+      const health = toDeploymentHealth(customerTargets(customer, targets));
+      const updates = toCustomerUpdates(customer, targets, applications, entitlements, pulls);
+      const openItems = countCustomerOpenItems(
+        health,
+        updates,
+        licenseCustomerIds.has(customer.id),
+        (openSupportBundles ?? []).filter((bundle) => bundle.customerOrganizationId === customer.id).length
+      );
+      return {
+        id: customer.id,
+        name: customer.name,
+        imageUrl: customer.imageUrl,
+        usage: toCustomerUsage(customer, health.total, pulls),
+        openItems,
+      };
+    })
+    .sort(compareByOpenItems);
+}
+
+export function countCustomerOpenItems(
+  health: DeploymentHealth | undefined,
+  updates: CustomerUpdates | undefined,
+  hasLicenseIssue: boolean,
+  openSupportBundles: number
+): number {
+  return (
+    (health?.error ?? 0) +
+    (health?.stale ?? 0) +
+    (updates?.outdatedDeployments || (updates?.isOutdated ? 1 : 0)) +
+    (hasLicenseIssue ? 1 : 0) +
+    openSupportBundles
+  );
+}
+
+export function compareByOpenItems(a: {name: string; openItems: number}, b: {name: string; openItems: number}): number {
+  return b.openItems - a.openItems || a.name.localeCompare(b.name);
+}

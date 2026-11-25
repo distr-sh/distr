@@ -1,6 +1,6 @@
 {
   "name": "@distr-sh/distr",
-  "version": "4.8.1",
+  "version": "4.11.0",
   "type": "module",
   "license": "Apache-2.0",
   "description": "Distr",
@@ -16,11 +16,11 @@
     "watch": "pnpm buildconfig && pnpm controller-changelog && ng build --watch --configuration=development",
     "test": "pnpm buildconfig && ng test --watch=false",
     "test:watch": "pnpm buildconfig && ng test --watch=true",
-    "lint": "prettier --check .",
-    "format": "prettier --write --list-different ."
+    "lint": "prettier --check --cache .",
+    "format": "prettier --write --list-different --cache ."
   },
   "private": true,
-  "packageManager": "pnpm@12.18.0",
+  "packageManager": "pnpm@12.23.0",
   "engines": {
     "node": "26.x"
   },
@@ -69,7 +69,7 @@
     "@tailwindcss/postcss": "^4.3.3",
     "@types/semver": "^7.7.1",
     "autoprefixer": "^10.5.4",
-    "jsdom": "^30.0.0",
+    "jsdom": "^31.0.0",
     "postcss": "^8.5.23",
     "prettier": "^3.9.6",
     "prettier-plugin-go-template": "^0.0.15",

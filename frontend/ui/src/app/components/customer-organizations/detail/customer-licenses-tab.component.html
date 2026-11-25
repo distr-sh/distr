@@ -1,0 +1,16 @@
+@if (canCopyFromAnotherCustomer()) {
+  <app-alert type="info" heading="This customer has no licenses yet.">
+    Start with a copy of another customer's license keys and entitlements and adjust them afterwards.
+    <button alertActions type="button" (click)="openCopyModal()" class="distr-btn-primary shrink-0 px-3 py-1.5">
+      <fa-icon [icon]="faCopy" class="mr-2" />
+      Copy from another customer
+    </button>
+  </app-alert>
+}
+<app-license-keys [customerOrganizationId]="customerOrganizationId()" [hotkey]="hotkeyTable() === 'licenseKeys'" />
+<app-application-entitlements
+  [customerOrganizationId]="customerOrganizationId()"
+  [hotkey]="hotkeyTable() === 'applicationEntitlements'" />
+<app-artifact-entitlements
+  [customerOrganizationId]="customerOrganizationId()"
+  [hotkey]="hotkeyTable() === 'artifactEntitlements'" />

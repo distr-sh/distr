@@ -11,7 +11,12 @@ func ArtifactToAPI(a types.ArtifactWithTaggedVersion) api.ArtifactResponse {
 		ImageUrl:                  CreateImageURL(a.ImageID),
 		TitleImageUrl:             CreateImageURL(a.TitleImageID),
 		Featured:                  a.Featured,
+		VersioningStrategy:        a.VersioningStrategy,
 	}
+}
+
+func SyncArtifactToAPI(a types.ArtifactWithTaggedVersion, skippedTags []string) api.SyncArtifactResponse {
+	return api.SyncArtifactResponse{ArtifactResponse: ArtifactToAPI(a), SkippedTags: skippedTags}
 }
 
 // DeleteArtifactTagToAPI takes the artifact that remains after the deletion, nil if the deletion removed it.
@@ -28,7 +33,22 @@ func ArtifactsWithDownloadsToAPI(a types.ArtifactWithDownloads) api.ArtifactsRes
 		ImageUrl:              CreateImageURL(a.ImageID),
 		TitleImageUrl:         CreateImageURL(a.TitleImageID),
 		Featured:              a.Featured,
+		VersioningStrategy:    a.VersioningStrategy,
 	}
+}
+
+func LatestArtifactPullToAPI(update types.CustomerArtifactUpdate) api.LatestArtifactPullResponse {
+	result := api.LatestArtifactPullResponse{
+		CustomerOrganizationID: update.CustomerOrganizationID,
+		ArtifactID:             update.Artifact.ID,
+		ArtifactName:           update.Artifact.Name,
+		ArtifactImageUrl:       CreateImageURL(update.Artifact.ImageID),
+		VersionName:            update.ArtifactVersion.Name,
+	}
+	if update.AvailableUpdate != nil {
+		result.AvailableUpdate = &update.AvailableUpdate.Name
+	}
+	return result
 }
 
 // CustomerArtifactToAPI adds the last pull of the customer organization to the artifact.

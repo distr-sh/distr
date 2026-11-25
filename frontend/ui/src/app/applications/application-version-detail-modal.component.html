@@ -100,6 +100,34 @@
 
             <div class="mt-4">
               @if (activeTab() === 'link') {
+                @if (detail.application.type === 'kubernetes') {
+                  <div class="mb-4 space-y-2">
+                    <label for="chartUrl" class="distr-label">Chart URL</label>
+                    <input
+                      type="text"
+                      id="chartUrl"
+                      [formControl]="versionDetailsForm.controls.kubernetes.controls.chartUrl"
+                      class="distr-input distr-input-raised" />
+                  </div>
+                  @if (detail.version.chartName) {
+                    <div class="mb-4 space-y-2">
+                      <label for="chartName" class="distr-label">Chart Name</label>
+                      <input
+                        type="text"
+                        id="chartName"
+                        [formControl]="versionDetailsForm.controls.kubernetes.controls.chartName"
+                        class="distr-input distr-input-raised" />
+                    </div>
+                  }
+                  <div class="mb-4 space-y-2">
+                    <label for="chartVersion" class="distr-label">Chart Version</label>
+                    <input
+                      type="text"
+                      id="chartVersion"
+                      [formControl]="versionDetailsForm.controls.kubernetes.controls.chartVersion"
+                      class="distr-input distr-input-raised" />
+                  </div>
+                }
                 <div class="space-y-2">
                   <label for="linkTemplate" class="distr-label"> Version Link Template </label>
                   <input
@@ -110,15 +138,9 @@
                   <p class="text-xs text-gray-500 dark:text-gray-400">
                     You can use the Go template language to get a dynamic link based on
                     @if (detail.application.type === 'docker') {
-                      <span ngNonBindable
-                        >environment variables (<code>{{ .Env.HOSTNAME }}</code
-                        >).</span
-                      >
+                      <span ngNonBindable>environment variables (<code>{{ .Env.HOSTNAME }}</code>).</span>
                     } @else if (detail.application.type === 'kubernetes') {
-                      <span ngNonBindable
-                        >user provided values (<code>{{ .Values.app.ingress.hostname }}</code
-                        >).</span
-                      >
+                      <span ngNonBindable>user provided values (<code>{{ .Values.app.ingress.hostname }}</code>).</span>
                     }
                   </p>
                 </div>

@@ -30,6 +30,7 @@ import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 import {UsersService} from '../services/users.service';
 import {AlertConfiguration, CreateUpdateAlertConfigurationRequest} from '../types/alert-configuration';
+import {customerFeatureRequiredMessage} from '../types/customer-features';
 
 @Component({
   selector: 'app-alert-configurations',
@@ -43,10 +44,15 @@ import {AlertConfiguration, CreateUpdateAlertConfigurationRequest} from '../type
     ClickableRowDirective,
     SpinnerComponent,
   ],
+  host: {'[hidden]': 'isHidden()'},
 })
 export class AlertConfigurationsComponent {
   /** customerOrganizationId scopes the page to what one customer is notified about. */
   public readonly customerOrganizationId = input<string>();
+  /** Blocks creating configurations for a customer that lacks the feature, and hides the component unless it has some. */
+  public readonly customerFeatureDisabled = input(false);
+  /** Replaces the component's own search bar when the page filters several tables at once. */
+  public readonly search = input<string>();
 
   protected readonly auth = inject(AuthService);
   protected readonly canEdit = this.auth.hasAnyRole('read_write', 'admin');
@@ -158,8 +164,14 @@ export class AlertConfigurationsComponent {
 
   private readonly filterValue = toSignal(this.filterForm.controls.search.valueChanges);
 
+  protected readonly loaded = computed(() => this.configs() !== undefined);
+  protected readonly createBlockedReason = computed(() =>
+    this.customerFeatureDisabled() ? customerFeatureRequiredMessage(['alerts']) : undefined
+  );
+  public readonly isHidden = computed(() => this.customerFeatureDisabled() && !this.configs()?.length);
+
   protected readonly filteredConfigs = computed(() => {
-    const value = this.filterValue()?.toLowerCase();
+    const value = (this.search() ?? this.filterValue())?.toLowerCase();
     const configs = this.configs();
     return !value ? configs : configs?.filter((it) => it.name.toLowerCase().includes(value));
   });

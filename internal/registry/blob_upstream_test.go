@@ -85,9 +85,9 @@ func TestServeFromUpstreamStoresBlobAfterClientDisconnected(t *testing.T) {
 
 func TestServeFromUpstreamStoresBlobForStalledClient(t *testing.T) {
 	RegisterTestingT(t)
-	timeout := upstreamBlobClientWriteTimeout
-	upstreamBlobClientWriteTimeout = 50 * time.Millisecond
-	t.Cleanup(func() { upstreamBlobClientWriteTimeout = timeout })
+	timeout := clientWriteTimeout
+	clientWriteTimeout = 50 * time.Millisecond
+	t.Cleanup(func() { clientWriteTimeout = timeout })
 	content := bytes.Repeat([]byte("layer"), 100_000)
 	h := digest.FromBytes(content)
 	client := &stalledClient{header: http.Header{}}

@@ -9,7 +9,6 @@ import {
 } from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {reloadOnChunkLoadError} from '../util/chunk-reload';
-import {NavShellComponent} from './components/nav-shell.component';
 import {ForgotComponent} from './forgot/forgot.component';
 import {InviteComponent} from './invite/invite.component';
 import {LoginComponent} from './login/login.component';
@@ -81,16 +80,6 @@ const inviteComponentGuard: CanActivateFn = async () => {
   return router.createUrlTree(['/login']);
 };
 
-const baseRouteRedirectGuard: CanActivateFn = () => {
-  const auth = inject(AuthService);
-  const router = inject(Router);
-  if (auth.isVendor() || auth.isPartner()) {
-    return router.createUrlTree(['/dashboard']);
-  } else {
-    return router.createUrlTree(['/home']);
-  }
-};
-
 export const routes: Routes = [
   {path: 'maintenance', component: MaintenanceComponent},
   {path: 'login', component: LoginComponent},
@@ -100,12 +89,7 @@ export const routes: Routes = [
     path: '',
     canActivate: [jwtParamRedirectGuard, jwtAuthGuard],
     children: [
-      {
-        path: '',
-        pathMatch: 'full',
-        canActivate: [baseRouteRedirectGuard],
-        children: [],
-      },
+      {path: '', pathMatch: 'full', redirectTo: 'home'},
       {
         path: 'verify',
         component: VerifyComponent,
@@ -115,7 +99,6 @@ export const routes: Routes = [
       {path: 'join', component: InviteComponent, canActivate: [inviteComponentGuard]},
       {
         path: '',
-        component: NavShellComponent,
         loadChildren: () => import('./app-logged-in.routes').then((m) => m.routes).catch(reloadOnChunkLoadError),
       },
     ],

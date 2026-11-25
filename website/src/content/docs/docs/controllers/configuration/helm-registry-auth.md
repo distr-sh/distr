@@ -24,6 +24,9 @@ myAppDb:
   imagePullSecrets: {}
 image:
   pullSecrets: []
+worker:
+  imagePullSecrets:
+    - ''
 ```
 
 will be transformed into
@@ -34,11 +37,20 @@ imagePullSecrets:
   - name: sh.distr.agent.v1.xxxxxx.pull
 myAppServer:
   imagePullSecrets:
-    name: sh.distr.agent.v1.xxxxxx.pull
+    - name: sh.distr.agent.v1.xxxxxx.pull
 myAppDb:
   # not changed because it is not an array
   imagePullSecrets: {}
 image:
   pullSecrets:
-    name: sh.distr.agent.v1.xxxxxx.pull
+    - name: sh.distr.agent.v1.xxxxxx.pull
+worker:
+  imagePullSecrets:
+    - sh.distr.agent.v1.xxxxxx.pull
 ```
+
+The controller adds the secret as `name: ...` by default.
+Some charts expect plain strings instead, e.g. `imagePullSecrets: [foo]`.
+If an array is non-empty and every entry is a string, the controller adds the secret name as a string as well.
+To get this form without a secret of your own, put an empty string into the array, as `worker` does above.
+The controller replaces the empty string with its secret name.

@@ -16,7 +16,7 @@ func RunUpstreamSync(ctx context.Context, skipExistingTags bool) error {
 	}
 	syncer := &Syncer{}
 	for _, artifact := range artifacts {
-		if err := syncer.SyncArtifactTags(ctx, &artifact, skipExistingTags); err != nil {
+		if _, err := syncer.SyncArtifactTags(ctx, &artifact, skipExistingTags); err != nil {
 			log.Warn("upstream sync failed", zap.Stringer("artifactId", artifact.ID), zap.Error(err))
 		}
 	}

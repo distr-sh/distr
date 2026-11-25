@@ -3,17 +3,32 @@ import dayjs from 'dayjs';
 export const UNLIMITED_QTY = -1;
 export type SubscriptionType = 'community' | 'pro' | 'business' | 'enterprise' | 'trial';
 
-// Subscription types without access to paid features. Feature gating is expressed by
-// excluding these types rather than by listing the paid ones, so a newly introduced plan
-// has access by default instead of silently losing it.
-export const NON_PRO_SUBSCRIPTION_TYPES: SubscriptionType[] = ['community'];
+/** The plans a feature can ask an organization to upgrade to, from the lowest to the highest. */
+export const UPGRADE_PLANS = ['pro', 'business'] as const satisfies readonly SubscriptionType[];
+export type UpgradePlan = (typeof UPGRADE_PLANS)[number];
+
+/**
+ * The lowest plan that grants each plan-managed feature. Mirrors ProFeatures and BusinessFeatures in
+ * internal/types/types.go: change both together, so that a lock never offers a plan that does not unlock it.
+ */
+export const FEATURE_UPGRADE_PLANS = {
+  licensing: 'pro',
+  support: 'pro',
+  notifications: 'pro',
+  user_roles: 'pro',
+  partner_management: 'business',
+  custom_domains: 'business',
+  vulnerabilities: 'business',
+  custom_emails: 'business',
+  custom_oidc_providers: 'business',
+  auto_updates: 'business',
+  customer_settings: 'business',
+} as const satisfies Record<string, UpgradePlan>;
+
+export type PlanManagedFeature = keyof typeof FEATURE_UPGRADE_PLANS;
 
 // Subscription types that are not a paying subscription, i.e. where upgrade prompts apply.
-export const NON_PAYING_SUBSCRIPTION_TYPES: SubscriptionType[] = [...NON_PRO_SUBSCRIPTION_TYPES, 'trial'];
-
-export function isProSubscription(subscriptionType: SubscriptionType | undefined): boolean {
-  return subscriptionType !== undefined && !NON_PRO_SUBSCRIPTION_TYPES.includes(subscriptionType);
-}
+export const NON_PAYING_SUBSCRIPTION_TYPES: SubscriptionType[] = ['community', 'trial'];
 
 export function isPayingSubscription(subscriptionType: SubscriptionType | undefined): boolean {
   return subscriptionType !== undefined && !NON_PAYING_SUBSCRIPTION_TYPES.includes(subscriptionType);
@@ -53,6 +68,7 @@ export interface SubscriptionInfo {
   subscriptionEndsAt: string;
   subscriptionCustomerOrganizationQuantity: number;
   subscriptionUserAccountQuantity: number;
+  hasStripeSubscription: boolean;
   currentUserAccountCount: number;
   currentCustomerOrganizationCount: number;
   currentRegistryStorageBytes: number;

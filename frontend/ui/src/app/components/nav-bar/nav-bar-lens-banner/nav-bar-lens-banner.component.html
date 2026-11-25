@@ -10,8 +10,8 @@
           <span class="font-semibold text-gray-900 dark:text-white">{{ lensName() }}</span> with read-only access.
         } @else {
           You are working in the customer portal of
-          <span class="font-semibold text-gray-900 dark:text-white">{{ lensName() }}</span
-          ><span class="hidden md:inline">
+          <span class="font-semibold text-gray-900 dark:text-white">{{ lensName() }}</span><span
+            class="hidden md:inline">
             with your
             <span class="font-semibold text-gray-900 dark:text-white">{{
               organization().userRole | userRoleLabel
@@ -22,7 +22,11 @@
       </p>
     </div>
   </div>
-  <button type="button" (click)="leaveLens.emit()" class="distr-btn-secondary shrink-0 px-3 py-2 text-sm font-medium">
+  <button
+    type="button"
+    (click)="leaveLens.emit()"
+    [title]="'Shortcut: G then ' + (leaveLensShortcut | uppercase)"
+    class="distr-btn-secondary shrink-0 px-3 py-2 text-sm font-medium">
     @switch (ownKind()) {
       @case ('partner') {
         Return to Partner Portal

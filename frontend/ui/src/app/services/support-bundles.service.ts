@@ -1,5 +1,6 @@
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpParams} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
+import {map, Observable} from 'rxjs';
 import {
   CreateSupportBundleCommentRequest,
   CreateSupportBundleRequest,
@@ -45,6 +46,10 @@ export class SupportBundlesService {
     return this.httpClient.get<SupportBundleConfigurationEnvVar[]>(`${baseUrl}/configuration`);
   }
 
+  public hasConfiguration(): Observable<boolean> {
+    return this.getConfiguration().pipe(map((envVars) => envVars.length > 0));
+  }
+
   public updateConfiguration(request: CreateUpdateSupportBundleConfigurationRequest) {
     return this.httpClient.put<SupportBundleConfigurationEnvVar[]>(`${baseUrl}/configuration`, request);
   }
@@ -73,8 +78,12 @@ export class SupportBundlesService {
     return this.httpClient.delete<void>(`${baseUrl}/configuration/scripts/${id}`);
   }
 
-  public list() {
-    return this.httpClient.get<SupportBundle[]>(baseUrl);
+  public list(customerOrganizationId?: string) {
+    let params = new HttpParams();
+    if (customerOrganizationId) {
+      params = params.set('customerOrganizationId', customerOrganizationId);
+    }
+    return this.httpClient.get<SupportBundle[]>(baseUrl, {params});
   }
 
   public get(id: string) {

@@ -1,0 +1,33 @@
+@reference '../../styles/tailwind.css';
+
+.locked {
+  h2,
+  .headline,
+  .subtitle {
+    @apply opacity-60;
+  }
+}
+
+:host(.card-success) {
+  --card-hover-bg: --theme(--color-green-100);
+}
+
+:host(.card-warning) {
+  --card-hover-bg: --theme(--color-yellow-100);
+}
+
+:host(.card-error) {
+  --card-hover-bg: --theme(--color-red-100);
+}
+
+:host(:not(.card-neutral)) {
+  &:not(:where(.dark, .dark *)) .distr-card-clickable:hover {
+    background-color: var(--card-hover-bg);
+  }
+
+  h2,
+  .headline,
+  .subtitle {
+    color: inherit;
+  }
+}

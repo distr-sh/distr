@@ -1,9 +1,9 @@
 import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
-import {ActivatedRoute, Router, RouterLink} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faArrowLeft, faCheck, faComment, faDownload, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faCheck, faComment, faDownload, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, map, startWith, Subject, switchMap} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
@@ -31,7 +31,6 @@ import {SupportBundleResourceFolderComponent} from './support-bundle-resource-fo
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     DatePipe,
-    RouterLink,
     FaIconComponent,
     AlertComponent,
     ClipComponent,
@@ -50,7 +49,6 @@ export class SupportBundleDetailComponent {
   private readonly overlay = inject(OverlayService);
   protected readonly auth = inject(AuthService);
 
-  protected readonly faArrowLeft = faArrowLeft;
   protected readonly faCheck = faCheck;
   protected readonly faComment = faComment;
   protected readonly faDownload = faDownload;
@@ -70,7 +68,7 @@ export class SupportBundleDetailComponent {
 
   protected readonly title = computed(() => {
     const bundle = this.bundle();
-    return bundle?.title || `Support Bundle ${bundle?.id.substring(0, 8)}`;
+    return bundle?.title || `Support Request ${bundle?.id.substring(0, 8)}`;
   });
 
   protected readonly resourceTree = computed(() => buildResourceTree(this.bundle()?.resources ?? []));
@@ -111,8 +109,6 @@ export class SupportBundleDetailComponent {
       });
   }
 
-  protected readonly backRoute = this.auth.isCustomer() ? '/support' : '/support-bundles';
-
   protected async downloadResources(): Promise<void> {
     const bundle = this.bundle();
     if (!bundle || this.downloading()) {
@@ -138,7 +134,7 @@ export class SupportBundleDetailComponent {
       return;
     }
     const confirmed = await firstValueFrom(
-      this.overlay.confirm('Are you sure you want to mark this support bundle as resolved?')
+      this.overlay.confirm('Are you sure you want to mark this support request as resolved?')
     );
     if (!confirmed) {
       return;
@@ -146,7 +142,7 @@ export class SupportBundleDetailComponent {
     this.updatingStatus.set(true);
     try {
       await firstValueFrom(this.supportBundlesService.updateStatus(bundle.id, {status: 'resolved'}));
-      this.toast.success('Support bundle marked as resolved');
+      this.toast.success('Support request marked as resolved');
       this.refresh$.next();
     } catch (e) {
       const msg = getFormDisplayedError(e);
@@ -164,7 +160,7 @@ export class SupportBundleDetailComponent {
       return;
     }
     const confirmed = await firstValueFrom(
-      this.overlay.confirm('Are you sure you want to cancel this support bundle?')
+      this.overlay.confirm('Are you sure you want to cancel this support request?')
     );
     if (!confirmed) {
       return;
@@ -172,7 +168,7 @@ export class SupportBundleDetailComponent {
     this.updatingStatus.set(true);
     try {
       await firstValueFrom(this.supportBundlesService.updateStatus(bundle.id, {status: 'canceled'}));
-      this.toast.success('Support bundle canceled');
+      this.toast.success('Support request canceled');
       this.refresh$.next();
     } catch (e) {
       const msg = getFormDisplayedError(e);
@@ -196,8 +192,8 @@ export class SupportBundleDetailComponent {
     this.deleting.set(true);
     try {
       await firstValueFrom(this.supportBundlesService.delete(bundle.id));
-      this.toast.success('Support bundle deleted');
-      await this.router.navigate([this.backRoute]);
+      this.toast.success('Support request deleted');
+      await this.router.navigate(['/support'], {replaceUrl: true});
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {

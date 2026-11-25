@@ -15,8 +15,11 @@ export interface ActivityFeedEntry {
   createdAt: string;
   type: ActivityFeedEntryType;
   resourceId: string;
+  resourceName: string;
   subject: string;
   detail?: string;
   userName?: string;
   userImageUrl?: string;
+  customerOrganizationId?: string;
+  customerOrganizationName?: string;
 }

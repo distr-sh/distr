@@ -14,6 +14,8 @@ export type VersionComparator = (a: ApplicationVersion, b: ApplicationVersion) =
 /** The strategies an application may be set to. The legacy one only ever applies to existing ones. */
 export type SelectableVersioningStrategy = Exclude<VersioningStrategy, 'legacy'>;
 
+export const selectableVersioningStrategies: SelectableVersioningStrategy[] = ['semver', 'chronological'];
+
 /**
  * Mirrors types.ApplicationVersionComparator in the backend, which decides which version an
  * automatic update moves a deployment to. The ordering is derived from the whole set because the
@@ -29,7 +31,7 @@ export function applicationVersionComparator(
   const parsed = new Map<string, SemVer>();
   for (const version of versions) {
     try {
-      parsed.set(version.id!, new SemVer(version.name, {loose: true}));
+      parsed.set(version.id!, new SemVer(version.name));
     } catch {
       if (strategy !== 'semver') {
         return compareByCreationDate;
@@ -128,6 +130,31 @@ export function latestDeploymentVersion(
   return latestApplicationVersion(
     applicationVersionComparator(application?.versioningStrategy, application?.versions ?? []),
     candidates
+  );
+}
+
+/**
+ * Whether the version the deployment runs is older than the newest one it is entitled to. A deployment running a
+ * version beyond that is not outdated. A customer receives only the entitled versions, so a version missing from
+ * `applications` counts as outdated unless it is the newest.
+ */
+export function isDeploymentOutdated(
+  deployment: DeploymentWithLatestRevision,
+  applications: Application[],
+  entitlements: ApplicationEntitlement[]
+): boolean {
+  const latest = latestDeploymentVersion(deployment, applications, entitlements);
+  if (latest === undefined) {
+    return false;
+  }
+  const application = applications.find((app) => app.id === deployment.application.id);
+  const runningVersionId = deployment.currentApplicationVersionId ?? deployment.applicationVersionId;
+  const running = application?.versions?.find((version) => version.id === runningVersionId);
+  if (running === undefined) {
+    return latest.id !== runningVersionId;
+  }
+  return (
+    applicationVersionComparator(application?.versioningStrategy, application?.versions ?? [])(running, latest) < 0
   );
 }
 

@@ -9,8 +9,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// CustomerApplicationVersion is a version of an application that a customer organization may deploy.
-type CustomerApplicationVersion struct {
+// ApplicationVersionEvent is the release of an application version with what an activity feed shows.
+type ApplicationVersionEvent struct {
 	ID              uuid.UUID `db:"id"`
 	CreatedAt       time.Time `db:"created_at"`
 	ApplicationID   uuid.UUID `db:"application_id"`

@@ -22,9 +22,9 @@ const (
 	MaxUsersPerCustomerOrganizationTrial                 = limit.Unlimited
 
 	MaxDeploymentTargetsPerCustomerOrganizationCommunity limit.Limit = 1
-	MaxDeploymentTargetsPerCustomerOrganizationPro       limit.Limit = 8
-	MaxDeploymentTargetsPerCustomerOrganizationBusiness  limit.Limit = 8
-	MaxDeploymentTargetsPerCustomerOrganizationTrial     limit.Limit = 8
+	MaxDeploymentTargetsPerCustomerOrganizationPro       limit.Limit = 3
+	MaxDeploymentTargetsPerCustomerOrganizationBusiness  limit.Limit = 5
+	MaxDeploymentTargetsPerCustomerOrganizationTrial     limit.Limit = 3
 
 	// The registry storage limits are informational: they are reported to the frontend so the
 	// subscription page can show usage against the plan allowance, but they are not enforced.

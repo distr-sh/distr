@@ -1,6 +1,6 @@
 ---
 title: Customer Portal
-description: A white-labeled customer-facing UI for managing deployments, pulling artifacts, viewing licenses, creating support bundles, and managing secrets.
+description: A white-labeled customer-facing UI for managing deployments, pulling artifacts, viewing licenses, creating support requests, and managing secrets.
 slug: docs/platform/customer-portal
 sidebar:
   label: Overview
@@ -9,8 +9,8 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import homeLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-home-light.png';
-import homeDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-home-dark.png';
+import homeLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-home-light.webp';
+import homeDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-home-dark.webp';
 
 The Customer Portal is a simplified, white-labeled UI built for end customers. Vendors control which sections each customer can access through [Customer Management](/docs/platform/customer-management/#enabling-and-disabling-features-per-customer).
 
@@ -32,11 +32,11 @@ The sidebar shows the sections that are enabled for your organization. A fully c
 | **[Licenses](/docs/platform/customer-portal/licenses/)**         | View license keys and tokens issued by your vendor            | Requires Pro (or higher) |
 | **[Support](/docs/platform/customer-portal/support/)**           | Create and manage support bundles for troubleshooting         | Off by default           |
 | **[Alerts](/docs/platform/customer-portal/deployments/#alerts)** | Configure deployment health and resource usage notifications  | Off by default           |
-| **Users**                                                        | Manage users in your organization (admin only)                | Always visible           |
+| **Team**                                                         | Manage users in your organization (admin only)                | Always visible           |
 | **[Secrets](/docs/platform/customer-portal/secrets/)**           | Store and manage deployment secrets                           | On by default            |
 | **Access Tokens**                                                | Generate Personal Access Tokens for registry authentication   | Always visible           |
 
-**Deployments** and **Artifacts** are enabled by default for new customers. **Alerts** and **Support Bundles** must be explicitly enabled by the vendor. Disabled sections are hidden entirely from the Customer Portal, so customers only see what has been enabled for them.
+**Deployments** and **Artifacts** are enabled by default for new customers. **Alerts** and **Support** must be explicitly enabled by the vendor. Disabled sections are hidden entirely from the Customer Portal, so customers only see what has been enabled for them.
 
 In addition to these sections, vendors can configure [links](/docs/platform/customer-management/#managing-links-per-customer) per customer, for example to documentation or a support page. They are shown at the bottom of the sidebar and open in a new tab.
 

@@ -24,7 +24,7 @@ func CreateBillingPortalSessionHandler(r *http.Request) (respond.Responder, erro
 		return resp, nil
 	} else if session, err := billing.CreateBillingPortalSession(ctx, billing.BillingPortalSessionParams{
 		CustomerID: *org.StripeCustomerID,
-		ReturnURL:  fmt.Sprintf("%v/subscription", handlerutil.GetRequestSchemeAndHost(r)),
+		ReturnURL:  handlerutil.GetRequestSchemeAndHost(r) + subscriptionPagePath,
 	}); err != nil {
 		return nil, fmt.Errorf("failed to create billing portal session: %w", err)
 	} else {

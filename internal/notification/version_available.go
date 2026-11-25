@@ -166,34 +166,50 @@ func SendArtifactVersionAvailableNotifications(ctx context.Context, version type
 		return fmt.Errorf("failed to get artifact version entitlement: %w", err)
 	}
 
+	strategy, err := db.GetArtifactVersioningStrategy(ctx, version.ArtifactID)
+	if err != nil {
+		return err
+	}
+
 	var aggErr error
 	mailed := map[uuid.UUID]struct{}{}
 	for _, config := range configs {
-		if err := sendArtifactVersionAvailableWithConfig(ctx, config, version, entitlement, mailed); err != nil {
+		if err := sendArtifactVersionAvailableWithConfig(
+			ctx, config, version, strategy, entitlement, mailed,
+		); err != nil {
 			aggErr = errors.Join(aggErr, fmt.Errorf("config %v: %w", config.ID, err))
 		}
 	}
 	return aggErr
 }
 
+// SendArtifactEntitlementVersionsNotifications announces the newest of the tags an entitlement was just widened to.
+// No versions stands for all of them, as it does on the entitlement.
 func SendArtifactEntitlementVersionsNotifications(
 	ctx context.Context,
 	artifactID uuid.UUID,
 	artifactVersionIDs []uuid.UUID,
 ) error {
-	version, err := db.GetNewestArtifactTag(ctx, artifactID, artifactVersionIDs)
+	strategy, err := db.GetArtifactVersioningStrategy(ctx, artifactID)
 	if err != nil {
-		return fmt.Errorf("failed to get newest artifact tag: %w", err)
-	} else if version == nil {
+		return err
+	}
+	tags, err := db.GetArtifactReleaseTags(ctx, artifactID, artifactVersionIDs)
+	if err != nil {
+		return err
+	} else if len(tags) == 0 {
 		return nil
 	}
-	return SendArtifactVersionAvailableNotifications(ctx, *version)
+	return SendArtifactVersionAvailableNotifications(ctx, slices.MaxFunc(tags, func(a, b types.ArtifactVersion) int {
+		return types.CompareArtifactTags(strategy, a, b)
+	}))
 }
 
 func sendArtifactVersionAvailableWithConfig(
 	ctx context.Context,
 	config types.UpdateNotificationConfiguration,
 	version types.ArtifactVersion,
+	strategy types.VersioningStrategy,
 	entitlement types.GetArtifactVersionEntitlementResult,
 	mailed map[uuid.UUID]struct{},
 ) error {
@@ -213,10 +229,18 @@ func sendArtifactVersionAvailableWithConfig(
 	for _, group := range recipientsByAudience(config.Recipients) {
 		log := group.audience.logger(log)
 
-		if customerOrgID := group.audience.customerOrganizationID; customerOrgID != nil &&
-			!entitlement.Allows(*customerOrgID) {
-			log.Debug("skip audience whose entitlement does not cover the version")
-			continue
+		if customerOrgID := group.audience.customerOrganizationID; customerOrgID != nil {
+			if !entitlement.Allows(*customerOrgID) {
+				log.Debug("skip audience whose entitlement does not cover the version")
+				continue
+			} else if behind, err := customerBehind(
+				ctx, config.OrganizationID, *customerOrgID, strategy, version,
+			); err != nil {
+				return err
+			} else if !behind {
+				log.Debug("skip audience that has pulled the version or a newer one")
+				continue
+			}
 		}
 
 		record := types.NotificationRecord{
@@ -273,6 +297,23 @@ func deploymentsBehind(
 		}
 	}
 	return behind
+}
+
+// customerBehind reports whether the tag the customer organization pulled last is older than the announced one. A
+// customer who never pulled the artifact has not decided on a version yet and is notified as well.
+func customerBehind(
+	ctx context.Context,
+	organizationID, customerOrganizationID uuid.UUID,
+	strategy types.VersioningStrategy,
+	announced types.ArtifactVersion,
+) (bool, error) {
+	pulls, err := db.GetLatestArtifactPullsOfCustomerOrganization(
+		ctx, organizationID, customerOrganizationID, []uuid.UUID{announced.ArtifactID},
+	)
+	if err != nil {
+		return false, err
+	}
+	return len(pulls) == 0 || types.ArtifactTagBehind(strategy, pulls[0].ArtifactVersion, announced), nil
 }
 
 // audience is who a recipient is notified as: the vendor's own team when both are nil, otherwise

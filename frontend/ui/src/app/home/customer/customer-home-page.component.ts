@@ -4,6 +4,8 @@ import {CustomerOrganizationFeature} from '@distr-sh/distr-sdk';
 import {catchError, combineLatest, firstValueFrom, map, Observable, of, shareReplay, switchMap, take} from 'rxjs';
 import {isNotFound, recoverWithToast, toastDisplayedError} from '../../../util/errors';
 import {refreshInBackground} from '../../../util/refresh';
+import {toActivityFeedItems} from '../../components/activity-feed/activity-feed';
+import {ActivityFeedComponent} from '../../components/activity-feed/activity-feed.component';
 import {LoadingCardComponent} from '../../components/loading-card/loading-card.component';
 import {PageComponent} from '../../components/page.component';
 import {AccessTokensService} from '../../services/access-tokens.service';
@@ -27,7 +29,6 @@ import {SupportBundlesService} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
 import {CustomerHomeAccessTokensComponent} from './customer-home-access-tokens.component';
-import {CustomerHomeActivityComponent} from './customer-home-activity.component';
 import {CustomerHomeAlertsComponent} from './customer-home-alerts.component';
 import {CustomerHomeChecklistComponent} from './customer-home-checklist.component';
 import {CustomerHomeDeploymentsComponent, CustomerHomePrimarySection} from './customer-home-deployments.component';
@@ -36,7 +37,6 @@ import {CustomerHomeLicenseComponent} from './customer-home-license.component';
 import {
   customerHomeNotificationsSince,
   toCustomerHomeAccessTokens,
-  toCustomerHomeActivity,
   toCustomerHomeAlerts,
   toCustomerHomeArtifacts,
   toCustomerHomeChecklist,
@@ -66,7 +66,7 @@ function storedFlag(storage: Storage, key: string | undefined): boolean | undefi
     CustomerHomeUpdateNotificationsComponent,
     CustomerHomeAccessTokensComponent,
     CustomerHomeSupportBundlesComponent,
-    CustomerHomeActivityComponent,
+    ActivityFeedComponent,
   ],
 })
 export class CustomerHomePageComponent {
@@ -340,7 +340,7 @@ export class CustomerHomePageComponent {
       ].filter(Boolean).length
   );
 
-  protected readonly activity = toSignal(this.activityFeedService.list().pipe(map(toCustomerHomeActivity)));
+  protected readonly activity = toSignal(this.activityFeedService.list().pipe(map(toActivityFeedItems)));
   protected readonly activityShown = computed(() => this.activity()?.length !== 0);
   protected readonly vendorName = toSignal(this.organizationService.get().pipe(map((org) => org.name)));
 
@@ -373,7 +373,8 @@ export class CustomerHomePageComponent {
       this.refreshIf(
         features.then((it) => it.includes('deployment_targets')),
         () => this.deploymentTargetsService.refresh(),
-        () => this.applicationsService.refresh()
+        () => this.applicationsService.refresh(),
+        () => this.secretsService.refresh()
       ),
       this.refreshIf(
         features.then((it) => it.includes('artifacts')),

@@ -13,6 +13,15 @@ export interface ArtifactVersionPull {
   artifactVersion: BaseArtifactVersion;
 }
 
+export interface LatestArtifactPull {
+  customerOrganizationId: string;
+  artifactId: string;
+  artifactName: string;
+  artifactImageUrl?: string;
+  versionName: string;
+  availableUpdate?: string;
+}
+
 export interface ArtifactPullFilterOption {
   id: string;
   name: string;

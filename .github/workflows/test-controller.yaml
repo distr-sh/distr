@@ -22,8 +22,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_id || github.ref }}
   cancel-in-progress: true
 
+env:
+  CGO_ENABLED: '0'
+
 jobs:
   test:
+    # The release pull request only bumps versions of what main has already checked.
+    if: ${{ github.head_ref != 'release-please--branches--main' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -36,12 +41,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        uses: ./.github/actions/setup-go
         with:
-          go-version-file: 'go.mod'
-          check-latest: true
-          cache-dependency-path: |
-            go.sum
+          # saved by the build of the same controller in build-controller.yaml
+          cache-name: ${{ matrix.controller }}-controller
       - name: Build Controller
         run: go build -o dist/${{ matrix.controller }}-controller ./cmd/controller/${{ matrix.controller }}
       - name: Test Controller Startup

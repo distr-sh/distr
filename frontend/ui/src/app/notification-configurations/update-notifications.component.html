@@ -1,10 +1,15 @@
 <div class="distr-toolbar p-4">
-  <app-search-bar [control]="filterForm.controls.search" placeholder="Filter notification configurations" />
-  <div class="distr-toolbar-actions">
-    @if (auth.hasAnyRole('read_write', 'admin') && kinds().length > 0) {
+  <ng-content select="[heading]" />
+  @if (search() === undefined) {
+    <app-search-bar [control]="filterForm.controls.search" placeholder="Filter notification configurations" />
+  }
+  <div class="distr-toolbar-actions md:ms-auto">
+    @if (auth.hasAnyRole('read_write', 'admin')) {
       <button
         type="button"
         (click)="showDrawer()"
+        [disabled]="!!createBlockedReason()"
+        [title]="createBlockedReason() ?? ''"
         class="distr-btn-secondary flex w-full items-center justify-center px-4 py-2 text-sm font-medium md:w-auto">
         <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
         Update Notification
@@ -73,11 +78,23 @@
           </td>
         </tr>
       } @empty {
-        <tr class="border-t border-gray-200 dark:border-gray-600">
-          <td colspan="6" class="px-4 py-3 text-center font-medium whitespace-nowrap text-gray-600 dark:text-gray-400">
-            No configurations found
-          </td>
-        </tr>
+        @if (loaded()) {
+          <tr class="border-t border-gray-200 dark:border-gray-600">
+            <td
+              colspan="6"
+              class="px-4 py-3 text-center font-medium whitespace-nowrap text-gray-600 dark:text-gray-400">
+              No configurations found
+            </td>
+          </tr>
+        } @else {
+          <tr class="border-t border-gray-200 dark:border-gray-600">
+            <td colspan="6">
+              <div class="flex items-center justify-center py-12">
+                <app-spinner class="size-8" />
+              </div>
+            </td>
+          </tr>
+        }
       }
     </tbody>
   </table>
@@ -196,7 +213,7 @@
           <button
             type="submit"
             [disabled]="editFormLoading() || editConfigForm.invalid"
-            class="distr-btn-primary inline-flex w-full items-center justify-center text-white disabled:opacity-50">
+            class="distr-btn-primary inline-flex w-full items-center justify-center">
             <fa-icon [icon]="faPen" class="mr-2" />
             Save
           </button>

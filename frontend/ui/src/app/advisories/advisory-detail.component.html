@@ -1,11 +1,4 @@
 <app-page>
-  <a
-    [routerLink]="backRoute"
-    class="mb-4 inline-flex items-center text-sm text-gray-600 hover:text-primary-700 dark:text-gray-400 dark:hover:text-white">
-    <fa-icon [icon]="faArrowLeft" class="me-2" />
-    Back to advisories
-  </a>
-
   @if (advisory(); as advisory) {
     <div class="distr-panel mb-6">
       <div class="flex items-start justify-between gap-4">
@@ -280,7 +273,7 @@
                     [href]="reference.url"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="text-sm break-all text-primary-600 hover:underline dark:text-primary-500">
+                    class="distr-link text-sm break-all">
                     {{ reference.label || reference.url }}
                     <fa-icon [icon]="faUpRightFromSquare" class="text-xs" />
                   </a>

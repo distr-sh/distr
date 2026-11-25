@@ -21,6 +21,15 @@ type LicenseKey struct {
 	LicenseTemplateID      *uuid.UUID      `db:"license_template_id"     json:"licenseTemplateId,omitempty"`
 }
 
+// LicenseKeyEvent is the latest revision of a license key with what an activity feed shows.
+type LicenseKeyEvent struct {
+	ID                     uuid.UUID `db:"id"`
+	CreatedAt              time.Time `db:"created_at"`
+	Name                   string    `db:"name"`
+	CustomerOrganizationID uuid.UUID `db:"customer_organization_id"`
+	LastRevisedAt          time.Time `db:"last_revised_at"`
+}
+
 type LicenseKeyRevision struct {
 	ID           uuid.UUID       `db:"id"             json:"id"`
 	CreatedAt    time.Time       `db:"created_at"     json:"createdAt"`

@@ -1,0 +1,239 @@
+<div class="flex flex-col gap-4">
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    @if (deployments(); as health) {
+      @let type = health.type;
+      <app-quick-navigation-card
+        class="min-h-32"
+        [icon]="faBoxesStacked"
+        heading="Deployments"
+        [type]="type"
+        [count]="type === 'neutral' ? undefined : health.error + health.stale"
+        [link]="tabLinks().deployments"
+        [queryParams]="type === 'error' || type === 'warning' ? deploymentAttentionQueryParams : undefined">
+        @switch (type) {
+          @case ('error') {
+            @if (health.stale > 0) {
+              issues
+            } @else {
+              <ng-container [ngPlural]="health.error">
+                <ng-template ngPluralCase="=1">error</ng-template>
+                <ng-template ngPluralCase="other">errors</ng-template>
+              </ng-container>
+            }
+          }
+          @case ('warning') {
+            stale
+          }
+          @case ('success') {
+            issues
+          }
+        }
+        <span subtitle>
+          @if (type === 'error' && health.stale > 0) {
+            <ng-container [ngPlural]="health.error">
+              <ng-template ngPluralCase="=1">1 error</ng-template>
+              <ng-template ngPluralCase="other">{{ health.error }} errors</ng-template>
+            </ng-container>
+            &middot; {{ health.stale }} stale
+          } @else if (type === 'error' || type === 'warning') {
+            <span class="grid auto-cols-[minmax(0,max-content)] grid-flow-col gap-1">
+              @for (name of health.affectedNames; track $index) {
+                @if (!$first) {
+                  <span>&middot;</span>
+                }
+                <span class="truncate" [title]="name">{{ name }}</span>
+              }
+              @if (health.moreAffected > 0) {
+                <span class="whitespace-nowrap">&middot; {{ health.moreAffected }} more</span>
+              }
+            </span>
+          } @else if (type === 'success') {
+            All deployments up and running
+          } @else if (health.isDisabled) {
+            Disabled for this customer
+          } @else {
+            No running deployments yet
+          }
+        </span>
+      </app-quick-navigation-card>
+    } @else {
+      <app-loading-card layout="stat" class="min-h-32" />
+    }
+
+    @if (updates(); as updates) {
+      <app-quick-navigation-card
+        class="min-h-32"
+        [icon]="faCircleArrowUp"
+        heading="Updates"
+        [type]="updates.type"
+        [count]="updates.type === 'neutral' ? undefined : updates.outdated"
+        [link]="updates.source === 'downloads' ? tabLinks().registry : tabLinks().deployments"
+        [queryParams]="
+          updates.type === 'warning' && updates.source === 'deployments' ? outdatedDeploymentsQueryParams : undefined
+        ">
+        outdated
+        <span subtitle>
+          @if (updates.source === 'none') {
+            No deployments or downloads yet
+          } @else if (updates.type === 'warning') {
+            @if (updates.source === 'deployments') {
+              Deployments on an older version
+            } @else {
+              Downloaded artifacts with a newer version
+            }
+          } @else {
+            @if (updates.source === 'deployments') {
+              All deployments on the latest version
+            } @else {
+              All downloads on the latest version
+            }
+          }
+        </span>
+      </app-quick-navigation-card>
+    } @else {
+      <app-loading-card layout="stat" class="min-h-32" />
+    }
+
+    @let license = licenseCard();
+    @if (license === null) {
+      @if (isVendor) {
+        <app-quick-navigation-card
+          class="min-h-32"
+          [icon]="faKey"
+          heading="Licenses"
+          [locked]="{requiresAnyOf: ['licensing']}">
+          <span subtitle>Upgrade to manage customer licenses</span>
+        </app-quick-navigation-card>
+      }
+    } @else if (license) {
+      <app-quick-navigation-card
+        class="min-h-32"
+        [icon]="faKey"
+        heading="Licenses"
+        [type]="license.type"
+        [count]="license.count"
+        [link]="tabLinks().licenses">
+        @switch (license.status) {
+          @case ('expired') {
+            expired
+          }
+          @case ('expiring') {
+            expiring
+          }
+          @case ('valid') {
+            active
+          }
+          @default {
+            licenses
+          }
+        }
+        <span subtitle>
+          @switch (license.status) {
+            @case ('expired') {
+              Renewal overdue
+              @if (license.expiring > 0) {
+                &middot; {{ license.expiring }} expiring
+              }
+            }
+            @case ('expiring') {
+              In the next {{ licenseExpiryWindowDays }} days
+            }
+            @case ('valid') {
+              None expiring in the next {{ licenseExpiryWindowDays }} days
+            }
+            @default {
+              No license key or entitlement yet
+            }
+          }
+        </span>
+      </app-quick-navigation-card>
+    } @else {
+      <app-loading-card layout="stat" class="min-h-32" />
+    }
+
+    @let support = supportCard();
+    @if (support === null) {
+      @if (isVendor) {
+        <app-quick-navigation-card
+          class="min-h-32"
+          [icon]="faLifeRing"
+          heading="Support"
+          [locked]="{requiresAnyOf: ['support']}">
+          <span subtitle>Upgrade to receive support requests from this customer</span>
+        </app-quick-navigation-card>
+      }
+    } @else if (support) {
+      <app-quick-navigation-card
+        class="min-h-32"
+        [icon]="faLifeRing"
+        heading="Support"
+        [type]="support.type"
+        [count]="support.isDisabled && support.open === 0 ? undefined : support.open"
+        [link]="tabLinks().support">
+        open
+        <span subtitle>
+          @if (support.open > 0) {
+            Requests awaiting resolution
+          } @else if (support.isDisabled) {
+            Disabled for this customer
+          } @else if (support.total > 0) {
+            All requests resolved
+          } @else {
+            No support requests yet
+          }
+        </span>
+      </app-quick-navigation-card>
+    } @else {
+      <app-loading-card layout="stat" class="min-h-32" />
+    }
+  </div>
+
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <div class="relative lg:col-span-2">
+      @if (activity(); as activity) {
+        <app-activity-feed
+          [activity]="activity"
+          [viewer]="activityViewer"
+          [customerOrganizationId]="customerOrganizationId()"
+          [fillHeight]="true" />
+      } @else {
+        <app-loading-card layout="timeline" />
+      }
+    </div>
+
+    @if (users(); as users) {
+      <a [routerLink]="tabLinks().users" class="distr-card distr-card-clickable h-auto min-h-96 self-start p-4">
+        <h2 appCardHeading [icon]="faUsers" class="mb-3">
+          Users
+          @if (users.total > 0) {
+            <span class="distr-badge distr-badge-neutral ms-2">{{ users.total }}</span>
+          }
+        </h2>
+        @if (users.total === 0) {
+          <p class="distr-text-muted text-sm">No users yet. Invite the first one on the users tab.</p>
+        } @else {
+          <ul class="distr-home-list -mx-2">
+            @for (user of users.users; track user.id) {
+              <li class="flex items-center gap-3 p-2">
+                <app-avatar [image]="user.imageUrl" [name]="user.name || user.email" class="size-8 rounded-full" />
+                <div class="min-w-0 flex-1">
+                  <span class="distr-home-row-title block truncate" [title]="user.name || user.email">
+                    {{ user.name || user.email }}
+                  </span>
+                  @if (isUserRolesEnabled()) {
+                    <span class="distr-home-row-meta block truncate">{{ user.userRole | userRoleLabel }}</span>
+                  }
+                </div>
+                @if (!user.activated) {
+                  <span class="distr-badge distr-badge-warning shrink-0">Invitation pending</span>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </a>
+    } @else {
+      <app-loading-card class="min-h-96" />
+    }
+  </div>
+</div>

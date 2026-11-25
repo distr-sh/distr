@@ -9,6 +9,7 @@ import (
 	"github.com/distr-sh/distr/internal/chartcache"
 	"github.com/distr-sh/distr/internal/controllerauth"
 	"github.com/distr-sh/distr/internal/controllerenv"
+	"github.com/distr-sh/distr/internal/controllerhelm"
 	"github.com/distr-sh/distr/internal/util"
 	slogzap "github.com/samber/slog-zap/v2"
 	"go.uber.org/zap"
@@ -123,7 +124,7 @@ func RunHelmPreflight(
 	} else if charter, err := loader.Load(chartPath); err != nil {
 		return nil, fmt.Errorf("chart loading failed: %w", err)
 	} else {
-		addImagePullSecretToValues(deployment.ReleaseName, deployment.Values)
+		controllerhelm.AddImagePullSecret(deployment.Values, PullSecretName(deployment.ReleaseName))
 		return charter, nil
 	}
 }
@@ -315,19 +316,5 @@ func GetHelmManifest(ctx context.Context, namespace, releaseName string) ([]*uns
 	} else {
 		// decode the release manifests which is represented as multi-document YAML
 		return DecodeResourceYaml([]byte(acc.Manifest()))
-	}
-}
-
-func addImagePullSecretToValues(relaseName string, values map[string]any) {
-	if s, ok := values["imagePullSecrets"].([]any); ok {
-		values["imagePullSecrets"] = append(s, map[string]any{"name": PullSecretName(relaseName)})
-	}
-	if s, ok := values["pullSecrets"].([]any); ok {
-		values["pullSecrets"] = append(s, map[string]any{"name": PullSecretName(relaseName)})
-	}
-	for _, v := range values {
-		if m, ok := v.(map[string]any); ok {
-			addImagePullSecretToValues(relaseName, m)
-		}
 	}
 }

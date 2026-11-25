@@ -218,6 +218,10 @@ func GetNotificationRecords(
 				dtm.cpu_usage,
 				dtm.memory_bytes,
 				dtm.memory_usage,
+				dtm.controller_cpu_usage_millis,
+				dtm.controller_memory_bytes,
+				dtm.controller_log_bytes,
+				dtm.image_bytes,
 				array_agg(row(dtdm.device, dtdm.path, dtdm.fs_type, dtdm.bytes_total, dtdm.bytes_used) ORDER BY dtdm.device)
 					FILTER (WHERE dtdm.id IS NOT NULL)
 			) END AS current_deployment_target_metrics

@@ -12,6 +12,7 @@ on:
       - 'go.mod'
       - 'go.sum'
       - '.github/workflows/build-support-collector.yaml'
+      - '.github/actions/**'
     tags:
       - '*'
   pull_request:
@@ -21,6 +22,7 @@ on:
       - 'go.mod'
       - 'go.sum'
       - '.github/workflows/build-support-collector.yaml'
+      - '.github/actions/**'
 
 jobs:
   build:
@@ -33,12 +35,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        uses: ./.github/actions/setup-go
         with:
-          go-version-file: 'go.mod'
-          check-latest: true
-          cache-dependency-path: |
-            go.sum
+          cache-name: support-collector
       - name: Generate commit hash
         id: hash
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
@@ -60,6 +59,9 @@ jobs:
             -s -w
             -X github.com/distr-sh/distr/internal/buildconfig.version=${{ github.ref_name }}
             -X github.com/distr-sh/distr/internal/buildconfig.commit=${{ steps.hash.outputs.sha_short }}
+      - name: Save Go cache
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
+        uses: ./.github/actions/save-go-cache
       - name: Upload Archives (tag only)
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

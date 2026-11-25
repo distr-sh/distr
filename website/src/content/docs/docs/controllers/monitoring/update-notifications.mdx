@@ -18,18 +18,18 @@ Update notifications tell selected users by email that a new version is availabl
 
 ## How to Configure Update Notifications
 
-In the sidebar, navigate to **Notifications** > **Updates**.
+In the sidebar, navigate to **Notifications**, where update notifications are listed in the **Updates** table.
 
 1. Click **Update Notification**.
 2. Optionally enter a name for the configuration.
 3. Switch between **Applications** and **Artifacts**, and select what to watch. One configuration can watch applications and artifacts together, so an application and the images it is shipped with are announced from a single place.
 4. Select the users who should receive the emails. Your own team, your partners and your customers' users can all be picked.
 
-Each configuration can be toggled on or off without deleting it, and the **History** page lists what has been sent.
+Each configuration can be toggled on or off without deleting it, and **History** at the top of the page lists what has been sent.
 
 ## Configuring for a Customer
 
-The page lists what your own organization has configured. **Show customer update notifications** leads to the same page for one of your customers, where the breadcrumb switches between them, and the **Alerts**, **Updates** and **History** of a customer can be managed the way their users and secrets are.
+The page lists what your own organization has configured. The **Alerts**, **Updates** and **History** of a customer are managed on the **Notifications** tab of that customer in **Customers**.
 
 A configuration created there belongs to the customer: it can only watch what that customer is [entitled](/docs/platform/license-management/) to and only notify users of their organization.
 
@@ -41,7 +41,7 @@ Grant a customer organization the **Update Notifications** feature in **Customer
 
 An application notification is sent when a new version of a watched application is created, to every selected recipient who can see at least one deployment that runs an older version. Older is decided by the application's versioning strategy: with SemVer, a customer already on 2.1.0 is not told about a 2.0.5 bugfix. A deployment whose [entitlement](/docs/platform/license-management/) does not cover the new version is left out for every recipient, and its customer hears about the version once the entitlement is widened.
 
-An artifact notification is sent when a new tag is pushed to a watched artifact. Artifacts that mirror an upstream registry cannot be watched, because all of their versions appear at once when the mirror syncs.
+An artifact notification is sent when a new tag is pushed to a watched artifact. A customer is left out when the tag it pulled last has the same content as the new tag or newer content, as decided by the artifact's [versioning strategy](/docs/registry/#versioning-strategy): with SemVer, a customer who pulled 2.1.0 is not told about a 2.0.5 bugfix. A customer who has not pulled the artifact yet is notified when its entitlement covers the new tag, and so are your own team and partners. When an entitlement is widened, its customer hears about the newest of the tags it now covers. Artifacts that mirror an upstream registry cannot be watched, because all of their versions appear at once when the mirror syncs.
 
 Each recipient hears about a version once, however many deployments are affected and however many configurations cover them. A customer who watches the same application as you do receives one email, not two.
 

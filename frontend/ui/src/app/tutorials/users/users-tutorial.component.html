@@ -13,7 +13,7 @@
               </p>
               <p class="mt-8">
                 You can find additional resources on this topic in our
-                <a [href]="rbacDocsUrl" class="text-primary-600 underline" target="_blank">docs</a>.
+                <a [href]="rbacDocsUrl" class="distr-link" target="_blank">docs</a>.
               </p>
             </div>
 
@@ -63,7 +63,7 @@
                   </ul>
                   <p class="mt-3 text-sm">
                     Learn more about roles and permissions in our
-                    <a [href]="rbacDocsUrl" class="text-primary-600 underline" target="_blank">RBAC documentation</a>.
+                    <a [href]="rbacDocsUrl" class="distr-link" target="_blank">RBAC documentation</a>.
                   </p>
                 </li>
 
@@ -124,10 +124,7 @@
                     }
 
                     <div class="col-span-full">
-                      <button
-                        type="button"
-                        (click)="addUser()"
-                        class="flex items-center py-2 text-sm font-medium text-primary-600 hover:underline">
+                      <button type="button" (click)="addUser()" class="distr-link flex items-center py-2 text-sm">
                         <fa-icon class="mr-2" [icon]="faPlus" />
                         Add another teammate
                       </button>

@@ -1,0 +1,38 @@
+name: Save Go cache
+description: Saves the build cache restored by setup-go, without the entries this job did not use
+inputs:
+  save-module-cache:
+    description: Whether to also save the module cache when setup-go found none for the current go.sum
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    # Go refreshes the modification time of an entry it uses only once that is older than an hour,
+    # so everything older than an hour before the job started went unused.
+    - name: Prune unused build cache entries
+      shell: bash
+      run: |
+        find "$GOCACHE" -mindepth 2 -type f ! -newermt "@$((GO_JOB_STARTED_AT - 3600))" -delete
+        du -sh "$GOCACHE"
+
+    - name: Save Go build cache
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ env.GOCACHE }}
+        key: ${{ env.GO_BUILD_CACHE_KEY }}
+
+    # The key never changes for the same go.sum, so a module cache saved by a job that failed
+    # before downloading everything would stay incomplete until the next go.sum change.
+    - name: Download all modules
+      if: inputs.save-module-cache == 'true' && env.GO_MODULE_CACHE_HIT != 'true'
+      shell: bash
+      run: |
+        go mod download
+        du -sh "$GOMODCACHE"
+
+    - name: Save Go module cache
+      if: inputs.save-module-cache == 'true' && env.GO_MODULE_CACHE_HIT != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ env.GOMODCACHE }}
+        key: go-mod-${{ runner.os }}-${{ hashFiles('go.sum') }}

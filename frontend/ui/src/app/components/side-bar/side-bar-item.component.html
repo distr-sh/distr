@@ -1,0 +1,33 @@
+@let item = entry();
+@switch (item.kind) {
+  @case ('link') {
+    <a
+      class="item"
+      routerLinkActive="active"
+      [routerLink]="item.route"
+      [attr.title]="item.shortcut ? 'Go to ' + item.label + ' (G then ' + (item.shortcut | uppercase) + ')' : null"
+      (click)="sidebar.hide()">
+      <fa-icon [icon]="item.icon" size="lg" class="icon" />
+      <span class="label">{{ item.label }}</span>
+    </a>
+  }
+  @case ('external') {
+    <a class="item" [href]="item.href" target="_blank" rel="noopener noreferrer" (click)="sidebar.hide()">
+      <fa-icon [icon]="item.icon" size="lg" class="icon" />
+      <span class="label">{{ item.label }}</span>
+    </a>
+  }
+  @case ('locked') {
+    <button
+      type="button"
+      class="item locked"
+      [title]="'Upgrade to ' + (item.plan | titlecase) + ' to enable ' + (item.label | lowercase)"
+      cdkOverlayOrigin
+      #origin="cdkOverlayOrigin">
+      <fa-icon [icon]="item.icon" size="lg" class="icon" />
+      <span class="label whitespace-nowrap">{{ item.label }}</span>
+      <app-plan-badge [plan]="item.plan" class="me-2 ml-2" />
+    </button>
+    <app-plan-hint-overlay [origin]="origin" [plan]="item.plan" placement="end" />
+  }
+}

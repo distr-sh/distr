@@ -69,6 +69,7 @@ export class UsersTutorialComponent implements OnInit {
   protected readonly tutorialsService = inject(TutorialsService);
 
   protected progress?: TutorialProgress;
+  private readonly invitedEmails: string[] = [];
   protected readonly welcomeFormGroup = new FormGroup({});
   protected readonly inviteFormGroup = new FormGroup({
     users: new FormArray([userFormGroup()]),
@@ -143,7 +144,7 @@ export class UsersTutorialComponent implements OnInit {
     if (pending.some((c) => c.invalid)) {
       return;
     }
-    if (pending.length === 0) {
+    if (pending.length === 0 && this.invitedEmails.length === 0) {
       this.toast.error('Please add at least one teammate to invite.');
       return;
     }
@@ -159,7 +160,6 @@ export class UsersTutorialComponent implements OnInit {
     });
 
     this.loading.set(true);
-    const invitedEmails: string[] = [];
     const failedEmails: string[] = [];
     const mailNotSentEmails: string[] = [];
     let firstError: unknown;
@@ -179,35 +179,19 @@ export class UsersTutorialComponent implements OnInit {
             continue;
           }
         }
-        invitedEmails.push(email);
+        this.invitedEmails.push(email);
         const idx = this.users.controls.indexOf(group);
         if (idx >= 0) {
           this.users.removeAt(idx);
         }
       }
 
-      if (invitedEmails.length === 0) {
+      if (this.invitedEmails.length === 0) {
         const msg = getFormDisplayedError(firstError);
         if (msg) {
           this.toast.error(msg);
         }
         return;
-      }
-
-      try {
-        this.progress = await lastValueFrom(
-          this.tutorialsService.save(tutorialId, {
-            stepId: inviteStep,
-            taskId: inviteTaskSend,
-            value: invitedEmails,
-            markCompleted: true,
-          })
-        );
-      } catch (e) {
-        const msg = getFormDisplayedError(e);
-        if (msg) {
-          this.toast.error(msg);
-        }
       }
 
       if (failedEmails.length > 0) {
@@ -219,6 +203,24 @@ export class UsersTutorialComponent implements OnInit {
             'You can resend the invitation from the users page.'
         );
       }
+
+      try {
+        this.progress = await lastValueFrom(
+          this.tutorialsService.save(tutorialId, {
+            stepId: inviteStep,
+            taskId: inviteTaskSend,
+            value: this.invitedEmails,
+            markCompleted: true,
+          })
+        );
+      } catch (e) {
+        const msg = getFormDisplayedError(e);
+        if (msg) {
+          this.toast.error(msg);
+        }
+        return;
+      }
+
       if (failedEmails.length === 0 && mailNotSentEmails.length === 0) {
         this.toast.success('Your teammates have been invited. Good job!');
       }
@@ -232,6 +234,6 @@ export class UsersTutorialComponent implements OnInit {
   }
 
   protected navigateToOverviewPage() {
-    this.router.navigate(['tutorials']);
+    this.router.navigate(['/home']);
   }
 }

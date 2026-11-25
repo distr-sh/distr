@@ -43,17 +43,18 @@ type HelmOptions struct {
 	ForceConflicts    bool     `db:"helm_options_force_conflicts" json:"forceConflicts"`
 }
 
-// CustomerDeploymentRevision is a deployment revision of a customer organization with what its activity
-// feed shows.
-type CustomerDeploymentRevision struct {
-	ID                     uuid.UUID `db:"id"`
-	CreatedAt              time.Time `db:"created_at"`
-	DeploymentTargetID     uuid.UUID `db:"deployment_target_id"`
-	DeploymentTargetName   string    `db:"deployment_target_name"`
-	ApplicationName        string    `db:"application_name"`
-	ApplicationVersionName string    `db:"application_version_name"`
-	// CreatedByName and CreatedByImageID are only set for a creator who is a member of the customer
-	// organization, since a customer must not learn who works for the vendor.
+// DeploymentRevisionEvent is the creation of a deployment revision with what an activity feed shows.
+// CustomerOrganizationID is nil for a deployment target of the vendor itself.
+type DeploymentRevisionEvent struct {
+	ID                     uuid.UUID  `db:"id"`
+	CreatedAt              time.Time  `db:"created_at"`
+	CustomerOrganizationID *uuid.UUID `db:"customer_organization_id"`
+	DeploymentTargetID     uuid.UUID  `db:"deployment_target_id"`
+	DeploymentTargetName   string     `db:"deployment_target_name"`
+	ApplicationName        string     `db:"application_name"`
+	ApplicationVersionName string     `db:"application_version_name"`
+	// CreatedByName and CreatedByImageID are only set for a creator the viewer may know, see
+	// types.ActivityViewer, since a customer must not learn who works for the vendor.
 	CreatedByName    *string    `db:"created_by_name"`
 	CreatedByImageID *uuid.UUID `db:"created_by_image_id"`
 }

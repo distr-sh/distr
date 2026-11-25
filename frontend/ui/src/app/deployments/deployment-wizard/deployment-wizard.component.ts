@@ -7,6 +7,7 @@ import {
   DestroyRef,
   effect,
   inject,
+  input,
   OnInit,
   output,
   signal,
@@ -47,8 +48,10 @@ import {FeatureFlagService} from '../../services/feature-flag.service';
 import {OrganizationBrandingService} from '../../services/organization-branding.service';
 import {OrganizationService} from '../../services/organization.service';
 import {ToastService} from '../../services/toast.service';
+import {UNLIMITED_QTY} from '../../types/subscription';
 import {DeploymentFormComponent, mapToDeploymentRequest} from '../deployment-form/deployment-form.component';
 import {PodSchedulingFieldsComponent} from '../pod-scheduling-fields/pod-scheduling-fields.component';
+import {DeploymentQuotaComponent} from './deployment-quota.component';
 import {DeploymentWizardStepperComponent} from './deployment-wizard-stepper.component';
 
 @Component({
@@ -68,6 +71,7 @@ import {DeploymentWizardStepperComponent} from './deployment-wizard-stepper.comp
     DeploymentTypeBadgeComponent,
     SpinnerComponent,
     PodSchedulingFieldsComponent,
+    DeploymentQuotaComponent,
   ],
 })
 export class DeploymentWizardComponent extends ClosableDialog implements OnInit {
@@ -90,6 +94,7 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
 
   private readonly stepper = viewChild<CdkStepper>('stepper');
 
+  readonly customerOrganizationId = input<string>();
   readonly closed = output<void>();
 
   // Step 1: Customer Selection (optional)
@@ -168,11 +173,24 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
     this.customerForm.controls.customerOrganizationId.valueChanges
   );
   protected readonly selectedDeploymentTarget = signal<DeploymentTarget | undefined>(undefined);
-  protected readonly internalDeploymentCount = toSignal(
-    this.deploymentTargets
-      .list()
-      .pipe(map((targets) => targets.filter((it) => it.customerOrganization === undefined).length)),
-    {initialValue: 0}
+  private readonly existingDeploymentTargets = toSignal(this.deploymentTargets.list(), {initialValue: []});
+  protected readonly deploymentLimit = toSignal(
+    this.currentOrganization$.pipe(map((org) => org.subscriptionLimits.maxDeploymentsPerCustomerOrganization)),
+    {initialValue: UNLIMITED_QTY}
+  );
+  protected readonly internalDeploymentCount = computed(
+    () => this.existingDeploymentTargets().filter((it) => it.customerOrganization === undefined).length
+  );
+  protected readonly selectedCustomerDeploymentCount = computed(() => {
+    const customerOrganizationId = this.selectedCustomerOrganizationId();
+    return this.existingDeploymentTargets().filter((it) => it.customerOrganization?.id === customerOrganizationId)
+      .length;
+  });
+  protected readonly isSelectedCustomerQuotaShown = computed(
+    () =>
+      !this.showCustomerStep() &&
+      this.selectedCustomerOrganizationId() !== undefined &&
+      this.deploymentLimit() !== UNLIMITED_QTY
   );
 
   // Filter applications based on customer entitlements
@@ -197,7 +215,7 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
 
   // Computed properties
   protected readonly showCustomerStep = computed(() => {
-    return this.auth.isVendor() || this.auth.isPartner();
+    return (this.auth.isVendor() || this.auth.isPartner()) && !this.customerOrganizationId();
   });
 
   protected readonly selectedDeploymentType = computed<DeploymentType>(() => {
@@ -267,6 +285,7 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
       const licensingEnabled = await firstValueFrom(this.featureFlags.isLicensingEnabled$);
       await Promise.all([
         this.applications.refresh(),
+        this.deploymentTargets.refresh(),
         ...(licensingEnabled ? [this.applicationEntitlements.refresh()] : []),
         ...(this.showCustomerStep() ? [this.customerOrganizations.refresh()] : []),
       ]);
@@ -281,8 +300,11 @@ export class DeploymentWizardComponent extends ClosableDialog implements OnInit 
   }
 
   ngOnInit() {
-    // If user is a customer, auto-select their own customer organization
-    if (this.auth.isCustomer()) {
+    const customerOrganizationId = this.customerOrganizationId();
+    if (customerOrganizationId) {
+      this.customerForm.controls.customerOrganizationId.setValue(customerOrganizationId);
+    } else if (this.auth.isCustomer()) {
+      // If user is a customer, auto-select their own customer organization
       this.currentOrganization$
         .pipe(take(1))
         .subscribe((org) => this.customerForm.controls.customerOrganizationId.setValue(org.customerOrganizationId!));

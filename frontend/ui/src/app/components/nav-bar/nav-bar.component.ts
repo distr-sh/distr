@@ -15,22 +15,20 @@ import {
   faShuffle,
   faUserCircle,
 } from '@fortawesome/free-solid-svg-icons';
-import {catchError, EMPTY, lastValueFrom, map, of, startWith, Subject, switchMap} from 'rxjs';
+import {catchError, EMPTY, lastValueFrom, map, of} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {MembershipLabelPipe, organizationKind} from '../../../util/organization-kind';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {UserRoleLabelPipe} from '../../../util/user-role';
+import {ContextSwitcherService, SwitcherLens, SwitcherOrganization} from '../../navigation/context-switcher.service';
 import {AuthService} from '../../services/auth.service';
 import {ContextService} from '../../services/context.service';
-import {LensesService} from '../../services/lenses.service';
 import {OrganizationBrandingService} from '../../services/organization-branding.service';
 import {OrganizationService} from '../../services/organization.service';
 import {SidebarService} from '../../services/sidebar.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
-import {CustomerLens} from '../../types/lens';
-import {Organization, OrganizationWithUserRole} from '../../types/organization';
-import {subscriptionRank} from '../../types/subscription';
+import {Organization} from '../../types/organization';
 import {AvatarComponent} from '../avatar.component';
 import {ColorSchemeSwitcherComponent} from '../color-scheme-switcher/color-scheme-switcher.component';
 import {SearchBarComponent} from '../search-bar.component';
@@ -41,22 +39,10 @@ import {NavBarSubscriptionBannerComponent} from './nav-bar-subscription-banner/n
 // above this many entries the dropdown gets a search field
 const ORGANIZATION_SEARCH_THRESHOLD = 4;
 
-interface SwitcherLens extends CustomerLens {
-  current: boolean;
-}
-
-interface SwitcherOrganization {
-  org: OrganizationWithUserRole;
-  current: boolean;
-  lenses: SwitcherLens[];
-}
-
 @Component({
   selector: 'app-nav-bar',
   templateUrl: './nav-bar.component.html',
   host: {
-    '(document:keydown.control.k)': 'onSwitcherShortcut($event)',
-    '(document:keydown.meta.k)': 'onSwitcherShortcut($event)',
     '(document:keydown.escape)': 'organizationsOpened.set(false)',
   },
   imports: [
@@ -85,7 +71,7 @@ export class NavBarComponent implements OnInit {
   private readonly organizationService = inject(OrganizationService);
   private readonly organizationBranding = inject(OrganizationBrandingService);
   private readonly ctx = inject(ContextService);
-  private readonly lensesService = inject(LensesService);
+  private readonly switcher = inject(ContextSwitcherService);
   protected readonly user$ = this.usersService.get().pipe(
     catchError(() => {
       const claims = this.auth.getClaims();
@@ -117,43 +103,9 @@ export class NavBarComponent implements OnInit {
     return membership ? organizationKind(membership) : 'vendor';
   });
 
-  private readonly lensesRefresh$ = new Subject<void>();
-  private readonly lenses = toSignal(
-    this.lensesRefresh$.pipe(
-      startWith(undefined),
-      switchMap(() => this.lensesService.list().pipe(catchError(() => EMPTY)))
-    ),
-    {initialValue: []}
-  );
-  // The current organization comes first since it holds the lenses, which only it can enter.
-  protected readonly switcherTree = computed<SwitcherOrganization[]>(() => {
-    const current = this.currentOrg();
-    const lenses = this.lenses();
-    return [...this.allOrgs()]
-      .sort(
-        (a, b) =>
-          Number(b.id === current?.id) - Number(a.id === current?.id) ||
-          subscriptionRank(a.subscriptionType, a.subscriptionEndsAt) -
-            subscriptionRank(b.subscriptionType, b.subscriptionEndsAt) ||
-          a.name.localeCompare(b.name)
-      )
-      .map((org) => {
-        const isCurrentOrg = org.id === current?.id;
-        return {
-          org,
-          current: isCurrentOrg && !this.isLens,
-          lenses: isCurrentOrg
-            ? lenses.map((lens) => ({
-                ...lens,
-                current: lens.customerOrganizationId === current?.customerOrganizationId,
-              }))
-            : [],
-        };
-      });
-  });
-  protected readonly isSingleOrganization = computed(() => this.switcherTree().length === 1);
-  // A single organization is left out of the list unless the session is in a lens, which it leads back from.
-  protected readonly isOrganizationListed = computed(() => !this.isSingleOrganization() || this.isLens);
+  private readonly switcherTree = this.switcher.switcherTree;
+  private readonly isSingleOrganization = this.switcher.isSingleOrganization;
+  protected readonly isOrganizationListed = this.switcher.isOrganizationListed;
   protected readonly switchEntryCount = computed(() =>
     this.switcherTree().reduce(
       (count, entry) =>
@@ -172,7 +124,6 @@ export class NavBarComponent implements OnInit {
   protected readonly userOpened = signal(false);
   protected readonly organizationsOpened = signal(false);
   protected readonly canOpenSwitcher = computed(() => this.switchEntryCount() > 0);
-  protected readonly switcherShortcut = navigator.userAgent.includes('Mac') ? '⌘K' : 'Ctrl+K';
 
   protected readonly organizationSearch = new FormControl<string>('', {nonNullable: true});
   private readonly organizationSearchTerm = toSignal(
@@ -223,38 +174,19 @@ export class NavBarComponent implements OnInit {
   protected toggleOrganizations() {
     this.organizationSearch.setValue('');
     if (!this.organizationsOpened()) {
-      this.lensesRefresh$.next();
+      this.switcher.refreshLenses();
     }
     this.organizationsOpened.update((opened) => !opened);
   }
 
-  protected onSwitcherShortcut(event: Event) {
-    if (!this.canOpenSwitcher()) {
-      return;
-    }
-    // Ctrl+K and Cmd+K are the browsers' own shortcuts for their search and address bars
-    event.preventDefault();
-    this.toggleOrganizations();
-  }
-
   protected async switchOrganization(org: Organization) {
-    await this.switchContextOrEnterLens(() => this.auth.switchContext(org.id!));
+    this.organizationsOpened.set(false);
+    await this.switcher.switchOrganization(org);
   }
 
   protected async enterLens(lens: SwitcherLens) {
-    await this.switchContextOrEnterLens(() => this.auth.enterLens(lens.customerOrganizationId));
-  }
-
-  private async switchContextOrEnterLens(switchFn: () => Promise<void>) {
     this.organizationsOpened.set(false);
-    try {
-      await switchFn();
-    } catch (e) {
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
-      }
-    }
+    await this.switcher.enterLens(lens);
   }
 
   async logout() {

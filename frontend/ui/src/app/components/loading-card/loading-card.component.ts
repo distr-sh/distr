@@ -1,11 +1,10 @@
 import {Component, input} from '@angular/core';
 
-export type LoadingCardLayout = 'row' | 'timeline' | 'list';
+export type LoadingCardLayout = 'row' | 'timeline' | 'list' | 'stat';
 
 @Component({
   selector: 'app-loading-card',
   templateUrl: './loading-card.component.html',
-  styleUrl: './loading-card.component.scss',
 })
 export class LoadingCardComponent {
   /**

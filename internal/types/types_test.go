@@ -81,8 +81,12 @@ func TestUserRoleRankPanicsOnUnknown(t *testing.T) {
 func TestFeaturesForSubscriptionType(t *testing.T) {
 	g := NewWithT(t)
 
+	proFeatures := []Feature{FeatureLicensing, FeatureSupport, FeatureNotifications, FeatureUserRoles}
 	businessFeatures := []Feature{
 		FeatureLicensing,
+		FeatureSupport,
+		FeatureNotifications,
+		FeatureUserRoles,
 		FeaturePartnerManagement,
 		FeatureCustomDomains,
 		FeatureVulnerabilities,
@@ -96,8 +100,8 @@ func TestFeaturesForSubscriptionType(t *testing.T) {
 		expected         []Feature
 	}{
 		{SubscriptionTypeCommunity, []Feature{}},
-		{SubscriptionTypeTrial, []Feature{FeatureLicensing}},
-		{SubscriptionTypePro, []Feature{FeatureLicensing}},
+		{SubscriptionTypeTrial, proFeatures},
+		{SubscriptionTypePro, proFeatures},
 		{SubscriptionTypeBusiness, businessFeatures},
 		{SubscriptionTypeEnterprise, businessFeatures},
 	}
@@ -118,6 +122,9 @@ func TestPlanManagedFeatures(t *testing.T) {
 
 	g.Expect(PlanManagedFeatures).To(ConsistOf(
 		FeatureLicensing,
+		FeatureSupport,
+		FeatureNotifications,
+		FeatureUserRoles,
 		FeaturePartnerManagement,
 		FeatureCustomDomains,
 		FeatureVulnerabilities,

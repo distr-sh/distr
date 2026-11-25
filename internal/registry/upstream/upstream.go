@@ -65,9 +65,13 @@ func newUpstreamRepository(artifact *types.Artifact) (*remote.Repository, error)
 
 type Syncer struct{}
 
-func (s *Syncer) SyncArtifactTags(ctx context.Context, artifact *types.Artifact, skipExistingTags bool) error {
+// SyncArtifactTags returns the upstream tags it skipped because the versioning strategy of the artifact does not
+// allow them.
+func (s *Syncer) SyncArtifactTags(
+	ctx context.Context, artifact *types.Artifact, skipExistingTags bool,
+) ([]string, error) {
 	if artifact.UpstreamURL == nil {
-		return nil
+		return nil, nil
 	}
 
 	log := internalctx.GetLogger(ctx).With(zap.Stringer("artifactId", artifact.ID))
@@ -76,17 +80,33 @@ func (s *Syncer) SyncArtifactTags(ctx context.Context, artifact *types.Artifact,
 	repo, err := newUpstreamRepository(artifact)
 	if err != nil {
 		syncErr := fmt.Sprintf("failed to create upstream client: %v", err)
-		return db.UpdateArtifactSyncStatus(ctx, artifact.ID, &syncErr)
+		return nil, db.UpdateArtifactSyncStatus(ctx, artifact.ID, &syncErr)
 	}
 
+	var skippedTags []string
+	var skippedTagsMu sync.Mutex
+	skipTag := func(tag string) {
+		log.Warn("upstream sync skipped tag that is not allowed by the artifacts versioning strategy",
+			zap.String("tag", tag),
+			zap.String("strategy", string(artifact.VersioningStrategy)))
+		skippedTagsMu.Lock()
+		defer skippedTagsMu.Unlock()
+		skippedTags = append(skippedTags, tag)
+	}
 	g, gCtx := errgroup.WithContext(ctx)
 	g.SetLimit(5)
 	tagsErr := repo.Tags(ctx, "", func(tags []string) error {
 		for _, tag := range tags {
+			if !artifact.VersioningStrategy.AllowsArtifactTag(tag) {
+				skipTag(tag)
+				continue
+			}
 			g.Go(func() error {
 				log.Debug("upstream sync tag", zap.String("tag", tag))
-				if err := syncTag(gCtx, repo, artifact, tag, skipExistingTags); err != nil {
+				if isAllowed, err := syncTag(gCtx, repo, artifact, tag, skipExistingTags); err != nil {
 					return fmt.Errorf("syncing tag %q: %w", tag, err)
+				} else if !isAllowed {
+					skipTag(tag)
 				}
 				return nil
 			})
@@ -109,27 +129,28 @@ func (s *Syncer) SyncArtifactTags(ctx context.Context, artifact *types.Artifact,
 
 	log.Debug("upstream sync finished")
 
-	return db.UpdateArtifactSyncStatus(ctx, artifact.ID, errStr)
+	return skippedTags, db.UpdateArtifactSyncStatus(ctx, artifact.ID, errStr)
 }
 
+// syncTag returns false when the versioning strategy of the artifact no longer allows the tag.
 func syncTag(
 	ctx context.Context, repo *remote.Repository, artifact *types.Artifact, tag string, skipExistingTags bool,
-) error {
+) (bool, error) {
 	if skipExistingTags {
 		if _, err := db.GetArtifactVersionByName(ctx, artifact.ID, tag); err == nil {
-			return nil
+			return true, nil
 		} else if !errors.Is(err, distrerr.ErrNotFound) {
-			return fmt.Errorf("checking if tag exists: %w", err)
+			return false, fmt.Errorf("checking if tag exists: %w", err)
 		}
 	}
 	desc, rc, err := repo.FetchReference(ctx, tag)
 	if err != nil {
-		return fmt.Errorf("fetching manifest: %w", err)
+		return false, fmt.Errorf("fetching manifest: %w", err)
 	}
 	data, err := io.ReadAll(rc)
 	rc.Close()
 	if err != nil {
-		return fmt.Errorf("reading manifest: %w", err)
+		return false, fmt.Errorf("reading manifest: %w", err)
 	}
 
 	contentType := desc.MediaType
@@ -140,7 +161,7 @@ func syncTag(
 
 	blobs, subManifests, err := parseManifest(data, contentType, d)
 	if err != nil {
-		return fmt.Errorf("parsing manifest: %w", err)
+		return false, fmt.Errorf("parsing manifest: %w", err)
 	}
 
 	tagVersion := &types.ArtifactVersion{
@@ -151,10 +172,6 @@ func syncTag(
 		ManifestData:        data,
 		ArtifactID:          artifact.ID,
 	}
-	if err := db.UpsertArtifactVersionForSync(ctx, tagVersion); err != nil {
-		return err
-	}
-
 	digestVersion := &types.ArtifactVersion{
 		Name:                d.String(),
 		ManifestBlobDigest:  types.Digest(d),
@@ -163,27 +180,39 @@ func syncTag(
 		ManifestData:        data,
 		ArtifactID:          artifact.ID,
 	}
-	if err := db.UpsertArtifactVersionForSync(ctx, digestVersion); err != nil {
-		return err
-	}
 
-	parts := make([]types.ArtifactVersionPart, 0, len(blobs)*2)
-	for _, b := range blobs {
-		parts = append(parts,
-			types.ArtifactVersionPart{
-				ArtifactVersionID:  tagVersion.ID,
-				ArtifactBlobDigest: types.Digest(b.Digest),
-				ArtifactBlobSize:   b.Size,
-			},
-			types.ArtifactVersionPart{
-				ArtifactVersionID:  digestVersion.ID,
-				ArtifactBlobDigest: types.Digest(b.Digest),
-				ArtifactBlobSize:   b.Size,
-			},
-		)
-	}
-	if err := db.BulkUpsertArtifactVersionParts(ctx, parts); err != nil {
-		return err
+	isAllowed := true
+	if err := db.RunTx(ctx, func(ctx context.Context) error {
+		// The strategy may have changed since the sync started, and a switch to semver holds the artifact row lock
+		// while it deletes the tags it does not allow.
+		if strategy, err := db.LockArtifactVersioningStrategy(ctx, artifact.ID); err != nil {
+			return err
+		} else if isAllowed = strategy.AllowsArtifactTag(tag); !isAllowed {
+			return nil
+		}
+		if err := db.UpsertArtifactVersionForSync(ctx, tagVersion); err != nil {
+			return err
+		} else if err := db.UpsertArtifactVersionForSync(ctx, digestVersion); err != nil {
+			return err
+		}
+		parts := make([]types.ArtifactVersionPart, 0, len(blobs)*2)
+		for _, b := range blobs {
+			parts = append(parts,
+				types.ArtifactVersionPart{
+					ArtifactVersionID:  tagVersion.ID,
+					ArtifactBlobDigest: types.Digest(b.Digest),
+					ArtifactBlobSize:   b.Size,
+				},
+				types.ArtifactVersionPart{
+					ArtifactVersionID:  digestVersion.ID,
+					ArtifactBlobDigest: types.Digest(b.Digest),
+					ArtifactBlobSize:   b.Size,
+				},
+			)
+		}
+		return db.BulkUpsertArtifactVersionParts(ctx, parts)
+	}); err != nil || !isAllowed {
+		return isAllowed, err
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
@@ -197,10 +226,10 @@ func syncTag(
 		})
 	}
 	if err := g.Wait(); err != nil {
-		return err
+		return true, err
 	}
 
-	return nil
+	return true, nil
 }
 
 func syncSubManifest(

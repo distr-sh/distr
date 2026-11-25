@@ -68,7 +68,7 @@ In the Tailscale admin console, generate an [auth key](https://tailscale.com/kb/
 
 ### 3. Store the auth key in Distr
 
-Open **Customers**, click **Manage secrets** next to the customer and create the secret `TAILSCALE_AUTHKEY` with the auth key as its value.
+Open the customer under **Customers**, select the **Secrets** tab and create the secret `TAILSCALE_AUTHKEY` with the auth key as its value.
 The Compose files below read it through the `.env` template.
 
 ## Option 1: a shell over Tailscale SSH

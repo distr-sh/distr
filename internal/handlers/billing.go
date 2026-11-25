@@ -7,6 +7,8 @@ import (
 	"github.com/oaswrap/spec/option"
 )
 
+const subscriptionPagePath = "/settings/organization/subscription"
+
 func BillingRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupHidden(true))
 	r.Use(middleware.RequireOrgAndRole, middleware.RequireVendor)

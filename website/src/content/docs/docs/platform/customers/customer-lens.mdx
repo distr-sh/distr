@@ -1,0 +1,35 @@
+---
+title: Customer Lens
+description: Open the Customer Portal of any of your customers with your own role to support them, check their onboarding or verify what they can access.
+slug: docs/platform/customer-lens
+sidebar:
+  label: Customer Lens
+  order: 3
+---
+
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import contextSwitcherLight from '~/assets/docs/platform/customers/customer-lens/context-switcher-light.webp';
+import contextSwitcherDark from '~/assets/docs/platform/customers/customer-lens/context-switcher-dark.webp';
+
+With Customer Lens, vendor users open the [Customer Portal](/docs/platform/customer-portal/) of any of their customers with their own role. Partner users can do the same for the customers assigned to their partner organization. You need neither a customer account nor an invitation, which makes it the quickest way to support a customer, check their onboarding or verify which features and resources they can access.
+
+## Opening a customer's portal
+
+Open the context switcher in the top navigation bar. It lists the customers of the organization you are working in below that organization. To open a customer of another organization, switch to that organization first. Select the customer to open its portal.
+
+<ThemedImage
+  lightSrc={contextSwitcherLight}
+  darkSrc={contextSwitcherDark}
+  alt="Customer Lens in the context switcher"
+/>
+
+You can also press <kbd>Ctrl</kbd>+<kbd>K</kbd> (<kbd>⌘</kbd>+<kbd>K</kbd> on macOS) to open the [Command Palette](/docs/vendor-portal/#command-palette) and pick the customer under **Enter customer lens**.
+
+## Working in a customer's portal
+
+While you are working in a customer's portal:
+
+- You keep your own role: a vendor administrator is an administrator in the customer portal, a vendor viewer stays a viewer.
+- Everything you change applies to that customer. Distr records it under your own name.
+- A banner at the top of the page names the portal you are in. Click **Return to Vendor Portal** (or **Return to Partner Portal**), select your organization in the switcher or press <kbd>G</kbd> then <kbd>P</kbd> to go back.
+- Personal access tokens are unavailable, since they belong to your own organization membership. Return to your own portal to manage them.

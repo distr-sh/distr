@@ -90,6 +90,7 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 	r.With(middleware.RequireOrgAndRole).Group(func(r chiopenapi.Router) {
 		r.Get("/", respond.Handler(getSupportBundlesHandler)).
 			With(option.Description("List support bundles")).
+			With(option.Request(customerScopeQuery{})).
 			With(option.Response(http.StatusOK, []api.SupportBundle{}))
 
 		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
@@ -293,8 +294,10 @@ func getSupportBundlesHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	a := auth.Authentication.Require(ctx)
 
-	if bundles, err := db.GetSupportBundles(
-		ctx, *a.CurrentOrgID(), a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID(),
+	if customerOrgID, resp := customerFilterFromQuery(r); resp != nil {
+		return resp, nil
+	} else if bundles, err := db.GetSupportBundles(
+		ctx, *a.CurrentOrgID(), a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID(), customerOrgID,
 	); err != nil {
 		return nil, fmt.Errorf("failed to get support bundles: %w", err)
 	} else {

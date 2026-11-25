@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
@@ -35,10 +36,15 @@ func GetSubscriptionHandler(r *http.Request) (respond.Responder, error) {
 func CreateSubscriptionHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
+	org := auth.CurrentOrg()
 
-	if body, resp := decodeJSON[api.CreateSubscriptionRequest](r); resp != nil {
+	if org.StripeSubscriptionID != nil {
+		return respond.BadRequest(
+			"the organization already has a subscription, please manage it in the billing portal",
+		), nil
+	} else if body, resp := decodeJSON[api.CreateSubscriptionRequest](r); resp != nil {
 		return resp, nil
-	} else if usage, err := getCurrentUsageCounts(ctx, *auth.CurrentOrgID()); err != nil {
+	} else if usage, err := getCurrentUsageCounts(ctx, org.ID); err != nil {
 		return nil, fmt.Errorf("failed to get current usage counts: %w", err)
 	} else if err := validateSubscriptionQuantities(
 		body.SubscriptionType,
@@ -48,14 +54,15 @@ func CreateSubscriptionHandler(r *http.Request) (respond.Responder, error) {
 	); err != nil {
 		return respond.BadRequest(err.Error()), nil
 	} else if session, err := billing.CreateCheckoutSession(ctx, billing.CheckoutSessionParams{
-		OrganizationID:          auth.CurrentOrgID().String(),
-		TrialEndsAt:             auth.CurrentOrg().SubscriptionEndsAt,
+		OrganizationID:          org.ID.String(),
+		CustomerID:              org.StripeCustomerID,
+		TrialEndsAt:             org.SubscriptionEndsAt,
 		SubscriptionType:        body.SubscriptionType,
 		SubscriptionPeriod:      body.SubscriptionPeriod,
 		CustomerOrganizationQty: body.CustomerOrganizationQty,
 		UserAccountQty:          body.UserAccountQty,
 		Currency:                "usd",
-		SuccessURL:              fmt.Sprintf("%v/subscription/callback", handlerutil.GetRequestSchemeAndHost(r)),
+		SuccessURL:              handlerutil.GetRequestSchemeAndHost(r) + subscriptionPagePath + "/callback",
 	}); err != nil {
 		return nil, fmt.Errorf("failed to create checkout session: %w", err)
 	} else {
@@ -124,7 +131,7 @@ func UpdateSubscriptionHandler(r *http.Request) (respond.Responder, error) {
 			CustomerOrganizationQty: body.CustomerOrganizationQty,
 			UserAccountQty:          body.UserAccountQty,
 			SubscriptionType:        body.SubscriptionType,
-			ReturnURL:               fmt.Sprintf("%v/subscription", handlerutil.GetRequestSchemeAndHost(r)),
+			ReturnURL:               handlerutil.GetRequestSchemeAndHost(r) + subscriptionPagePath,
 		})
 		if stripeErr, ok := errors.AsType[*stripe.Error](err); ok && stripeErr.Type == stripe.ErrorTypeInvalidRequest {
 			internalctx.GetLogger(ctx).Warn("stripe rejected subscription update", zap.Error(err))
@@ -238,7 +245,7 @@ func validateSubscriptionQuantities(
 		)
 	}
 
-	if !subscriptionType.IsPro() {
+	if !slices.Contains(types.FeaturesForSubscriptionType(subscriptionType), types.FeatureLicensing) {
 		if usage.applicationEntitlementCount > 0 {
 			return fmt.Errorf("subscription type %v does not allow application entitlements", subscriptionType)
 		}
@@ -289,6 +296,7 @@ func buildSubscriptionInfo(ctx context.Context, org *types.Organization) (*api.S
 		SubscriptionPeriod:                  org.SubscriptionPeriod,
 		SubscriptionCustomerOrganizationQty: org.SubscriptionCustomerOrganizationQty.Value(),
 		SubscriptionUserAccountQty:          org.SubscriptionUserAccountQty.Value(),
+		HasStripeSubscription:               org.StripeSubscriptionID != nil,
 		CurrentUserAccountCount:             usage.userAccountCount,
 		CurrentCustomerOrganizationCount:    usage.customerOrganizationCount,
 		CurrentRegistryStorageBytes:         usage.registryStorageBytes,

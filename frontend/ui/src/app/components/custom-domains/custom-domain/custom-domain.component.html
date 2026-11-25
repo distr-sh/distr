@@ -1,0 +1,19 @@
+@if (cnameTarget()) {
+  <ng-content select="[heading]" />
+  <app-domain-field
+    [fieldId]="domainType() + 'Domain'"
+    [label]="label()"
+    [placeholder]="placeholder()"
+    [invalidHint]="'Must be a valid hostname without scheme, e.g. ' + placeholder()"
+    [removeAriaLabel]="'Remove ' + label()"
+    [optionalCheckboxLabel]="optionalCheckboxLabel()"
+    [domain]="domain()"
+    [cnameTarget]="cnameTarget()"
+    [saving]="saving()"
+    [verifying]="verifying()"
+    (save)="save($event)"
+    (remove)="remove()"
+    (recheck)="verify()">
+    <ng-content />
+  </app-domain-field>
+}

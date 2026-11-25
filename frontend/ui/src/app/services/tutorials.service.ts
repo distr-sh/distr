@@ -6,7 +6,7 @@ import {firstValueFrom, map, Observable, shareReplay, startWith, Subject, switch
 import {getExistingTask} from '../tutorials/utils';
 import {Tutorial, TutorialProgress, TutorialProgressRequest} from '../types/tutorials';
 
-interface TutorialView {
+export interface TutorialView {
   id: Tutorial;
   name: string;
   icon: IconDefinition;
@@ -30,14 +30,14 @@ export class TutorialsService {
       id: 'users',
       icon: this.faUserGroup,
       description: 'Invite your colleagues to collaborate with you in Distr.',
-      completedRoute: '/users',
+      completedRoute: '/settings/organization/team',
     },
     {
       name: 'Setup Your Artifact Registry',
       id: 'registry',
       icon: this.faBox,
       description: 'Learn how to use the Distr registry to distribute OCI artifacts.',
-      completedRoute: '/artifacts',
+      completedRoute: '/registry',
     },
     {
       name: 'Try out Controllers, Applications and Deployments',
@@ -67,14 +67,6 @@ export class TutorialsService {
       })
     ),
     shareReplay(1)
-  );
-
-  public readonly allStarted$ = this.tutorialsProgress$.pipe(
-    map((tutorials) => tutorials.every((t) => t.progress?.createdAt))
-  );
-
-  public readonly allCompleted$ = this.tutorialsProgress$.pipe(
-    map((tutorials) => tutorials.every((t) => t.progress?.completedAt))
   );
 
   private list(): Observable<TutorialProgress[]> {

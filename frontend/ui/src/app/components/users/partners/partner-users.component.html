@@ -1,24 +1,11 @@
 <app-page>
   <div class="distr-table-panel">
     @if (partnerOrganization(); as partner) {
-      <nav class="m-4 flex justify-between" aria-label="Breadcrumb">
-        <ol class="mb-3 inline-flex items-center sm:mb-0">
-          <li class="flex items-center">
-            <a
-              [routerLink]="['/', 'partners']"
-              class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
-              <fa-icon class="mr-2" [icon]="faBuilding" />
-              Partners
-            </a>
-          </li>
-          <span class="mx-2 text-gray-400">/</span>
-          <li aria-current="page">
-            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ partner.name }}</span>
-          </li>
-        </ol>
-      </nav>
+      <h3 class="mx-4 mt-4 truncate text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+        {{ partner.name }}
+      </h3>
     }
 
-    <app-users [partnerOrganizationId]="partnerOrganizationId()" [users]="users() ?? []" (refresh)="refresh$.next()" />
+    <app-users [partnerOrganizationId]="partnerOrganizationId()" [users]="users()" />
   </div>
 </app-page>

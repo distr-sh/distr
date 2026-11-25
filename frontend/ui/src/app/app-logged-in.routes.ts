@@ -1,61 +1,68 @@
 import {inject} from '@angular/core';
-import {CanActivateFn, Router, Routes} from '@angular/router';
+import {CanActivateFn, CanMatchFn, Router, Routes} from '@angular/router';
 import {CustomerOrganizationFeature, UserRole} from '@distr-sh/distr-sdk';
-import {firstValueFrom, map, switchMap} from 'rxjs';
+import {combineLatest, firstValueFrom, map} from 'rxjs';
 import {getRemoteEnvironment} from '../env/remote';
 import {AccessTokenDetailComponent} from './access-tokens/access-token-detail.component';
 import {AccessTokensComponent} from './access-tokens/access-tokens.component';
 import {AdvisoryDetailComponent} from './advisories/advisory-detail.component';
 import {AdvisoryListComponent} from './advisories/advisory-list.component';
-import {AlertConfigurationsPageComponent} from './alert-configurations/alert-configurations-page.component';
-import {CustomerAlertConfigurationsPageComponent} from './alert-configurations/customer-alert-configurations-page.component';
 import {ApplicationDetailComponent} from './applications/application-detail.component';
 import {ApplicationsPageComponent} from './applications/applications-page.component';
-import {ArtifactPullsComponent} from './artifacts/artifact-pulls/artifact-pulls.component';
+import {ArtifactPullsPageComponent} from './artifacts/artifact-pulls/artifact-pulls-page.component';
 import {ArtifactVersionsComponent} from './artifacts/artifact-versions/artifact-versions.component';
 import {ArtifactsComponent} from './artifacts/artifacts/artifacts.component';
-import {BillingComponent} from './billing/billing.component';
-import {BillingSettingsComponent} from './billing/settings/billing-settings.component';
 import {CustomerOrganizationsComponent} from './components/customer-organizations/customer-organizations.component';
-import {DashboardComponent} from './components/dashboard/dashboard.component';
+import {CustomerDeploymentsTabComponent} from './components/customer-organizations/detail/customer-deployments-tab.component';
+import {customerDetailTabs} from './components/customer-organizations/detail/customer-detail-navigation';
+import {CustomerDetailPageComponent} from './components/customer-organizations/detail/customer-detail-page.component';
+import {CustomerLicensesTabComponent} from './components/customer-organizations/detail/customer-licenses-tab.component';
+import {CustomerNotificationsTabComponent} from './components/customer-organizations/detail/customer-notifications-tab.component';
+import {CustomerOverviewTabComponent} from './components/customer-organizations/detail/customer-overview-tab.component';
+import {CustomerRegistryTabComponent} from './components/customer-organizations/detail/customer-registry-tab.component';
+import {CustomerSecretsTabComponent} from './components/customer-organizations/detail/customer-secrets-tab.component';
+import {CustomerSettingsTabComponent} from './components/customer-organizations/detail/customer-settings-tab.component';
+import {CustomerSupportTabComponent} from './components/customer-organizations/detail/customer-support-tab.component';
+import {CustomerUsersTabComponent} from './components/customer-organizations/detail/customer-users-tab.component';
+import {NavShellComponent} from './components/nav-shell.component';
 import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
 import {PortalUnavailableComponent} from './components/portal-unavailable/portal-unavailable.component';
-import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
 import {PartnerUsersComponent} from './components/users/partners/partner-users.component';
-import {VendorUsersComponent} from './components/users/vendors/vendor-users.component';
+import {UsersPageComponent} from './components/users/users-page.component';
+import {CustomerPortalBrandingComponent} from './customer-portal/branding/customer-portal-branding.component';
+import {customerPortalTabs} from './customer-portal/customer-portal-navigation';
+import {CustomerPortalComponent} from './customer-portal/customer-portal.component';
+import {CustomerPortalDomainComponent} from './customer-portal/domain-and-sign-in/customer-portal-domain.component';
 import {CustomerSettingsComponent} from './customer-settings/customer-settings.component';
 import {DeploymentTargetDetailComponent} from './deployments/deployment-target-details/deployment-target-detail.component';
-import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
+import {DeploymentTargetsPageComponent} from './deployments/deployment-targets-page.component';
 import {CustomerHomePageComponent} from './home/customer/customer-home-page.component';
+import {VendorHomePageComponent} from './home/vendor/vendor-home-page.component';
 import {CustomerLicenseDetailPageComponent} from './licenses/customer-license-detail-page.component';
-import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
-import {VendorLicenseDetailPageComponent} from './licenses/vendor-license-detail-page.component';
-import {CustomerUpdateNotificationsPageComponent} from './notification-configurations/customer-update-notifications-page.component';
-import {UpdateNotificationsPageComponent} from './notification-configurations/update-notifications-page.component';
-import {CustomerNotificationRecordsPageComponent} from './notification-records/customer-notification-records-page.component';
 import {NotificationRecordsPageComponent} from './notification-records/notification-records-page.component';
-import {OrganizationBrandingComponent} from './organization-branding/organization-branding.component';
-import {CustomEmailComponent} from './organization-settings/custom-email.component';
-import {CustomOidcComponent} from './organization-settings/custom-oidc.component';
-import {GeneralSettingsComponent} from './organization-settings/general-settings.component';
+import {NotificationsPageComponent} from './notifications/notifications-page.component';
+import {BillingComponent} from './organization-settings/billing/billing.component';
+import {OrganizationDomainsComponent} from './organization-settings/domains-and-sign-in/organization-domains.component';
+import {GeneralSettingsComponent} from './organization-settings/general/general-settings.component';
+import {organizationSettingsTabs} from './organization-settings/organization-settings-navigation';
 import {OrganizationSettingsComponent} from './organization-settings/organization-settings.component';
-import {CustomerSecretsPageComponent} from './secrets/customer-secrets-page.component';
+import {SecretsSettingsComponent} from './organization-settings/secrets/secrets-settings.component';
+import {SubscriptionCallbackComponent} from './organization-settings/subscription/subscription-callback.component';
+import {SubscriptionComponent} from './organization-settings/subscription/subscription.component';
+import {canOpenSubscription, subscriptionGuard} from './organization-settings/subscription/subscription.guard';
+import {TeamSettingsComponent} from './organization-settings/team/team-settings.component';
 import {SecretsPage} from './secrets/secrets-page.component';
 import {AuthService} from './services/auth.service';
 import {ContextService} from './services/context.service';
 import {FeatureFlagService} from './services/feature-flag.service';
 import {OrganizationService} from './services/organization.service';
 import {ToastService} from './services/toast.service';
-import {SidebarLinksPageComponent} from './sidebar-links/sidebar-links-page.component';
-import {SubscriptionCallbackComponent} from './subscription/subscription-callback.component';
-import {SubscriptionComponent} from './subscription/subscription.component';
 import {SupportBundleDetailComponent} from './support-bundles/detail/support-bundle-detail.component';
-import {SupportBundleListComponent} from './support-bundles/list/support-bundle-list.component';
+import {SupportBundleListPageComponent} from './support-bundles/list/support-bundle-list-page.component';
 import {SupportBundleSettingsComponent} from './support-bundles/vendor/support-bundle-settings.component';
 import {BrandingTutorialComponent} from './tutorials/branding/branding-tutorial.component';
 import {ControllersTutorialComponent} from './tutorials/controllers/controllers-tutorial.component';
 import {RegistryTutorialComponent} from './tutorials/registry/registry-tutorial.component';
-import {TutorialsComponent} from './tutorials/tutorials.component';
 import {UsersTutorialComponent} from './tutorials/users/users-tutorial.component';
 import {isSubscriptionExpired} from './types/organization';
 import {UserGeneralSettingsComponent} from './user-settings/user-general-settings.component';
@@ -90,6 +97,19 @@ const requireCustomer: CanActivateFn = () => {
 const requireVendorOrPartner: CanActivateFn = () => {
   const auth = inject(AuthService);
   if (auth.isVendor() || auth.isPartner()) {
+    return true;
+  }
+  return inject(Router).createUrlTree(['/']);
+};
+
+const matchVendorOrPartner: CanMatchFn = () => {
+  const auth = inject(AuthService);
+  return auth.isVendor() || auth.isPartner();
+};
+
+const requirePartnerOrCustomer: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  if (auth.isPartner() || auth.isCustomer()) {
     return true;
   }
   return inject(Router).createUrlTree(['/']);
@@ -145,26 +165,6 @@ function supportBundlesEnabledGuard(): CanActivateFn {
   };
 }
 
-function vendorBillingEnabledGuard(): CanActivateFn {
-  return async () => {
-    const featureFlags = inject(FeatureFlagService);
-    return await firstValueFrom(featureFlags.isVendorBillingEnabled$);
-  };
-}
-
-// The tab holds the custom domains as well, so either feature makes it reachable.
-function customOidcProvidersEnabledGuard(): CanActivateFn {
-  return async () => {
-    const featureFlags = inject(FeatureFlagService);
-    const router = inject(Router);
-    return (
-      (await firstValueFrom(featureFlags.isCustomOidcProvidersEnabled$)) ||
-      (await firstValueFrom(featureFlags.isCustomDomainsEnabled$)) ||
-      router.createUrlTree(['/settings/organization/general'])
-    );
-  };
-}
-
 function customerSettingsEnabledGuard(): CanActivateFn {
   return async () => {
     const contextService = inject(ContextService);
@@ -175,25 +175,6 @@ function customerSettingsEnabledGuard(): CanActivateFn {
       ((await firstValueFrom(featureFlags.isCustomerSettingsEnabled$)) &&
         customerOrganization?.features?.includes('settings')) ||
       router.createUrlTree(['/'])
-    );
-  };
-}
-
-function customerSettingsFeatureGuard(): CanActivateFn {
-  return async () => {
-    const featureFlags = inject(FeatureFlagService);
-    const router = inject(Router);
-    return (await firstValueFrom(featureFlags.isCustomerSettingsEnabled$)) || router.createUrlTree(['/customers']);
-  };
-}
-
-function customEmailsEnabledGuard(): CanActivateFn {
-  return async () => {
-    const featureFlags = inject(FeatureFlagService);
-    const router = inject(Router);
-    return (
-      (await firstValueFrom(featureFlags.isCustomEmailsEnabled$)) ||
-      router.createUrlTree(['/settings/organization/general'])
     );
   };
 }
@@ -225,48 +206,25 @@ function registryHostSetOrRedirectGuard(redirectTo: string): CanActivateFn {
   };
 }
 
-function subscriptionGuard(): CanActivateFn {
+function portalUnavailableGuard(): CanActivateFn {
   return () => {
-    const auth = inject(AuthService);
     const router = inject(Router);
-    const organizationService = inject(OrganizationService);
-    return organizationService.get().pipe(
-      switchMap(async (org) => {
-        if (!isSubscriptionExpired(org)) {
-          return true;
-        } else if (auth.isLens()) {
-          // a lens cannot reach the subscription page, so the session has to return to the vendor portal first
-          await auth.switchContext(org.id!);
-          return false;
-        } else if (auth.isVendor()) {
-          return router.createUrlTree(['/subscription']);
-        } else {
-          return router.createUrlTree(['/unavailable']);
-        }
-      })
+    return combineLatest([inject(OrganizationService).get(), canOpenSubscription()]).pipe(
+      map(([org, canOpen]) => (isSubscriptionExpired(org) && !canOpen) || router.createUrlTree(['/']))
     );
   };
 }
 
-function portalUnavailableGuard(): CanActivateFn {
-  return () => {
-    const auth = inject(AuthService);
-    const router = inject(Router);
-    return inject(OrganizationService)
-      .get()
-      .pipe(map((org) => (!auth.isVendor() && isSubscriptionExpired(org)) || router.createUrlTree(['/'])));
-  };
-}
-
-export const routes: Routes = [
+const shellRoutes: Routes = [
   {
     path: '',
-    canActivate: [subscriptionGuard()],
+    canActivateChild: [subscriptionGuard],
     children: [
       {
-        path: 'dashboard',
-        component: DashboardComponent,
-        canActivate: [requireVendorOrPartner],
+        path: 'home',
+        title: 'Home',
+        component: VendorHomePageComponent,
+        canMatch: [matchVendorOrPartner],
       },
       {
         path: 'home',
@@ -274,7 +232,6 @@ export const routes: Routes = [
         component: CustomerHomePageComponent,
         canActivate: [requireCustomer],
       },
-      {path: 'overview', pathMatch: 'full', redirectTo: 'home'},
       {
         path: 'applications',
         title: 'Applications',
@@ -295,23 +252,28 @@ export const routes: Routes = [
         path: 'deployments',
         title: 'Deployments',
         children: [
-          {path: '', pathMatch: 'full', component: DeploymentTargetsComponent},
+          {path: '', pathMatch: 'full', component: DeploymentTargetsPageComponent},
           {path: ':deploymentTargetId', component: DeploymentTargetDetailComponent},
+        ],
+      },
+      {
+        path: 'registry',
+        title: 'Registry',
+        canActivate: [requireVendorOrPartner],
+        children: [
+          {path: '', pathMatch: 'full', component: ArtifactsComponent},
+          {path: 'downloads', title: 'Downloads', component: ArtifactPullsPageComponent},
+          {path: ':id', component: ArtifactVersionsComponent},
         ],
       },
       {
         path: 'artifacts',
         title: 'Artifacts',
+        canActivate: [requireCustomer],
         children: [
           {path: '', pathMatch: 'full', component: ArtifactsComponent},
           {path: ':id', component: ArtifactVersionsComponent},
         ],
-      },
-      {
-        path: 'artifact-pulls',
-        title: 'Downloads',
-        component: ArtifactPullsComponent,
-        canActivate: [requireVendorOrPartner],
       },
       {
         path: 'customers',
@@ -324,30 +286,67 @@ export const routes: Routes = [
         title: 'Customers',
         canActivate: [requireVendorOrPartner],
         children: [
-          {path: 'users', component: CustomerUsersComponent},
-          {path: 'secrets', component: CustomerSecretsPageComponent},
-          {path: 'links', component: SidebarLinksPageComponent},
           {
-            path: 'alerts',
-            component: CustomerAlertConfigurationsPageComponent,
-            canActivate: [notificationsEnabledGuard()],
+            path: '',
+            component: CustomerDetailPageComponent,
+            children: [
+              {
+                path: 'overview',
+                title: customerDetailTabs.title('overview'),
+                component: CustomerOverviewTabComponent,
+                canActivate: [customerDetailTabs.guard('overview')],
+              },
+              {
+                path: 'deployments',
+                title: customerDetailTabs.title('deployments'),
+                component: CustomerDeploymentsTabComponent,
+                canActivate: [customerDetailTabs.guard('deployments')],
+              },
+              {
+                path: 'registry',
+                title: customerDetailTabs.title('registry'),
+                component: CustomerRegistryTabComponent,
+                canActivate: [customerDetailTabs.guard('registry')],
+              },
+              {
+                path: 'licenses',
+                title: customerDetailTabs.title('licenses'),
+                component: CustomerLicensesTabComponent,
+                canActivate: [customerDetailTabs.guard('licenses')],
+              },
+              {
+                path: 'users',
+                title: customerDetailTabs.title('users'),
+                component: CustomerUsersTabComponent,
+                canActivate: [customerDetailTabs.guard('users')],
+              },
+              {
+                path: 'secrets',
+                title: customerDetailTabs.title('secrets'),
+                component: CustomerSecretsTabComponent,
+                canActivate: [customerDetailTabs.guard('secrets')],
+              },
+              {
+                path: 'support',
+                title: customerDetailTabs.title('support'),
+                component: CustomerSupportTabComponent,
+                canActivate: [customerDetailTabs.guard('support')],
+              },
+              {
+                path: 'notifications',
+                title: customerDetailTabs.title('notifications'),
+                component: CustomerNotificationsTabComponent,
+                canActivate: [customerDetailTabs.guard('notifications')],
+              },
+              {
+                path: 'settings',
+                title: customerDetailTabs.title('settings'),
+                component: CustomerSettingsTabComponent,
+                canActivate: [customerDetailTabs.guard('settings')],
+              },
+              {path: '', pathMatch: 'full', redirectTo: customerDetailTabs.firstOpenable},
+            ],
           },
-          {
-            path: 'updates',
-            component: CustomerUpdateNotificationsPageComponent,
-            canActivate: [notificationsEnabledGuard()],
-          },
-          {
-            path: 'notification-history',
-            component: CustomerNotificationRecordsPageComponent,
-            canActivate: [notificationsEnabledGuard()],
-          },
-          {
-            path: 'settings',
-            component: CustomerSettingsComponent,
-            canActivate: [requiredRoleGuard('admin'), customerSettingsFeatureGuard()],
-          },
-          {path: '', pathMatch: 'full', redirectTo: 'users'},
         ],
       },
       {
@@ -366,60 +365,41 @@ export const routes: Routes = [
         ],
       },
       {
-        path: 'users',
-        title: 'Users',
-        component: VendorUsersComponent,
-        canActivate: [requiredRoleGuard('admin')],
+        path: 'team',
+        title: 'Team',
+        component: UsersPageComponent,
+        canActivate: [requirePartnerOrCustomer, requiredRoleGuard('admin')],
       },
       {
         path: 'secrets',
         title: 'Secrets',
         component: SecretsPage,
+        canActivate: [requirePartnerOrCustomer],
       },
       {
-        path: 'license-keys',
+        path: 'licenses',
         title: 'Licenses',
         component: CustomerLicenseDetailPageComponent,
         canActivate: [requireCustomer, licensingEnabledGuard()],
       },
       {
-        path: 'branding',
-        title: 'Branding',
-        component: OrganizationBrandingComponent,
+        path: 'customer-portal',
+        title: 'Customer Portal',
+        component: CustomerPortalComponent,
         data: {userRole: 'vendor'},
         canActivate: [requireVendor, requiredRoleGuard('read_write', 'admin')],
-      },
-      {
-        path: 'billing',
-        title: 'Billing',
-        canActivate: [requireVendor, vendorBillingEnabledGuard()],
         children: [
+          {path: '', pathMatch: 'full', redirectTo: 'branding'},
           {
-            path: '',
-            pathMatch: 'full',
-            component: BillingComponent,
+            path: 'branding',
+            title: customerPortalTabs.title('branding'),
+            component: CustomerPortalBrandingComponent,
           },
           {
-            path: 'settings',
-            component: BillingSettingsComponent,
-            canActivate: [requiredRoleGuard('admin')],
-          },
-        ],
-      },
-      {
-        path: 'licenses',
-        title: 'Licenses',
-        canActivate: [requireVendorOrPartner, licensingEnabledGuard()],
-        data: {userRole: 'vendor'},
-        children: [
-          {
-            path: '',
-            pathMatch: 'full',
-            component: LicensesOverviewComponent,
-          },
-          {
-            path: ':customerOrganizationId',
-            component: VendorLicenseDetailPageComponent,
+            path: 'domain-and-sign-in',
+            title: customerPortalTabs.title('domain-and-sign-in'),
+            component: CustomerPortalDomainComponent,
+            canActivate: [customerPortalTabs.guard('domain-and-sign-in')],
           },
         ],
       },
@@ -442,26 +422,58 @@ export const routes: Routes = [
             title: 'Organization Settings',
             component: OrganizationSettingsComponent,
             data: {userRole: 'vendor'},
-            canActivate: [requireVendor, requiredRoleGuard('admin')],
+            canActivate: [requireVendor],
             children: [
               {
                 path: '',
                 pathMatch: 'full',
-                redirectTo: 'general',
+                redirectTo: organizationSettingsTabs.firstOpenable,
               },
               {
                 path: 'general',
+                title: organizationSettingsTabs.title('general'),
                 component: GeneralSettingsComponent,
+                canActivate: [organizationSettingsTabs.guard('general')],
               },
               {
-                path: 'identity-provider',
-                component: CustomOidcComponent,
-                canActivate: [customOidcProvidersEnabledGuard()],
+                path: 'team',
+                title: organizationSettingsTabs.title('team'),
+                component: TeamSettingsComponent,
+                canActivate: [organizationSettingsTabs.guard('team')],
               },
               {
-                path: 'email',
-                component: CustomEmailComponent,
-                canActivate: [customEmailsEnabledGuard()],
+                path: 'secrets',
+                title: organizationSettingsTabs.title('secrets'),
+                component: SecretsSettingsComponent,
+                canActivate: [organizationSettingsTabs.guard('secrets')],
+              },
+              {
+                path: 'domains-and-sign-in',
+                title: organizationSettingsTabs.title('domains-and-sign-in'),
+                component: OrganizationDomainsComponent,
+                canActivate: [organizationSettingsTabs.guard('domains-and-sign-in')],
+              },
+              {
+                path: 'subscription',
+                title: organizationSettingsTabs.title('subscription'),
+                canActivate: [organizationSettingsTabs.guard('subscription')],
+                children: [
+                  {
+                    path: '',
+                    pathMatch: 'full',
+                    component: SubscriptionComponent,
+                  },
+                  {
+                    path: 'callback',
+                    component: SubscriptionCallbackComponent,
+                  },
+                ],
+              },
+              {
+                path: 'billing',
+                title: organizationSettingsTabs.title('billing'),
+                component: BillingComponent,
+                canActivate: [organizationSettingsTabs.guard('billing')],
               },
             ],
           },
@@ -515,7 +527,7 @@ export const routes: Routes = [
           {
             path: '',
             pathMatch: 'full',
-            component: TutorialsComponent,
+            redirectTo: '/home',
           },
           {
             path: 'users',
@@ -531,44 +543,33 @@ export const routes: Routes = [
           },
           {
             path: 'registry',
-            canActivate: [registryHostSetOrRedirectGuard('/tutorials')],
+            canActivate: [registryHostSetOrRedirectGuard('/home')],
             component: RegistryTutorialComponent,
           },
         ],
       },
       {
         path: 'notifications',
-        canActivate: [requireVendorOrCustomer, notificationsEnabledGuard()],
+        title: 'Notifications',
+        canActivate: [
+          requireVendorOrCustomer,
+          notificationsEnabledGuard(),
+          requireCustomerFeature('alerts', 'update_notifications'),
+        ],
         children: [
-          {
-            path: 'alert-configurations',
-            title: 'Alerts',
-            canActivate: [requireCustomerFeature('alerts')],
-            component: AlertConfigurationsPageComponent,
-          },
-          {
-            path: 'updates',
-            title: 'Update Notifications',
-            canActivate: [requireCustomerFeature('update_notifications')],
-            component: UpdateNotificationsPageComponent,
-          },
-          {
-            path: 'history',
-            title: 'Notification History',
-            canActivate: [requireCustomerFeature('alerts', 'update_notifications')],
-            component: NotificationRecordsPageComponent,
-          },
+          {path: '', pathMatch: 'full', component: NotificationsPageComponent},
+          {path: 'history', title: 'Notification History', component: NotificationRecordsPageComponent},
         ],
       },
       {
-        path: 'support-bundles',
-        title: 'Support Bundles',
-        canActivate: [requireVendorOrPartner, supportBundlesEnabledGuard()],
+        path: 'support',
+        title: 'Support',
+        canActivate: [supportBundlesEnabledGuard(), requireCustomerFeature('support_bundles')],
         children: [
           {
             path: '',
             pathMatch: 'full',
-            component: SupportBundleListComponent,
+            component: SupportBundleListPageComponent,
           },
           {
             path: 'settings',
@@ -583,41 +584,9 @@ export const routes: Routes = [
         ],
       },
       {
-        path: 'support',
-        title: 'Support',
-        canActivate: [requireCustomer, supportBundlesEnabledGuard(), requireCustomerFeature('support_bundles')],
-        children: [
-          {
-            path: '',
-            pathMatch: 'full',
-            component: SupportBundleListComponent,
-          },
-          {
-            path: ':supportBundleId',
-            component: SupportBundleDetailComponent,
-          },
-        ],
-      },
-      {
-        path: 'advisories',
-        title: 'Security Advisories',
-        canActivate: [requireVendorOrPartner, vulnerabilitiesEnabledGuard()],
-        children: [
-          {
-            path: '',
-            pathMatch: 'full',
-            component: AdvisoryListComponent,
-          },
-          {
-            path: ':advisoryId',
-            component: AdvisoryDetailComponent,
-          },
-        ],
-      },
-      {
         path: 'security',
         title: 'Security',
-        canActivate: [requireCustomer, vulnerabilitiesEnabledGuard(), requireCustomerFeature('vulnerabilities')],
+        canActivate: [vulnerabilitiesEnabledGuard(), requireCustomerFeature('vulnerabilities')],
         children: [
           {
             path: '',
@@ -629,22 +598,6 @@ export const routes: Routes = [
             component: AdvisoryDetailComponent,
           },
         ],
-      },
-    ],
-  },
-  {
-    path: 'subscription',
-    title: 'Subscription',
-    canActivate: [requireVendor],
-    children: [
-      {
-        path: '',
-        pathMatch: 'full',
-        component: SubscriptionComponent,
-      },
-      {
-        path: 'callback',
-        component: SubscriptionCallbackComponent,
       },
     ],
   },
@@ -655,3 +608,5 @@ export const routes: Routes = [
     component: PortalUnavailableComponent,
   },
 ];
+
+export const routes: Routes = [{path: '', component: NavShellComponent, children: shellRoutes}];

@@ -1,9 +1,8 @@
 import {Application, DeploymentTarget, UserAccount} from '@distr-sh/distr-sdk';
 import dayjs, {Dayjs} from 'dayjs';
-import {latestDeploymentVersion} from '../../../util/versions';
+import {isDeploymentOutdated, latestDeploymentVersion} from '../../../util/versions';
 import {Artifact} from '../../services/artifacts.service';
 import {AccessToken} from '../../types/access-token';
-import {ActivityFeedEntry} from '../../types/activity-feed';
 import {AlertConfiguration} from '../../types/alert-configuration';
 import {ApplicationEntitlement} from '../../types/application-entitlement';
 import {ArtifactEntitlement} from '../../types/artifact-entitlement';
@@ -13,7 +12,6 @@ import {NotificationRecord} from '../../types/notification-record';
 import {SupportBundle} from '../../types/support-bundle';
 import {
   CustomerHomeAccessToken,
-  CustomerHomeActivity,
   CustomerHomeAlerts,
   CustomerHomeArtifacts,
   CustomerHomeChecklist,
@@ -55,9 +53,7 @@ export function toCustomerHomeDeploymentTargets(
         currentApplicationVersionId: deployment.currentApplicationVersionId,
         currentApplicationVersionName: deployment.currentApplicationVersionName,
         latestApplicationVersionName: latest?.name,
-        updateAvailable:
-          latest !== undefined &&
-          latest.id !== (deployment.currentApplicationVersionId ?? deployment.applicationVersionId),
+        updateAvailable: isDeploymentOutdated(deployment, applications, entitlements),
         deploymentRevisionId: deployment.deploymentRevisionId,
         deploymentRevisionCreatedAt: deployment.deploymentRevisionCreatedAt,
         deploymentRevisionCreatedBy: user(
@@ -230,16 +226,4 @@ export function toCustomerHomeSupportBundles(bundles: SupportBundle[]): Customer
             : user(bundle.createdByUserName, bundle.createdByImageUrl),
     }))
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-}
-
-export function toCustomerHomeActivity(entries: ActivityFeedEntry[]): CustomerHomeActivity[] {
-  return entries.map((entry) => ({
-    id: entry.id,
-    createdAt: entry.createdAt,
-    type: entry.type,
-    resourceId: entry.resourceId,
-    subject: entry.subject,
-    detail: entry.detail,
-    user: user(entry.userName, entry.userImageUrl),
-  }));
 }

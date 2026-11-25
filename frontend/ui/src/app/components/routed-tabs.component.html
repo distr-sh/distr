@@ -1,0 +1,11 @@
+<app-tab-bar [tabs]="tabs()" [(active)]="active" (tabClick)="onTabClick($event)">
+  <ng-template #tabSuffix let-tab let-origin="origin">
+    @if (tab.plan; as plan) {
+      <app-plan-badge [plan]="plan" class="ml-2" />
+      <app-plan-hint-overlay [origin]="origin" [plan]="plan" />
+    }
+  </ng-template>
+</app-tab-bar>
+<div role="tabpanel" class="pt-6" [id]="'tabpanel-' + active()" [attr.aria-labelledby]="'tab-' + active()">
+  <router-outlet />
+</div>
