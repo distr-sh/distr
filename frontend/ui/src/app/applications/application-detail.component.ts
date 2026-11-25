@@ -196,6 +196,14 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   readonly isVersionFormExpanded = signal(false);
 
   ngOnInit() {
+    this.filterForm.controls.showArchived.valueChanges.pipe(takeUntil(this.destroyed$)).subscribe((showArchived) => {
+      if (!showArchived) {
+        const archivedIds = new Set(
+          (this.application()?.versions ?? []).filter((version) => isArchived(version)).map((version) => version.id)
+        );
+        this.selectedVersionIds.update((ids) => new Set([...ids].filter((id) => !archivedIds.has(id))));
+      }
+    });
     this.newVersionForm.controls.kubernetes.controls.chartType.valueChanges
       .pipe(takeUntil(this.destroyed$))
       .subscribe((type) => {
@@ -456,21 +464,24 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   }
 
   async bulkArchiveVersions(app: Application) {
+    const versions = (app.versions ?? []).filter((version) => this.isVersionSelected(version) && !isArchived(version));
+    if (versions.length === 0) {
+      this.toast.info('All selected versions are already archived');
+      return;
+    }
     this.overlay
-      .confirm(`Really archive ${this.selectedVersionIds().size} versions? Existing deployments will continue to work.`)
+      .confirm(`Really archive ${versions.length} versions? Existing deployments will continue to work.`)
       .pipe(
         filter((it) => it === true),
         switchMap(() =>
           this.applicationService.patch(app.id!, {
-            versions: app?.versions
-              ?.filter((version) => this.isVersionSelected(version))
-              .map((version) => ({id: version.id!, archivedAt: new Date().toISOString()})),
+            versions: versions.map((version) => ({id: version.id!, archivedAt: new Date().toISOString()})),
           })
         )
       )
       .subscribe({
         next: () => {
-          this.toast.success(`${this.selectedVersionIds().size} archived`);
+          this.toast.success(`${versions.length} archived`);
           this.selectedVersionIds.set(new Set());
         },
         error: (e) => {
@@ -480,6 +491,59 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
           }
         },
       });
+  }
+
+  async deleteVersion(application: Application, version: ApplicationVersion) {
+    if (!(await firstValueFrom(this.overlay.confirm(`Really delete ${version.name}? This cannot be undone.`)))) {
+      return;
+    }
+    try {
+      await firstValueFrom(this.applicationService.deleteApplicationVersion(application, version));
+      this.selectedVersionIds.update((ids) => new Set([...ids].filter((id) => id !== version.id)));
+      this.toast.success(`${version.name} deleted`);
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    }
+  }
+
+  async bulkDeleteVersions(application: Application) {
+    const versions = (application.versions ?? []).filter((version) => this.isVersionSelected(version));
+    if (
+      !(await firstValueFrom(
+        this.overlay.confirm({
+          message: {
+            message: `Really delete ${versions.length} versions? This cannot be undone.`,
+            alert: {type: 'info', message: 'Versions that a deployment uses will be skipped.'},
+          },
+        })
+      ))
+    ) {
+      return;
+    }
+    try {
+      const failed = await this.applicationService.deleteApplicationVersions(application, versions);
+      this.selectedVersionIds.set(new Set());
+      const deletedCount = versions.length - failed.length;
+      if (deletedCount > 0) {
+        this.toast.success(`${deletedCount} deleted`);
+      }
+      const skippedByReason = new Map<string, string[]>();
+      for (const {version, error} of failed) {
+        const reason = getFormDisplayedError(error) ?? 'Unknown error';
+        skippedByReason.set(reason, [...(skippedByReason.get(reason) ?? []), version.name]);
+      }
+      for (const [reason, names] of skippedByReason) {
+        this.toast.error(`Skipped ${names.join(', ')}: ${reason}`);
+      }
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    }
   }
 
   async unArchiveVersion(application: Application, version: ApplicationVersion) {
@@ -571,7 +635,6 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   }
 
   protected toggleAllVersionsSelected(versions: ApplicationVersion[]) {
-    versions = versions.filter((version) => !isArchived(version));
     if (this.isAllVersionsSelected(versions)) {
       this.selectedVersionIds.set(new Set());
     } else {
@@ -580,7 +643,6 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   }
 
   protected isAllVersionsSelected(versions: ApplicationVersion[]): boolean {
-    versions = versions.filter((version) => !isArchived(version));
     return (
       this.selectedVersionIds().size > 0 &&
       versions.length === this.selectedVersionIds().size &&
