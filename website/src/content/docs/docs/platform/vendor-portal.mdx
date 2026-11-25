@@ -10,6 +10,8 @@ sidebar:
 import ThemedImage from '~/components/util/ThemedImage.astro';
 import vendorPortalLight from '~/assets/docs/product/vendor-portal/vendor-portal-light.png';
 import vendorPortalDark from '~/assets/docs/product/vendor-portal/vendor-portal-dark.png';
+import commandPaletteLight from '~/assets/docs/product/vendor-portal/command-palette-light.webp';
+import commandPaletteDark from '~/assets/docs/product/vendor-portal/command-palette-dark.webp';
 
 The Vendor Portal is the Distr UI for vendors. It gives you access to all Distr features, including [application creation](/docs/controllers/application/), [artifact registry](/docs/registry/configuration/) management, and monitoring of end-customer deployment states. The [Customer Portal](/docs/platform/customer-portal/) gives end customers a simpler interface where they configure and manage their deployments. It also centralizes release information and instructions for operating the vendor's software.
 
@@ -29,3 +31,21 @@ The Vendor Portal is the Distr UI for vendors. It gives you access to all Distr 
 6. **Customer Portal**: [White-label](/docs/platform/branding/) the customer portal with your branding and provide customers with self-service instructions and documentation in the _Branding_ tab. Admins set up the customer portal domain and its [identity providers](/docs/platform/custom-identity-provider/) in the _Domain & Sign-in_ tab.
 7. **Settings**: Manage the [secrets](/docs/controllers/secrets/) of your internal deployments in the _Secrets_ tab. Admins configure your organization name, registry [slug](/docs/registry/configuration/#1-set-your-registry-slug) and [custom domains](/docs/platform/branding/#custom-domains), and manage organization deletion. They add and manage the internal team members of your vendor organization in the _Team_ tab and view the current plan, usage limits and billing information in the _Subscription_ tab. With vendor billing enabled, they also manage license templates and the Stripe webhook in the _Billing_ tab.
 8. **Account Menu**: Access your personal account settings from the dropdown in the top-right corner. Update your profile information or create [Personal Access Tokens](/docs/integrations/personal-access-token/) for API, SDK, and registry authentication to integrate Distr into your CI/CD pipelines.
+
+## Command Palette
+
+Press <kbd>Ctrl</kbd>+<kbd>K</kbd> (<kbd>⌘</kbd>+<kbd>K</kbd> on macOS) anywhere in the Vendor Portal to open the Command Palette. Type to search and press <kbd>Enter</kbd> to open the selected entry. The Command Palette lists:
+
+- your applications, customers, deployments and artifacts
+- deployment status filters, which open the deployments page filtered by that status
+- every page of the sidebar
+- the organizations you can switch to
+- your customers under **Enter customer lens**, which opens their portal with [Customer Lens](/docs/platform/customer-lens/)
+
+<ThemedImage
+  lightSrc={commandPaletteLight}
+  darkSrc={commandPaletteDark}
+  alt="The Command Palette listing applications, customers, deployments and pages"
+/>
+
+Every sidebar page also has a keyboard shortcut: press <kbd>G</kbd> followed by the key of the page (<kbd>G</kbd> then <kbd>H</kbd> for Home, <kbd>G</kbd> then <kbd>C</kbd> for Customers, <kbd>G</kbd> then <kbd>D</kbd> for Deployments). Hover over a sidebar entry to see its shortcut.
