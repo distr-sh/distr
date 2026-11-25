@@ -7,7 +7,7 @@ const products = [
   {
     title: 'A guided path for your customers',
     description:
-      'Give customers one place to install, access artifacts, manage credentials, control versions, and stay on top of their deployments.',
+      'One branded portal where customers install, pull artifacts, manage credentials and keep their deployments up to date.',
     lightImage: images.distr.customerPortal.light,
     darkImage: images.distr.customerPortal.dark,
     alt: 'Distr customer portal for self-hosted deployments',
@@ -15,7 +15,7 @@ const products = [
   {
     title: 'Decide exactly what each customer gets',
     description:
-      'Entitle every customer to specific applications, versions and artifact tags, with an expiry date and a regex that adds matching new tags automatically. Issue signed license keys for the seats and features your application enforces, even offline.',
+      'Entitle each customer to specific versions and artifact tags, and issue signed license keys your application can verify offline.',
     lightImage: images.distr.artifactLicenses.light,
     darkImage: images.distr.artifactLicenses.dark,
     alt: 'Distr artifact entitlement restricting a customer to specific tags',
@@ -23,15 +23,15 @@ const products = [
   {
     title: 'Know who pulled which version',
     description:
-      'Every pull from the Distr registry is recorded with the customer, user, IP address and version, so you see who runs what without asking.',
+      'Every registry pull is recorded with customer, user, IP address and version, so you know who runs what without asking.',
     lightImage: images.distr.artifacts.light,
     darkImage: images.distr.artifacts.dark,
     alt: 'Distr registry downloads per customer and artifact version',
   },
   {
-    title: 'Cut the support burden of self-hosted deployments',
+    title: 'Cut the support burden',
     description:
-      'Centralize customer versions, entitlements, logs, metrics, deployment status and support bundles so support and engineering can diagnose issues without long back-and-forth cycles.',
+      'Logs, metrics, deployment status and support bundles in one place, so you diagnose issues without long back-and-forth.',
     lightImage: images.distr.logViewer.light,
     darkImage: images.distr.logViewer.dark,
     alt: 'Distr log viewer for self-hosted customer deployments',
@@ -39,7 +39,7 @@ const products = [
   {
     title: 'Tell affected customers about vulnerabilities',
     description:
-      'Record a security advisory, mark the affected and patched versions and see which customers deployed or pulled them. Once published, it appears in the portal of every customer who deployed or is entitled to an affected version.',
+      'Mark the versions an advisory affects, see which customers deployed or pulled them and publish it in their portal.',
     lightImage: images.distr.security.light,
     darkImage: images.distr.security.dark,
     alt: 'Distr security advisory listing affected customers and versions',
@@ -60,20 +60,17 @@ const products = [
       </p>
     </div>
 
-    {products.map((product, i) => (
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:gap-12 mb-12 md:mb-16 lg:mb-24 last:mb-0 lg:items-center">
-        <div class:list={['lg:col-span-4', {'lg:order-2': i % 2 === 1}]}>
+    {products.map(product => (
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:gap-12 mb-12 md:mb-16 lg:mb-24 lg:items-center">
+        <div class="lg:col-span-4">
           <h3 class="text-xl md:text-2xl lg:text-3xl font-bold mb-3 md:mb-4 border-l-4 border-accent-600 pl-3 md:pl-4">
             {product.title}
           </h3>
-          <p class="text-base md:text-lg text-gray-600 dark:text-gray-300 mb-4 md:mb-6 pl-3 md:pl-4 leading-relaxed">
+          <p class="text-base md:text-lg text-gray-600 dark:text-gray-300 pl-3 md:pl-4 leading-relaxed">
             {product.description}
           </p>
-          <div class="pl-3 md:pl-4">
-            <SignupButton />
-          </div>
         </div>
-        <div class:list={['lg:col-span-8', {'lg:order-1': i % 2 === 1}]}>
+        <div class="lg:col-span-8">
           <div class="rounded-xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.15)] bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
             <ThemedImage
               lightSrc={product.lightImage}
@@ -85,5 +82,9 @@ const products = [
         </div>
       </div>
     ))}
+
+    <div class="text-center">
+      <SignupButton />
+    </div>
   </div>
 </section>
