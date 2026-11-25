@@ -11,6 +11,8 @@ import {syncSearchWithQueryParam} from '../../../util/filter';
 import {refreshInBackground} from '../../../util/refresh';
 import {ClickableRowDirective} from '../../directives/clickable-row.directive';
 import {customerLicenseStatusSelectOptions, isCustomerLicenseStatus} from '../../licenses/customer-license-status';
+import {increaseSubscriptionQuantity} from '../../organization-settings/subscription/subscription-quantity-increase-modal.component';
+import {canOpenSubscription} from '../../organization-settings/subscription/subscription.guard';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
 import {ArtifactPullsService} from '../../services/artifact-pulls.service';
@@ -84,6 +86,9 @@ export class CustomerOrganizationsComponent {
   protected readonly currentCustomerOrganizationCount = computed(
     () => this.organization()?.currentCustomerOrganizationCount
   );
+  private readonly quota = viewChild.required(QuotaLimitComponent);
+  private readonly canOpenSubscription = toSignal(canOpenSubscription(), {initialValue: false});
+  protected readonly isCreateBlocked = computed(() => this.quota().isLimitReached() && !this.canOpenSubscription());
 
   private readonly route = inject(ActivatedRoute);
   private readonly queryParams = toSignal(this.route.queryParamMap, {requireSync: true});
@@ -205,7 +210,10 @@ export class CustomerOrganizationsComponent {
     this.router.navigate([], {relativeTo: this.route, queryParams, queryParamsHandling: 'merge', replaceUrl: true});
   }
 
-  protected showCreateDialog() {
+  protected async showCreateDialog() {
+    if (this.quota().isLimitReached() && !(await increaseSubscriptionQuantity(this.overlay, 'customer'))) {
+      return;
+    }
     this.closeCreateDialog();
     this.modalRef = this.overlay.showModal(this.createCustomerDialog());
   }

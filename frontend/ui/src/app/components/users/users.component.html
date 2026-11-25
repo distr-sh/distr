@@ -1,12 +1,12 @@
 <div class="distr-toolbar p-4">
   <app-search-bar [control]="filterForm.controls.search" placeholder="Filter users" />
   <div class="distr-toolbar-actions">
-    <app-quota-limit [usage]="effectiveUsage()" [limit]="limit()" label="seats" #quota />
+    <app-quota-limit [usage]="effectiveUsage()" [limit]="limit()" label="seats" />
     @if ((auth.isVendor() && auth.hasRole('read_write')) || auth.hasRole('admin')) {
       <button
         (click)="showInviteDialog()"
-        [disabled]="quota.isLimitReached()"
-        [title]="quota.isLimitReached() ? 'Limit reached' : ''"
+        [disabled]="isInviteBlocked()"
+        [title]="inviteBlockedReason()"
         type="button"
         id="addUserButton"
         class="distr-btn-secondary flex w-full items-center justify-center px-4 py-2 text-sm font-medium md:w-auto">

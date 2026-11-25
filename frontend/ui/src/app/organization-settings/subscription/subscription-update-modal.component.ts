@@ -61,7 +61,6 @@ export class SubscriptionUpdateModalComponent {
         });
       } else {
         this.toast.success('Subscription updated successfully');
-        setTimeout(() => location.reload(), 1000);
       }
     } catch (e) {
       const msg = getFormDisplayedError(e);

@@ -60,6 +60,10 @@ export class OrganizationService {
     );
   }
 
+  reload(): void {
+    this.contextService.reload();
+  }
+
   delete(): Observable<void> {
     return this.httpClient.delete<void>(this.baseUrl);
   }
