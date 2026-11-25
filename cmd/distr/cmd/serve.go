@@ -13,6 +13,8 @@ import (
 	"github.com/distr-sh/distr/internal/dbencryption"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/license"
+	"github.com/distr-sh/distr/internal/logging"
+	"github.com/distr-sh/distr/internal/migrations"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/svc"
 	"github.com/distr-sh/distr/internal/util"
@@ -69,7 +71,12 @@ func runServe(ctx context.Context, opts ServeOptions) {
 		stripe.Key = *key
 	}
 
-	registry := util.Require(svc.New(ctx, svc.ExecDbMigration(opts.Migrate)))
+	logger := logging.New()
+	if opts.Migrate {
+		util.Must(migrations.Up(logger))
+	}
+
+	registry := util.Require(svc.New(ctx, logger))
 	defer func() { util.Must(registry.Shutdown(ctx)) }()
 
 	dbCtx := internalctx.WithDb(ctx, registry.GetDbPool())

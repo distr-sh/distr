@@ -1,11 +1,9 @@
 package cmd
 
 import (
-	"context"
-
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/logging"
 	"github.com/distr-sh/distr/internal/migrations"
-	"github.com/distr-sh/distr/internal/svc"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/spf13/cobra"
 )
@@ -23,7 +21,7 @@ var MigrateCommand = &cobra.Command{
 	Args:   cobra.NoArgs,
 	PreRun: func(cmd *cobra.Command, args []string) { env.Initialize() },
 	Run: func(cmd *cobra.Command, args []string) {
-		runMigrate(cmd.Context(), migrateOpts)
+		runMigrate(migrateOpts)
 	},
 }
 
@@ -37,17 +35,17 @@ func init() {
 	RootCommand.AddCommand(MigrateCommand)
 }
 
-func runMigrate(ctx context.Context, opts MigrateOptions) {
-	registry := util.Require(svc.NewDefault(ctx))
-	defer func() { util.Must(registry.Shutdown(ctx)) }()
+func runMigrate(opts MigrateOptions) {
+	logger := logging.New()
+	defer func() { util.Must(logging.Sync(logger)) }()
 	if opts.To > 0 {
-		registry.GetLogger().Sugar().Infof("run migrations to schema version %v", opts.To)
-		util.Must(migrations.Migrate(registry.GetLogger(), opts.To))
+		logger.Sugar().Infof("run migrations to schema version %v", opts.To)
+		util.Must(migrations.Migrate(logger, opts.To))
 	} else if opts.Down {
-		registry.GetLogger().Info("run DOWN migrations")
-		util.Must(migrations.Down(registry.GetLogger()))
+		logger.Info("run DOWN migrations")
+		util.Must(migrations.Down(logger))
 	} else {
-		registry.GetLogger().Info("run UP migrations")
-		util.Must(migrations.Up(registry.GetLogger()))
+		logger.Info("run UP migrations")
+		util.Must(migrations.Up(logger))
 	}
 }
