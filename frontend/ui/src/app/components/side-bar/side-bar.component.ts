@@ -27,8 +27,14 @@ export class SideBarComponent {
   protected readonly faArrowRightLong = faArrowRightLong;
   protected readonly faXmark = faXmark;
 
-  protected readonly isAnnouncementVisible = signal(true);
+  private readonly announcementDismissedKey = 'sidebar.announcementDismissed.new-vendor-portal-experience';
+  protected readonly isAnnouncementVisible = signal(localStorage.getItem(this.announcementDismissedKey) !== 'true');
 
   public readonly isBannerVisible = input<boolean>();
   public readonly isSidebarVisible = input<boolean>();
+
+  protected dismissAnnouncement() {
+    localStorage.setItem(this.announcementDismissedKey, 'true');
+    this.isAnnouncementVisible.set(false);
+  }
 }
