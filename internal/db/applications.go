@@ -281,7 +281,8 @@ func GetApplicationWithEntitlementOwnerID(
 			SELECT DISTINCT `+applicationWithEntitledVersionsOutputExpr+`
 			FROM ApplicationEntitlement al
 				LEFT JOIN Application a ON al.application_id = a.id
-			WHERE al.customer_organization_id = @customerOrganizationId AND a.id = @applicationId
+			WHERE al.customer_organization_id = @customerOrganizationId
+				AND a.id = @applicationId
 				AND (al.expires_at IS NULL OR al.expires_at > now())
 			ORDER BY a.name
 			`, pgx.NamedArgs{"customerOrganizationId": customerOrganizationID, "applicationId": applicationID}); err != nil {
