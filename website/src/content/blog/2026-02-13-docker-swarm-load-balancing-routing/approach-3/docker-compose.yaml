@@ -12,7 +12,7 @@ volumes:
 
 services:
   traefik:
-    image: traefik:v3.7
+    image: traefik:v3.8
     command:
       - '--providers.swarm=true'
       - '--providers.swarm.exposedbydefault=false'
