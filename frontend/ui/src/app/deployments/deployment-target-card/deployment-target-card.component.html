@@ -611,10 +611,6 @@
           <p class="text-xs text-gray-500 dark:text-gray-400">Metrics reporting is not supported on macOS.</p>
         </div>
 
-        @if (deploymentTarget().type === 'docker' && editForm.controls.metricsEnabled.dirty) {
-          <app-alert type="info">Changes to metrics reporting are only applied after a reconnect!</app-alert>
-        }
-
         <div class="space-y-1">
           <div class="flex items-center">
             <input
@@ -738,10 +734,6 @@
               </p>
             }
           </div>
-
-          @if (editForm.controls.dockerEndpoint.dirty) {
-            <app-alert type="info">Changes to the Docker endpoint are only applied after a reconnect!</app-alert>
-          }
         }
 
         @if (editForm.controls.customResources.enabled) {
@@ -809,10 +801,6 @@
               }
             </div>
           </div>
-
-          @if (editForm.controls.resources.dirty) {
-            <app-alert type="info">Changes in the resource requirements are only applied after a reconnect!</app-alert>
-          }
         }
 
         @if (editForm.controls.customPodScheduling.enabled) {
@@ -830,12 +818,18 @@
 
         @if (editForm.controls.podScheduling.enabled) {
           <app-pod-scheduling-fields [group]="editForm.controls.podScheduling" />
+        }
 
-          @if (editForm.controls.podScheduling.dirty) {
-            <app-alert type="info">
-              Changes to the pod annotations, node selector and tolerations are only applied after a reconnect!
-            </app-alert>
-          }
+        @if (
+          (deploymentTarget().type === 'docker' && editForm.controls.metricsEnabled.dirty) ||
+          editForm.controls.customDockerEndpoint.dirty ||
+          editForm.controls.dockerEndpoint.dirty ||
+          editForm.controls.customResources.dirty ||
+          editForm.controls.resources.dirty ||
+          editForm.controls.customPodScheduling.dirty ||
+          editForm.controls.podScheduling.dirty
+        ) {
+          <app-alert type="info">Some of your changes are only applied after the controller reconnects.</app-alert>
         }
       </div>
       <div class="mt-8 flex w-full justify-center space-x-4 pb-4 sm:mt-0">
