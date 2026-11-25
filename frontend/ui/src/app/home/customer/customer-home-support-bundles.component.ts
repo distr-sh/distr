@@ -33,7 +33,8 @@ export class CustomerHomeSupportBundlesComponent {
 
   public readonly supportBundles = input.required<CustomerHomeSupportBundle[]>();
 
-  protected readonly canCreate = !this.auth.isLens() && this.auth.hasAnyRole('read_write', 'admin');
+  protected readonly canCreate = this.auth.hasAnyRole('read_write', 'admin');
+  protected readonly isLens = this.auth.isLens();
 
   protected readonly faLifeRing = faLifeRing;
   protected readonly faPlus = faPlus;

@@ -52,8 +52,7 @@ export class SupportBundleListComponent {
   public readonly customerOrganizationId = input<string>();
   private readonly customerOrganizationId$ = toObservable(this.customerOrganizationId);
 
-  protected readonly canCreate =
-    this.auth.isCustomer() && !this.auth.isLens() && this.auth.hasAnyRole('read_write', 'admin');
+  protected readonly isLens = this.auth.isLens();
 
   protected readonly showCustomerColumn = computed(
     () => (this.auth.isVendor() || this.auth.isPartner()) && !this.customerOrganizationId()
