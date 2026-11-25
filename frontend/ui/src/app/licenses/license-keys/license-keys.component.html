@@ -1,6 +1,9 @@
 <div class="distr-table-panel">
   <div class="distr-toolbar p-4">
-    <app-search-bar [control]="filterForm.controls.search" placeholder="Filter license keys" [hotkey]="hotkey()" />
+    <ng-content select="[heading]" />
+    @if (search() === undefined) {
+      <app-search-bar [control]="filterForm.controls.search" placeholder="Filter license keys" />
+    }
     <div class="distr-toolbar-actions">
       @if (canManage) {
         <button
@@ -20,7 +23,7 @@
           <th scope="col" class="p-4">Name</th>
           <th scope="col" class="p-4">Reference</th>
           <th scope="col" class="p-4">Description</th>
-          @if ((auth.isVendor() || auth.isPartner()) && !customerOrganizationId()) {
+          @if (showCustomerColumn()) {
             <th scope="col" class="p-4">Customer</th>
           }
           <th scope="col" class="p-4">Expires</th>
@@ -57,7 +60,7 @@
                 {{ license.description }}
               </span>
             </td>
-            @if ((auth.isVendor() || auth.isPartner()) && !customerOrganizationId()) {
+            @if (showCustomerColumn()) {
               <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-900 dark:text-white">
                 {{ getOwnerColumn(license.customerOrganizationId) | async }}
               </td>
@@ -158,6 +161,24 @@
               }
             </td>
           </tr>
+        } @empty {
+          @if (loaded()) {
+            <tr class="border-t border-gray-200 dark:border-gray-600">
+              <td
+                [attr.colspan]="showCustomerColumn() ? 7 : 6"
+                class="px-4 py-3 text-center font-medium whitespace-nowrap text-gray-600 dark:text-gray-400">
+                No license keys found
+              </td>
+            </tr>
+          } @else {
+            <tr class="border-t border-gray-200 dark:border-gray-600">
+              <td [attr.colspan]="showCustomerColumn() ? 7 : 6">
+                <div class="flex items-center justify-center py-12">
+                  <app-spinner class="size-8" />
+                </div>
+              </td>
+            </tr>
+          }
         }
       </tbody>
     </table>

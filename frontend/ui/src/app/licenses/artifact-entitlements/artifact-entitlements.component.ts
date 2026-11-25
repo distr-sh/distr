@@ -1,16 +1,14 @@
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, input, signal, TemplateRef} from '@angular/core';
-import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleExclamation, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, switchMap} from 'rxjs';
+import {catchError, EMPTY, filter, firstValueFrom, map, Observable, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
-import {filteredByFormControl} from '../../../util/filter';
 import {loadWhileOpen, refreshInBackground} from '../../../util/refresh';
 import {AlertComponent} from '../../components/alert/alert.component';
-import {SearchBarComponent} from '../../components/search-bar.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {ClickableRowDirective} from '../../directives/clickable-row.directive';
 import {ArtifactEntitlementsService} from '../../services/artifact-entitlements.service';
@@ -34,7 +32,6 @@ type EntitlementForm = 'standard' | 'legacy';
     DatePipe,
     EditArtifactEntitlementComponent,
     EditSingleArtifactEntitlementComponent,
-    SearchBarComponent,
     AlertComponent,
     ClickableRowDirective,
     SpinnerComponent,
@@ -44,7 +41,7 @@ type EntitlementForm = 'standard' | 'legacy';
 })
 export class ArtifactEntitlementsComponent {
   readonly customerOrganizationId = input<string>();
-  readonly hotkey = input(true);
+  readonly search = input.required<string>();
 
   protected readonly auth = inject(AuthService);
   private readonly artifactEntitlementsService = inject(ArtifactEntitlementsService);
@@ -62,22 +59,18 @@ export class ArtifactEntitlementsComponent {
   protected readonly faXmark = faXmark;
   protected readonly isExpired = isExpired;
 
-  filterForm = new FormGroup({
-    search: new FormControl(''),
-  });
+  private readonly entitlements = toSignal(this.artifactEntitlementsService.list());
+  protected readonly loaded = computed(() => this.entitlements() !== undefined);
 
-  entitlements$: Observable<ArtifactEntitlement[]> = combineLatest([
-    filteredByFormControl(
-      this.artifactEntitlementsService.list(),
-      this.filterForm.controls.search,
-      (it: ArtifactEntitlement, search: string) =>
-        !search || (it.name || '').toLowerCase().includes(search.toLowerCase())
-    ),
-    toObservable(this.customerOrganizationId),
-  ]).pipe(
-    map(([entitlements, id]) => (id ? entitlements.filter((e) => e.customerOrganizationId === id) : entitlements)),
-    takeUntilDestroyed()
-  );
+  protected readonly filteredEntitlements = computed(() => {
+    const search = this.search().toLowerCase();
+    const customerOrganizationId = this.customerOrganizationId();
+    return this.entitlements()?.filter(
+      (it) =>
+        (!customerOrganizationId || it.customerOrganizationId === customerOrganizationId) &&
+        (!search || (it.name || '').toLowerCase().includes(search))
+    );
+  });
 
   editForm = new FormGroup({
     entitlement: new FormControl<ArtifactEntitlement | undefined>(undefined, {

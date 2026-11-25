@@ -1,9 +1,6 @@
 <div class="distr-table-panel">
   <div class="distr-toolbar p-4">
-    <app-search-bar
-      [control]="filterForm.controls.search"
-      placeholder="Filter artifact entitlements"
-      [hotkey]="hotkey()" />
+    <ng-content select="[heading]" />
     <div class="distr-toolbar-actions">
       @if ((auth.isVendor() || auth.isPartner()) && auth.hasAnyRole('read_write', 'admin')) {
         <button
@@ -32,7 +29,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (entitlement of entitlements$ | async; track entitlement.id) {
+        @for (entitlement of filteredEntitlements(); track entitlement.id) {
           <tr
             appClickableRow
             [appClickableRowDisabled]="!canOpenDetails"
@@ -91,6 +88,24 @@
               }
             </td>
           </tr>
+        } @empty {
+          @if (loaded()) {
+            <tr class="border-t border-gray-200 dark:border-gray-600">
+              <td
+                [attr.colspan]="customerOrganizationId() ? 5 : 6"
+                class="px-4 py-3 text-center font-medium whitespace-nowrap text-gray-600 dark:text-gray-400">
+                No artifact entitlements found
+              </td>
+            </tr>
+          } @else {
+            <tr class="border-t border-gray-200 dark:border-gray-600">
+              <td [attr.colspan]="customerOrganizationId() ? 5 : 6">
+                <div class="flex items-center justify-center py-12">
+                  <app-spinner class="size-8" />
+                </div>
+              </td>
+            </tr>
+          }
         }
       </tbody>
     </table>
@@ -142,7 +157,7 @@
         <app-spinner class="size-8" />
       </div>
     } @else {
-      @if ((entitlements$ | async)?.length === 0) {
+      @if (filteredEntitlements()?.length === 0) {
         <app-alert
           type="warning"
           heading="Creating your first entitlement will restrict what all your customers see."
