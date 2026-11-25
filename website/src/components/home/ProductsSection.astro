@@ -5,14 +5,6 @@ import {images} from '~/assets/index';
 
 const products = [
   {
-    title: 'Single pane of glass for every self-hosted customer',
-    description:
-      'Manage customers, releases, deployment targets, artifacts, entitlements, logs, health, and support workflows from one place.',
-    lightImage: images.distr.dashboard.light,
-    darkImage: images.distr.dashboard.dark,
-    alt: 'Distr software distribution platform dashboard',
-  },
-  {
     title: 'A guided path for your customers',
     description:
       'Give customers one place to install, access artifacts, manage credentials, control versions, and stay on top of their deployments.',
@@ -21,12 +13,36 @@ const products = [
     alt: 'Distr customer portal for self-hosted deployments',
   },
   {
+    title: 'Decide exactly what each customer gets',
+    description:
+      'Entitle every customer to specific applications, versions and artifact tags, with an expiry date and a regex that adds matching new tags automatically. Issue signed license keys for the seats and features your application enforces, even offline.',
+    lightImage: images.distr.artifactLicenses.light,
+    darkImage: images.distr.artifactLicenses.dark,
+    alt: 'Distr artifact entitlement restricting a customer to specific tags',
+  },
+  {
+    title: 'Know who pulled which version',
+    description:
+      'Every pull from the Distr registry is recorded with the customer, user, IP address and version, so you see who runs what without asking.',
+    lightImage: images.distr.artifacts.light,
+    darkImage: images.distr.artifacts.dark,
+    alt: 'Distr registry downloads per customer and artifact version',
+  },
+  {
     title: 'Cut the support burden of self-hosted deployments',
     description:
-      'Centralize customer versions, entitlements, logs, metrics, deployment status, and support bundles so support and engineering can diagnose issues without long back-and-forth cycles.',
+      'Centralize customer versions, entitlements, logs, metrics, deployment status and support bundles so support and engineering can diagnose issues without long back-and-forth cycles.',
     lightImage: images.distr.logViewer.light,
     darkImage: images.distr.logViewer.dark,
     alt: 'Distr log viewer for self-hosted customer deployments',
+  },
+  {
+    title: 'Tell affected customers about vulnerabilities',
+    description:
+      'Record a security advisory, mark the affected and patched versions and see which customers deployed or pulled them. Once published, it appears in the portal of every customer who deployed or is entitled to an affected version.',
+    lightImage: images.distr.security.light,
+    darkImage: images.distr.security.dark,
+    alt: 'Distr security advisory listing affected customers and versions',
   },
 ];
 ---

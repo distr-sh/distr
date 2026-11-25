@@ -1,6 +1,6 @@
 ---
 title: Vendor Portal
-description: Find your way around the Distr Vendor Portal, from the home page and the customer pages to the command palette, keyboard shortcuts and organization settings.
+description: Find your way around the Distr Vendor Portal, from the home page and every section of the sidebar to Customer Lens, the command palette, keyboard shortcuts and organization settings.
 slug: docs/vendor-portal
 sidebar:
   label: Vendor Portal
@@ -9,8 +9,8 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import homeLight from '~/assets/docs/platform/vendor-portal/home-light.webp';
-import homeDark from '~/assets/docs/platform/vendor-portal/home-dark.webp';
+import homeMapLight from '~/assets/docs/platform/vendor-portal/home-map-light.webp';
+import homeMapDark from '~/assets/docs/platform/vendor-portal/home-map-dark.webp';
 import customerDetailLight from '~/assets/docs/platform/vendor-portal/customer-detail-light.webp';
 import customerDetailDark from '~/assets/docs/platform/vendor-portal/customer-detail-dark.webp';
 import contextSwitcherLight from '~/assets/docs/platform/vendor-portal/context-switcher-light.webp';
@@ -22,43 +22,41 @@ import settingsDark from '~/assets/docs/platform/vendor-portal/settings-dark.web
 
 The Vendor Portal is the part of Distr your team works in. You publish [applications](/docs/controllers/application/) and [artifacts](/docs/registry/) there, manage your customers and their licenses, and follow every deployment in your customers' environments. Your customers work in the [Customer Portal](/docs/platform/customer-portal/), a simpler white-labeled interface that shows them only what you enable.
 
-## Home
+## The Vendor Portal at a glance
 
-The home page shows what needs your attention across all customers.
+After you sign in, the Vendor Portal opens on **Home**.
 
 <ThemedImage
-  lightSrc={homeLight}
-  darkSrc={homeDark}
-  alt="Vendor Portal home page with attention cards, the activity feed and the customers that need attention"
+  lightSrc={homeMapLight}
+  darkSrc={homeMapDark}
+  alt="Vendor Portal home page with numbered markers on the sidebar, the attention cards, the activity feed, the customers list, the color scheme toggle, the context switcher and the account menu"
 />
 
-- **Attention cards** count the deployments in error or without a recent status update, the customers running an older version, the expired or missing licenses, the open support requests and the open security advisories. Each card opens the matching list, already filtered.
-- **Activity** lists what happened recently: deployments, new application versions, published artifacts, license changes and support requests.
-- **Customers** lists your customers with the number of open items, so the ones that need attention come first.
+1. **Sidebar**: every section of the Vendor Portal. The upper group holds what you work with every day, the lower group the configuration you set up once. Each section is described [below](#distribution). Sections your plan does not include show a lock.
+2. **Attention cards**: the deployments in error or without a recent status update, the customers running an older version, the expired or missing licenses, the open support requests and the open security advisories. Each card opens the matching list, already filtered.
+3. **Activity**: what happened recently, such as deployments, new application versions, published artifacts, license changes and support requests.
+4. **Customers**: your customers with the number of open items, so the ones that need attention come first. **View all** opens the [Customers](#customers) page.
+5. **Color scheme**: switches between light and dark mode.
+6. **Context switcher**: your organization and your role. Open it to switch to another organization or to look at a customer's portal with [Customer Lens](#customer-lens).
+7. **Account menu**: update your profile, create [Personal Access Tokens](/docs/integrations/personal-access-token/) for the API, the SDK and the registry or sign out.
 
-During a trial, admins also see a **Getting started** card with guided tutorials for the registry, controllers, branding and inviting users.
+## Distribution
 
-## Navigation
+### Home
 
-The sidebar is split into the areas you work in every day and the configuration you set up once.
+Home is the page shown above. Admins of an organization without a paid plan also see a **Getting started** card there, with guided tutorials for inviting teammates, the registry, controllers and branding.
 
-| Section                                                  | What you do there                                                                                                 | Shortcut |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | -------- |
-| **Home**                                                 | See what needs attention and what happened recently                                                               | `G` `H`  |
-| **[Applications](/docs/controllers/application/)**       | Create Docker Compose and Helm applications and publish their versions                                            | `G` `A`  |
-| **Partners**                                             | Manage the partners that serve customers on your behalf (with partner management enabled)                         | `G` `P`  |
-| **[Customers](/docs/platform/customer-management/)**     | Create customers and manage everything about one customer on its own page                                         | `G` `C`  |
-| **[Deployments](/docs/controllers/)**                    | Follow every deployment, filter by customer, application and status, and create new ones                          | `G` `D`  |
-| **[Registry](/docs/registry/)**                          | Browse your artifacts and open the [download history](/docs/registry/analytics/) of every pull                    | `G` `R`  |
-| **Notifications**                                        | Configure [alerts](/docs/controllers/alerts/) and [update notifications](/docs/controllers/update-notifications/) | `G` `N`  |
-| **[Support](/docs/platform/support-bundles/)**           | Answer support requests and review the diagnostic data customers attach                                           | `G` `B`  |
-| **[Security](/docs/platform/vulnerability-management/)** | Triage, draft and publish security advisories for your customers                                                  | `G` `V`  |
-| **[Customer Portal](/docs/platform/branding/)**          | Brand the Customer Portal and set up its domain and sign-in                                                       | `G` `O`  |
-| **Settings**                                             | Configure your organization, team, secrets and subscription                                                       | `G` `S`  |
+### Applications
 
-## Customers
+Create [Docker Compose and Helm applications](/docs/controllers/application/) and publish their versions. Each version can carry [resources](/docs/controllers/application/#additional-resources) such as release notes, a [vulnerability scan](/docs/platform/vulnerability-scanning/) or a [Kubernetes compatibility matrix](/docs/platform/kubernetes-compatibility-matrix/). The resources you mark as visible to customers appear in the Customer Portal.
 
-The **Customers** page lists all customers with their deployments, update status, license status and open support requests. Click a customer to open its page.
+### Partners
+
+Create partner organizations that serve customers on your behalf, invite their users and see how many customers each partner has. Assign a customer to a partner on the customer's page. Partner users work with the customers assigned to them and can open their portals with [Customer Lens](/docs/platform/rbac/#customer-lens). The section appears when partner management is enabled for your organization.
+
+### Customers
+
+The **Customers** page lists all customers with their deployments, update status, license status and open support requests. [Create a customer](/docs/platform/customer-management/) here and click one to open its page.
 
 <ThemedImage
   lightSrc={customerDetailLight}
@@ -79,6 +77,53 @@ The customer page brings together everything about one customer in tabs:
 - **Settings** controls which [features the customer can use](/docs/platform/customer-management/#enabling-and-disabling-features-per-customer) and which [links](/docs/platform/customer-management/#managing-links-per-customer) appear in its sidebar.
 
 **Open customer portal** shows the Customer Portal exactly as this customer sees it.
+
+### Deployments
+
+Follow every [deployment](/docs/controllers/#deployments) across all customers. Each deployment target shows the status of its deployments and the resource usage of its host or cluster. Filter by customer, application and status, open a target to read its logs, [update its controller](/docs/controllers/#controller-updates) from its menu and start a new deployment with **New Deployment**.
+
+### Registry
+
+Browse the artifacts in your [registry](/docs/registry/): container images, Helm charts and other OCI artifacts with their tags and the customers who pulled them. Add an artifact that [mirrors an upstream registry](/docs/registry/pull-through-cache/), and open **Downloads** for the [history of every pull](/docs/registry/analytics/), filterable by customer, user, deployment, address and artifact and exportable to CSV.
+
+### Notifications
+
+Configure [alerts](/docs/controllers/alerts/) for deployment status changes and resource usage, and [update notifications](/docs/controllers/update-notifications/) that email users when a new version is available. **Notification History** lists every notification sent.
+
+### Support
+
+Answer the support requests your customers open and review the diagnostic data in the [support bundles](/docs/platform/support-bundles/) they attach. **Settings** decides which environment variables, ConfigMap and Secret values and custom scripts a bundle collects, and which of them are redacted.
+
+### Security
+
+Track [security advisories](/docs/platform/vulnerability-management/) from triage to publication. Mark the affected and patched versions, see which customers deployed or pulled an affected version and publish the advisory to the customers who deployed or are entitled to one.
+
+## Configuration
+
+### Customer Portal
+
+Configure what your customers see: the [branding](/docs/platform/branding/) of the Customer Portal with your title, logo and the instructions on its home page, and the domain and sign-in your customers use to reach it. Only members who may edit see this section.
+
+### Settings
+
+**Settings** holds the configuration of your vendor organization.
+
+<ThemedImage
+  lightSrc={settingsLight}
+  darkSrc={settingsDark}
+  alt="Organization settings with the General tab open"
+/>
+
+- **General**: the organization name, the registry [slug](/docs/registry/configuration/#1-set-your-registry-slug), registry and controller settings, and deleting the organization.
+- **Team**: the members of your vendor organization and their [roles](/docs/platform/rbac/).
+- **Secrets**: the [secrets](/docs/controllers/secrets/) of your internal deployments.
+- **Domains & Sign-in**: [custom domains](/docs/platform/branding/#custom-domains), [identity providers](/docs/platform/custom-identity-provider/) and a custom email sender.
+- **Subscription**: your plan, usage limits and billing information.
+- **Billing**: license templates and the Stripe webhook, with vendor billing enabled.
+
+<Aside type="note">
+  Only admins see every tab. Other members see the **Secrets** tab.
+</Aside>
 
 ## Customer Lens
 
@@ -109,33 +154,18 @@ Type to search across applications, customers, deployments and artifacts, or jum
 | Shortcut              | Action                                              |
 | --------------------- | --------------------------------------------------- |
 | `Ctrl` `K` or `⌘` `K` | Open or close the command palette                   |
-| `G` and a letter      | Go to a page, see [Navigation](#navigation)         |
+| `G` `H`               | Go to Home                                          |
+| `G` `A`               | Go to Applications                                  |
+| `G` `P`               | Go to Partners                                      |
+| `G` `C`               | Go to Customers                                     |
+| `G` `D`               | Go to Deployments                                   |
+| `G` `R`               | Go to Registry                                      |
+| `G` `N`               | Go to Notifications                                 |
+| `G` `B`               | Go to Support                                       |
+| `G` `V`               | Go to Security                                      |
+| `G` `O`               | Go to Customer Portal                               |
+| `G` `S`               | Go to Settings                                      |
 | `G` `P` in a lens     | Leave Customer Lens and return to the Vendor Portal |
 | `/`                   | Focus the search field of the current list          |
 
 Press the second key within one and a half seconds after `G`. Shortcuts do nothing while you type in a form field.
-
-## Settings
-
-**Settings** holds the configuration of your vendor organization.
-
-<ThemedImage
-  lightSrc={settingsLight}
-  darkSrc={settingsDark}
-  alt="Organization settings with the General tab open"
-/>
-
-- **General**: the organization name, the registry [slug](/docs/registry/configuration/#1-set-your-registry-slug), registry and controller settings, and deleting the organization.
-- **Team**: the members of your vendor organization and their [roles](/docs/platform/rbac/).
-- **Secrets**: the [secrets](/docs/controllers/secrets/) of your internal deployments.
-- **Domains & Sign-in**: [custom domains](/docs/platform/branding/#custom-domains), [identity providers](/docs/platform/custom-identity-provider/) and a custom email sender.
-- **Subscription**: your plan, usage limits and billing information.
-- **Billing**: license templates and the Stripe webhook, with vendor billing enabled.
-
-<Aside type="note">
-  Only admins see every tab. Other members see the **Secrets** tab.
-</Aside>
-
-## Account menu
-
-Click your avatar in the top-right corner to update your profile, create [Personal Access Tokens](/docs/integrations/personal-access-token/) for the API, the SDK and the registry or sign out. The icon next to your organization name switches between light and dark mode.

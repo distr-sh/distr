@@ -6,27 +6,20 @@ import distrArtifactLicensesDark from './screenshots/distr/distr-artifact-licens
 import distrArtifactLicensesLight from './screenshots/distr/distr-artifact-licenses-light.webp';
 import distrArtifactsDark from './screenshots/distr/distr-artifacts-dark.webp';
 import distrArtifactsLight from './screenshots/distr/distr-artifacts-light.webp';
-import distrCustomerPortalArtifactsDark from './screenshots/distr/distr-customer-portal-artifacts-dark.webp';
-import distrCustomerPortalArtifactsLight from './screenshots/distr/distr-customer-portal-artifacts-light.webp';
-import distrCustomerPortalArtifacts from './screenshots/distr/distr-customer-portal-artifacts.webp';
 import distrCustomerPortalDark from './screenshots/distr/distr-customer-portal-dark.webp';
 import distrCustomerPortalLight from './screenshots/distr/distr-customer-portal-light.webp';
 import distrDashboardDark from './screenshots/distr/distr-dashboard-dark.webp';
 import distrDashboardLight from './screenshots/distr/distr-dashboard-light.webp';
-import distrDeploymentsDark from './screenshots/distr/distr-deployments-dark.webp';
-import distrDeploymentsLight from './screenshots/distr/distr-deployments-light.webp';
 import distrLogViewerDark from './screenshots/distr/distr-log-viewer-dark.webp';
 import distrLogViewerLight from './screenshots/distr/distr-log-viewer-light.webp';
+import distrSecurityDark from './screenshots/distr/distr-security-dark.webp';
+import distrSecurityLight from './screenshots/distr/distr-security-light.webp';
 
 export const images = {
   yc: {
     badge: ycBadge,
   },
   distr: {
-    deployments: {
-      light: distrDeploymentsLight,
-      dark: distrDeploymentsDark,
-    },
     artifacts: {
       light: distrArtifactsLight,
       dark: distrArtifactsDark,
@@ -34,11 +27,6 @@ export const images = {
     artifactLicenses: {
       light: distrArtifactLicensesLight,
       dark: distrArtifactLicensesDark,
-    },
-    customerPortalArtifacts: {
-      light: distrCustomerPortalArtifactsLight,
-      dark: distrCustomerPortalArtifactsDark,
-      default: distrCustomerPortalArtifacts,
     },
     dashboard: {
       light: distrDashboardLight,
@@ -51,6 +39,10 @@ export const images = {
     logViewer: {
       light: distrLogViewerLight,
       dark: distrLogViewerDark,
+    },
+    security: {
+      light: distrSecurityLight,
+      dark: distrSecurityDark,
     },
   },
 };
