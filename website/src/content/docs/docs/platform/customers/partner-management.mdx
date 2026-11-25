@@ -8,9 +8,6 @@ sidebar:
 ---
 
 import {Aside} from '@astrojs/starlight/components';
-import ThemedImage from '~/components/util/ThemedImage.astro';
-import partnersLight from '~/assets/docs/platform/customers/partner-management/partners-light.webp';
-import partnersDark from '~/assets/docs/platform/customers/partner-management/partners-dark.webp';
 
 A partner is an organization that serves customers on your behalf, such as a reseller or a distribution partner. You assign customers to it, and its users manage those customers in Distr: they onboard them, issue their licenses, deploy for them and answer their support requests. Your applications, artifacts and settings stay yours.
 
@@ -23,12 +20,6 @@ A partner is an organization that serves customers on your behalf, such as a res
 1. In the Vendor Portal sidebar, go to **Partners**.
 2. Click **Create Partner** and enter the partner's name.
 3. Click **Manage users** next to the partner and invite its users with their name, email and [role](/docs/platform/rbac/).
-
-<ThemedImage
-  lightSrc={partnersLight}
-  darkSrc={partnersDark}
-  alt="Partners page with each partner's number of users and customers"
-/>
 
 The list shows how many users and customers each partner has. Rename a partner with the edit icon next to its name.
 
