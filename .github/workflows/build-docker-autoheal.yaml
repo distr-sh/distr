@@ -55,6 +55,8 @@ jobs:
       - name: Generate Docker Metadata
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
         with:
           images: |
             ghcr.io/distr-sh/distr/docker-autoheal
@@ -67,6 +69,9 @@ jobs:
           labels: |
             org.opencontainers.image.description=Docker Autoheal
             org.opencontainers.image.vendor=Glasskube
+            org.opencontainers.image.licenses=MIT
+          annotations: |
+            org.opencontainers.image.licenses=MIT
 
       - name: Docker build (push on tag only)
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
@@ -79,6 +84,7 @@ jobs:
           provenance: mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
           build-args: |
             APK_UPGRADE_DATE=${{ steps.date.outputs.date }}
           cache-from: type=gha

@@ -156,9 +156,19 @@ description = "Generate values.schema.json from values.yaml and its helm-docs co
 run = 'schema'
 dir = "deploy/charts/distr"
 
+[tasks."build:third-party-licenses"]
+description = "Generate THIRD_PARTY_LICENSES.md and NOTICE from the Go modules, the npm packages and the bundled components"
+run = [
+  "mkdir -p dist",
+  "pnpm licenses list --prod --json > dist/npm-licenses.json",
+  "go -C hack/third-party-licenses run . --npm ../../dist/npm-licenses.json",
+]
+
 [tasks."format:frontend"]
 run = ['pnpm dedupe', 'pnpm format']
 depends = ["build:helm-docs", "build:helm-schema"]
+# after pnpm dedupe, which can still change the lockfile the npm licenses are read from
+depends_post = ["build:third-party-licenses"]
 
 [tasks."format:website"]
 run = ['pnpm dedupe', 'pnpm format']
@@ -205,7 +215,7 @@ run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/controller/kubernetes/ run'
 run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/support-collector/'
 
 [tasks."docker-build:distr"]
-depends = "build:distr:enterprise"
+depends = ["build:distr:enterprise", "build:third-party-licenses"]
 run = 'cp dist/distr dist/distr-$(go env GOARCH) && docker build -f Dockerfile.distr --tag ghcr.io/distr-sh/distr:$VERSION .'
 
 [tasks."docker-build:controller:docker"]
