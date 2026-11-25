@@ -142,6 +142,7 @@ published by their authors and verified against the checksums in [`go.sum`](go.s
 | github.com/fvbommel/sortorder | v1.2.0 | [MIT](https://pkg.go.dev/github.com/fvbommel/sortorder@v1.2.0?tab=licenses) |
 | github.com/fxamacker/cbor/v2 | v2.9.4 | [MIT](https://pkg.go.dev/github.com/fxamacker/cbor/v2@v2.9.4?tab=licenses) |
 | github.com/getsentry/sentry-go | v0.50.0 | [MIT](https://pkg.go.dev/github.com/getsentry/sentry-go@v0.50.0?tab=licenses) |
+| github.com/getsentry/sentry-go/otel | v0.50.0 | [MIT](https://pkg.go.dev/github.com/getsentry/sentry-go/otel@v0.50.0?tab=licenses) |
 | github.com/getsentry/sentry-go/otel/otlp | v0.50.0 | [MIT](https://pkg.go.dev/github.com/getsentry/sentry-go/otel/otlp@v0.50.0?tab=licenses) |
 | github.com/glasskube/pkg/crypto | v0.2.1 | [Apache-2.0](https://pkg.go.dev/github.com/glasskube/pkg/crypto@v0.2.1?tab=licenses) |
 | github.com/glasskube/pkg/seekbuf | v0.1.2 | [Apache-2.0](https://pkg.go.dev/github.com/glasskube/pkg/seekbuf@v0.1.2?tab=licenses) |
@@ -314,15 +315,15 @@ published by their authors and verified against the checksums in [`go.sum`](go.s
 | github.com/zeebo/xxh3 | v1.1.0 | [BSD-2-Clause](https://pkg.go.dev/github.com/zeebo/xxh3@v1.1.0?tab=licenses) |
 | go.etcd.io/etcd/raft/v3/raftpb | v3.5.21 | [Apache-2.0](https://pkg.go.dev/go.etcd.io/etcd/raft/v3/raftpb@v3.5.21?tab=licenses) |
 | go.opentelemetry.io/auto/sdk | v1.2.1 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/auto/sdk@v1.2.1?tab=licenses) |
-| go.opentelemetry.io/collector/component | v1.71.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/component@v1.71.0?tab=licenses) |
+| go.opentelemetry.io/collector/component | v1.72.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/component@v1.72.0?tab=licenses) |
 | go.opentelemetry.io/collector/confmap | v1.71.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/confmap@v1.71.0?tab=licenses) |
 | go.opentelemetry.io/collector/consumer | v1.71.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/consumer@v1.71.0?tab=licenses) |
 | go.opentelemetry.io/collector/consumer/consumererror | v0.165.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/consumer/consumererror@v0.165.0?tab=licenses) |
 | go.opentelemetry.io/collector/consumer/xconsumer | v0.165.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/consumer/xconsumer@v0.165.0?tab=licenses) |
-| go.opentelemetry.io/collector/featuregate | v1.71.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/featuregate@v1.71.0?tab=licenses) |
+| go.opentelemetry.io/collector/featuregate | v1.72.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/featuregate@v1.72.0?tab=licenses) |
 | go.opentelemetry.io/collector/filter | v0.165.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/filter@v0.165.0?tab=licenses) |
 | go.opentelemetry.io/collector/internal/componentalias | v0.165.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/internal/componentalias@v0.165.0?tab=licenses) |
-| go.opentelemetry.io/collector/pdata | v1.71.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/pdata@v1.71.0?tab=licenses) |
+| go.opentelemetry.io/collector/pdata | v1.72.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/pdata@v1.72.0?tab=licenses) |
 | go.opentelemetry.io/collector/pdata/pprofile | v0.165.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/pdata/pprofile@v0.165.0?tab=licenses) |
 | go.opentelemetry.io/collector/pdata/xpdata/xhash | v0.165.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/pdata/xpdata/xhash@v0.165.0?tab=licenses) |
 | go.opentelemetry.io/collector/pipeline | v1.71.0 | [Apache-2.0](https://pkg.go.dev/go.opentelemetry.io/collector/pipeline@v1.71.0?tab=licenses) |
