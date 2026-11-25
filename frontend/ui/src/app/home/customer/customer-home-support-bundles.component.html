@@ -9,6 +9,8 @@
       <button
         type="button"
         (click)="openCreateDialog()"
+        [disabled]="isLens"
+        [title]="isLens ? 'Only customers can create support requests' : ''"
         class="distr-btn-secondary distr-home-card-action relative z-10 mt-3 inline-flex items-center">
         <fa-icon [icon]="faPlus" class="distr-home-icon me-2" />
         New support request

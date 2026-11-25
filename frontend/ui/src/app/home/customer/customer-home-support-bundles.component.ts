@@ -29,9 +29,12 @@ const maxSupportBundles = 5;
 export class CustomerHomeSupportBundlesComponent {
   private readonly overlay = inject(OverlayService);
 
+  private readonly auth = inject(AuthService);
+
   public readonly supportBundles = input.required<CustomerHomeSupportBundle[]>();
 
-  protected readonly canCreate = inject(AuthService).hasAnyRole('read_write', 'admin');
+  protected readonly canCreate = this.auth.hasAnyRole('read_write', 'admin');
+  protected readonly isLens = this.auth.isLens();
 
   protected readonly faLifeRing = faLifeRing;
   protected readonly faPlus = faPlus;
