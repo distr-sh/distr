@@ -311,7 +311,7 @@ func createSupportBundleHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	a := auth.Authentication.Require(ctx)
 
-	if a.CurrentCustomerOrgID() == nil {
+	if a.CurrentCustomerOrgID() == nil || a.IsLens() {
 		return respond.Forbidden("only customers can create support bundles"), nil
 	} else if request, resp := decodeJSON[api.CreateSupportBundleRequest](r); resp != nil {
 		return resp, nil

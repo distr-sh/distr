@@ -10,7 +10,7 @@
           Settings
         </a>
       }
-      @if (auth.isCustomer() && auth.hasAnyRole('read_write', 'admin')) {
+      @if (canCreate) {
         <button
           (click)="openDialog(createBundleDialog)"
           type="button"
