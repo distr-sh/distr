@@ -1,0 +1,65 @@
+---
+title: Partner Management
+description: Let resellers and distribution partners manage the customers assigned to them in Distr, and learn what partners can see and how they count toward your subscription.
+slug: docs/platform/partner-management
+sidebar:
+  label: Partner Management
+  order: 5
+---
+
+import {Aside} from '@astrojs/starlight/components';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import partnersLight from '~/assets/docs/platform/customers/partner-management/partners-light.webp';
+import partnersDark from '~/assets/docs/platform/customers/partner-management/partners-dark.webp';
+
+A partner is an organization that serves customers on your behalf, such as a reseller or a distribution partner. You assign customers to it, and its users manage those customers in Distr: they onboard them, issue their licenses, deploy for them and answer their support requests. Your applications, artifacts and settings stay yours.
+
+<Aside type="note">
+  Partner management is part of the [Business plan](/docs/subscription/).
+</Aside>
+
+## Creating a partner
+
+1. In the Vendor Portal sidebar, go to **Partners**.
+2. Click **Create Partner** and enter the partner's name.
+3. Click **Manage users** next to the partner and invite its users with their name, email and [role](/docs/platform/rbac/).
+
+<ThemedImage
+  lightSrc={partnersLight}
+  darkSrc={partnersDark}
+  alt="Partners page with each partner's number of users and customers"
+/>
+
+The list shows how many users and customers each partner has. Rename a partner with the edit icon next to its name.
+
+## Assigning customers
+
+Open a customer and pick the partner in the selector below its name, or **No partner** to manage the customer yourself again. When you move a customer away from a partner, that partner's users can no longer manage it.
+
+Customers that a partner creates are assigned to that partner automatically.
+
+## What partners see
+
+Partner users sign in to the same domain as your team, where Distr shows them a **Partner Portal**. Its sidebar has **Home**, **Deployments**, **Registry**, **Support**, **Security**, **Customers** and, for partner administrators, **Team**.
+
+Everything in it is limited to the customers assigned to the partner:
+
+- **Customers**: they create customers, invite customer users, manage the customers' secrets, configure [alerts](/docs/controllers/alerts/) for them and open a customer's portal with [Customer Lens](/docs/platform/customer-lens/).
+- **Licenses**: they manage the [application entitlements](/docs/platform/application-entitlements/), [artifact entitlements](/docs/platform/artifact-entitlements/) and [license keys](/docs/platform/license-keys/) of their customers.
+- **Deployments**: they see and create deployments for their customers, but no internal deployments.
+- **Registry**: they browse your artifacts and see the download history of their customers.
+- **Support and security**: they see the [support requests](/docs/platform/support-bundles/) of their customers and read your published [security advisories](/docs/platform/vulnerability-management/), with the impact on their customers.
+
+Partners cannot create or change applications or artifacts, push to the registry, write advisories or change your organization's settings or branding. Partner administrators can delete their own customers.
+
+## Subscription and billing
+
+- Every partner user takes a user seat of your organization, like a member of your own team.
+- Every customer counts toward your customer limit, whether you or a partner created it.
+- The number of partners is not limited.
+
+See [Subscription Management](/docs/subscription-management/) for how seats and customers are billed.
+
+## Deleting a partner
+
+Click the delete button next to the partner and confirm by typing its name. Its users lose access, and its customers are assigned back to you.
