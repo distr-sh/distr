@@ -1,6 +1,6 @@
 ---
 import ThemedImage from '../util/ThemedImage.astro';
-import SignupButton from '~/components/buttons/SignupButton.astro';
+import SignUpCta from '~/components/cta/standalone/SignUpCta.astro';
 import {images} from '~/assets/index';
 
 const products = [
@@ -61,7 +61,7 @@ const products = [
     </div>
 
     {products.map(product => (
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:gap-12 mb-12 md:mb-16 lg:mb-24 lg:items-center">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:gap-12 mb-12 md:mb-16 lg:mb-24 last:mb-0 lg:items-center">
         <div class="lg:col-span-4">
           <h3 class="text-xl md:text-2xl lg:text-3xl font-bold mb-3 md:mb-4 border-l-4 border-accent-600 pl-3 md:pl-4">
             {product.title}
@@ -82,9 +82,11 @@ const products = [
         </div>
       </div>
     ))}
-
-    <div class="text-center">
-      <SignupButton />
-    </div>
   </div>
 </section>
+
+<SignUpCta
+  bgClass="bg-gray-50 dark:bg-gray-800 pt-0 md:pt-0 lg:pt-0"
+  title="Try it with your own application"
+  description="Add your first customer, publish a version and deploy it in minutes. Or book a demo and we walk you through Distr with your setup in mind."
+/>
