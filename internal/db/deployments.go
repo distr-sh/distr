@@ -551,18 +551,17 @@ func GetCustomerDeploymentRevisionEvents(
 	ctx context.Context,
 	orgID uuid.UUID,
 	customerOrgIDs []uuid.UUID,
-	viewer types.ActivityViewer,
 	since time.Time,
 	limit int,
 ) ([]types.DeploymentRevisionEvent, error) {
 	return getDeploymentRevisionEvents(
 		ctx, "dt.customer_organization_id = any(@customerOrgIds)",
-		activityViewerArgs(viewer, pgx.NamedArgs{
+		pgx.NamedArgs{
 			"orgId":          orgID,
 			"customerOrgIds": customerOrgIDs,
 			"since":          since,
 			"limit":          limit,
-		}),
+		},
 	)
 }
 
@@ -571,13 +570,12 @@ func GetCustomerDeploymentRevisionEvents(
 func GetInternalDeploymentRevisionEvents(
 	ctx context.Context,
 	orgID uuid.UUID,
-	viewer types.ActivityViewer,
 	since time.Time,
 	limit int,
 ) ([]types.DeploymentRevisionEvent, error) {
 	return getDeploymentRevisionEvents(
 		ctx, "dt.customer_organization_id IS NULL",
-		activityViewerArgs(viewer, pgx.NamedArgs{"orgId": orgID, "since": since, "limit": limit}),
+		pgx.NamedArgs{"orgId": orgID, "since": since, "limit": limit},
 	)
 }
 
@@ -596,15 +594,13 @@ func getDeploymentRevisionEvents(
 			dt.name AS deployment_target_name,
 			a.name AS application_name,
 			av.name AS application_version_name,
-			`+activityUserExpr("name", "dt.customer_organization_id")+` AS created_by_name,
-			`+activityUserExpr("image_id", "dt.customer_organization_id")+` AS created_by_image_id
+			`+activityUserOutputExpr+` AS created_by
 		FROM DeploymentTarget dt
 			JOIN Deployment d ON d.deployment_target_id = dt.id
 			JOIN DeploymentRevision dr ON dr.deployment_id = d.id
 			JOIN ApplicationVersion av ON av.id = dr.application_version_id
 			JOIN Application a ON a.id = av.application_id
-			LEFT JOIN UserAccount u ON u.id = dr.created_by_user_account_id
-			LEFT JOIN Organization_UserAccount j ON j.user_account_id = u.id AND j.organization_id = dt.organization_id
+			`+activityUserJoinExpr("dr.created_by_user_account_id", "dt.organization_id")+`
 		WHERE dt.organization_id = @orgId
 			AND `+customerOrgCondition+`
 			AND dr.created_at > @since

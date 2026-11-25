@@ -21,6 +21,7 @@ import {never} from '../../../util/exhaust';
 import {CustomerHomeCollapsibleComponent} from '../../home/customer/customer-home-collapsible.component';
 import {organizationSettingsTabs} from '../../organization-settings/organization-settings-navigation';
 import {AuthService} from '../../services/auth.service';
+import {actorAuthor, Author, AuthorContext, AuthorService} from '../../services/author.service';
 import {AvatarComponent} from '../avatar.component';
 import {CardHeadingComponent} from '../card-heading.component';
 import {CustomerDetailTabId} from '../customer-organizations/detail/customer-detail-navigation';
@@ -34,7 +35,7 @@ interface ActivityEntry {
   /** Missing for an entry whose page the viewer cannot open. */
   link?: string;
   queryParams?: Params;
-  user?: {name: string; imageUrl?: string; isVendor: boolean};
+  user?: Author;
   customerName?: string;
   partnerName?: string;
 }
@@ -67,9 +68,6 @@ export class ActivityFeedComponent {
 
   public readonly activity = input.required<ActivityFeedItem[]>();
   public readonly viewer = input.required<ActivityFeedViewer>();
-  /** Shown as the author of what the vendor did, to a customer only. */
-  public readonly vendorName = input<string>();
-  public readonly vendorLogo = input<string>();
   /** For a feed of a single customer, whose entries then link to its tabs instead of naming it. */
   public readonly customerOrganizationId = input<string>();
   /**
@@ -79,6 +77,7 @@ export class ActivityFeedComponent {
   public readonly fillHeight = input(false);
 
   private readonly canOpenTeamSettings = toSignal(organizationSettingsTabs.canOpen('team'), {initialValue: false});
+  private readonly authorContext = toSignal(inject(AuthorService).getContext(), {initialValue: {}});
 
   protected readonly faAddressBook = faAddressBook;
   protected readonly faBuilding = faBuilding;
@@ -88,39 +87,41 @@ export class ActivityFeedComponent {
 
   protected readonly entries = computed<ActivityEntry[]>(() => {
     const viewer = this.viewer();
-    const vendorName = this.vendorName();
+    const authorContext = this.authorContext();
     const customerOrganizationId = this.customerOrganizationId();
     const shouldShowCustomer = viewer !== 'customer' && customerOrganizationId === undefined;
     const permissions: LinkPermissions = {
       isAdmin: this.auth.hasRole('admin'),
       canOpenTeamSettings: this.canOpenTeamSettings(),
     };
-    return this.activity().map((activity) => {
-      const byVendor =
-        activity.type === 'application_version_created' ||
-        activity.type === 'artifact_version_created' ||
-        activity.type === 'license_key_created' ||
-        activity.type === 'license_key_updated' ||
-        activity.type === 'support_bundle_resolved';
-      return {
-        id: `${activity.type}-${activity.id}`,
-        createdAt: activity.createdAt,
-        action: action(activity),
-        icon: icon(activity),
-        ...(customerOrganizationId === undefined
-          ? link(activity, viewer, permissions)
-          : customerTabLink(activity, viewer, permissions, customerOrganizationId)),
-        user:
-          viewer === 'customer' && byVendor
-            ? vendorName
-              ? {name: vendorName, imageUrl: this.vendorLogo(), isVendor: true}
-              : undefined
-            : activity.user && {...activity.user, isVendor: false},
-        customerName: shouldShowCustomer ? activity.customer?.name : undefined,
-        partnerName: viewer === 'vendor' ? activity.partner?.name : undefined,
-      };
-    });
+    return this.activity().map((activity) => ({
+      id: `${activity.type}-${activity.id}`,
+      createdAt: activity.createdAt,
+      action: action(activity),
+      icon: icon(activity),
+      ...(customerOrganizationId === undefined
+        ? link(activity, viewer, permissions)
+        : customerTabLink(activity, viewer, permissions, customerOrganizationId)),
+      user: author(activity, viewer, authorContext),
+      customerName: shouldShowCustomer ? activity.customer?.name : undefined,
+      partnerName: viewer === 'vendor' ? activity.partner?.name : undefined,
+    }));
   });
+}
+
+function author(activity: ActivityFeedItem, viewer: ActivityFeedViewer, context: AuthorContext): Author | undefined {
+  if (activity.user) {
+    return actorAuthor(activity.user, context);
+  }
+  switch (activity.type) {
+    // These entries record no user, so a customer sees them as the vendor's.
+    case 'application_version_created':
+    case 'license_key_created':
+    case 'license_key_updated':
+      return viewer === 'customer' ? context.vendor : undefined;
+    default:
+      return undefined;
+  }
 }
 
 function icon({type}: ActivityFeedItem): IconDefinition {

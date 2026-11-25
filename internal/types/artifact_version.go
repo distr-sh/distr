@@ -22,14 +22,11 @@ type ArtifactVersion struct {
 
 // ArtifactTagEvent is the creation of a release tag with what an activity feed shows.
 type ArtifactTagEvent struct {
-	ID         uuid.UUID `db:"id"`
-	CreatedAt  time.Time `db:"created_at"`
-	ArtifactID uuid.UUID `db:"artifact_id"`
-	Name       string    `db:"name"`
-	// CreatedByName and CreatedByImageID are only set for a creator the viewer may know, see
-	// types.ActivityViewer, since a customer must not learn who works for the vendor.
-	CreatedByName    *string    `db:"created_by_name"`
-	CreatedByImageID *uuid.UUID `db:"created_by_image_id"`
+	ID         uuid.UUID     `db:"id"`
+	CreatedAt  time.Time     `db:"created_at"`
+	ArtifactID uuid.UUID     `db:"artifact_id"`
+	Name       string        `db:"name"`
+	CreatedBy  *ActivityUser `db:"created_by"`
 }
 
 // IsDigestVersion reports whether the version is named after its own manifest digest, which is the

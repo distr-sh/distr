@@ -17,11 +17,20 @@ type ActivityFeedEntry struct {
 	ResourceName string                 `json:"resourceName"`
 	Subject      string                 `json:"subject"`
 	Detail       *string                `json:"detail,omitempty"`
-	UserName     *string                `json:"userName,omitempty"`
-	UserImageUrl *string                `json:"userImageUrl,omitempty"`
+	User         *ActivityFeedUser      `json:"user,omitempty"`
 
 	CustomerOrganizationID   *uuid.UUID `json:"customerOrganizationId,omitempty"`
 	CustomerOrganizationName *string    `json:"customerOrganizationName,omitempty"`
 	PartnerOrganizationID    *uuid.UUID `json:"partnerOrganizationId,omitempty"`
 	PartnerOrganizationName  *string    `json:"partnerOrganizationName,omitempty"`
+}
+
+// ActivityFeedUser is who did what an entry is about. Name and ImageURL are missing for a user the viewer may
+// not know, who is then known by their organization.
+type ActivityFeedUser struct {
+	Name                   *string    `json:"name,omitempty"`
+	ImageURL               *string    `json:"imageUrl,omitempty"`
+	CustomerOrganizationID *uuid.UUID `json:"customerOrganizationId,omitempty"`
+	PartnerOrganizationID  *uuid.UUID `json:"partnerOrganizationId,omitempty"`
+	Deleted                bool       `json:"deleted,omitempty"`
 }

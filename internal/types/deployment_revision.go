@@ -46,17 +46,14 @@ type HelmOptions struct {
 // DeploymentRevisionEvent is the creation of a deployment revision with what an activity feed shows.
 // CustomerOrganizationID is nil for a deployment target of the vendor itself.
 type DeploymentRevisionEvent struct {
-	ID                     uuid.UUID  `db:"id"`
-	CreatedAt              time.Time  `db:"created_at"`
-	CustomerOrganizationID *uuid.UUID `db:"customer_organization_id"`
-	DeploymentTargetID     uuid.UUID  `db:"deployment_target_id"`
-	DeploymentTargetName   string     `db:"deployment_target_name"`
-	ApplicationName        string     `db:"application_name"`
-	ApplicationVersionName string     `db:"application_version_name"`
-	// CreatedByName and CreatedByImageID are only set for a creator the viewer may know, see
-	// types.ActivityViewer, since a customer must not learn who works for the vendor.
-	CreatedByName    *string    `db:"created_by_name"`
-	CreatedByImageID *uuid.UUID `db:"created_by_image_id"`
+	ID                     uuid.UUID     `db:"id"`
+	CreatedAt              time.Time     `db:"created_at"`
+	CustomerOrganizationID *uuid.UUID    `db:"customer_organization_id"`
+	DeploymentTargetID     uuid.UUID     `db:"deployment_target_id"`
+	DeploymentTargetName   string        `db:"deployment_target_name"`
+	ApplicationName        string        `db:"application_name"`
+	ApplicationVersionName string        `db:"application_version_name"`
+	CreatedBy              *ActivityUser `db:"created_by"`
 }
 
 // DeploymentRevisionCreator is the user who created a deployment revision, with their membership in the

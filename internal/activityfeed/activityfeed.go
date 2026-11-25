@@ -35,11 +35,6 @@ const (
 	EntryTypeTeamMemberAdded            EntryType = "team_member_added"
 )
 
-type User struct {
-	Name    string
-	ImageID *uuid.UUID
-}
-
 type Entry struct {
 	ID        uuid.UUID
 	CreatedAt time.Time
@@ -52,20 +47,14 @@ type Entry struct {
 	// besides the deployment target.
 	Subject string
 	Detail  *string
-	User    *User
+	// User is who did what the entry is about, including users the viewer may not know.
+	User *types.ActivityUser
 	// CustomerOrganizationID is nil for activity of the vendor that concerns no particular customer
 	// organization, such as a new application version.
 	CustomerOrganizationID   *uuid.UUID
 	CustomerOrganizationName *string
 	PartnerOrganizationID    *uuid.UUID
 	PartnerOrganizationName  *string
-}
-
-func newUser(name *string, imageID *uuid.UUID) *User {
-	if name == nil {
-		return nil
-	}
-	return &User{Name: *name, ImageID: imageID}
 }
 
 // RestrictToCustomerOrganizations returns the entries with the name of their customer organization. Entries of
@@ -126,13 +115,14 @@ func ArtifactTags(artifacts []types.ArtifactWithDownloads, tags []types.Artifact
 			ResourceName: names[tag.ArtifactID],
 			Subject:      names[tag.ArtifactID],
 			Detail:       new(tag.Name),
-			User:         newUser(tag.CreatedByName, tag.CreatedByImageID),
+			User:         tag.CreatedBy,
 		}
 	}
 	return result
 }
 
-// FirstPulls returns an entry for every pull, which has to have its customer organization set.
+// FirstPulls returns an entry for every pull, which has to have its customer organization set. The user who
+// pulled is a member of that customer organization.
 func FirstPulls(pulls []types.ArtifactVersionPull) []Entry {
 	result := make([]Entry, len(pulls))
 	for i, pull := range pulls {
@@ -147,7 +137,11 @@ func FirstPulls(pulls []types.ArtifactVersionPull) []Entry {
 			CustomerOrganizationID: new(pull.CustomerOrganization.ID),
 		}
 		if pull.UserAccount != nil {
-			result[i].User = &User{Name: pull.UserAccount.Name, ImageID: pull.UserAccount.ImageID}
+			result[i].User = &types.ActivityUser{
+				Name:                   new(pull.UserAccount.Name),
+				ImageID:                pull.UserAccount.ImageID,
+				CustomerOrganizationID: new(pull.CustomerOrganization.ID),
+			}
 		}
 	}
 	return result
@@ -164,7 +158,7 @@ func DeploymentRevisions(revisions []types.DeploymentRevisionEvent) []Entry {
 			ResourceName:           revision.DeploymentTargetName,
 			Subject:                revision.ApplicationName + " (" + revision.DeploymentTargetName + ")",
 			Detail:                 new(revision.ApplicationVersionName),
-			User:                   newUser(revision.CreatedByName, revision.CreatedByImageID),
+			User:                   revision.CreatedBy,
 			CustomerOrganizationID: revision.CustomerOrganizationID,
 		}
 	}
@@ -311,7 +305,7 @@ func SupportBundles(events []types.CustomerSupportBundleEvent) []Entry {
 			ResourceID:             event.SupportBundleID,
 			ResourceName:           event.Title,
 			Subject:                event.Title,
-			User:                   newUser(event.UserName, event.UserImageID),
+			User:                   event.User,
 			CustomerOrganizationID: new(event.CustomerOrganizationID),
 		})
 	}
