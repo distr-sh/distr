@@ -1,0 +1,37 @@
+---
+import weave from '~/assets/customers/weave/logo-mono.svg';
+import ozgar from '~/assets/customers/ozgar-ai/logo-mono.svg';
+import basedash from '~/assets/customers/basedash/logo-mono.svg';
+import candor from '~/assets/customers/candor/logo-mono.svg';
+
+const customers = [
+  {name: 'Weave', logo: weave, href: '/case-studies/weave/'},
+  {name: 'Ozgar AI', logo: ozgar, href: '/case-studies/ozgar-ai/'},
+  {name: 'Basedash', logo: basedash, href: '/case-studies/basedash/'},
+  {name: 'Candor', logo: candor, href: '/case-studies/candor/'},
+];
+---
+
+<section class="py-10 md:py-14 bg-gray-50 dark:bg-gray-800">
+  <div class="container mx-auto px-4 max-w-5xl">
+    <p class="text-center text-sm font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-8 md:mb-10">
+      Trusted by teams shipping self-hosted software
+    </p>
+    <ul class="not-content flex flex-wrap items-center justify-center gap-x-12 gap-y-8 md:gap-x-20 list-none p-0 m-0">
+      {customers.map(customer => (
+        <li class="m-0">
+          <a
+            href={customer.href}
+            class="block opacity-60 hover:opacity-100 transition-opacity">
+            <img
+              src={customer.logo.src}
+              alt={`${customer.name} case study`}
+              class="h-6 md:h-7 w-auto dark:invert"
+              loading="lazy"
+            />
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
