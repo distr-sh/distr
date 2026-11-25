@@ -19,6 +19,7 @@ import (
 	"github.com/distr-sh/distr/internal/svc"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
+	sentryotel "github.com/getsentry/sentry-go/otel"
 	"github.com/spf13/cobra"
 	"github.com/stripe/stripe-go/v87"
 	"go.uber.org/zap"
@@ -51,13 +52,14 @@ func init() {
 
 func runServe(ctx context.Context, opts ServeOptions) {
 	util.Must(sentry.Init(sentry.ClientOptions{
-		Dsn:              env.SentryDSN(),
-		Debug:            env.SentryDebug(),
-		Environment:      env.SentryEnvironment(),
-		EnableTracing:    env.OtelExporterSentryEnabled(),
-		TracesSampleRate: 1.0,
-		Release:          buildconfig.Version(),
-		IgnoreErrors:     []string{context.Canceled.Error()},
+		Dsn:          env.SentryDSN(),
+		Debug:        env.SentryDebug(),
+		Environment:  env.SentryEnvironment(),
+		Release:      buildconfig.Version(),
+		IgnoreErrors: []string{context.Canceled.Error()},
+		Integrations: func(integrations []sentry.Integration) []sentry.Integration {
+			return append(integrations, sentryotel.NewOtelIntegration())
+		},
 	}))
 	defer sentry.Flush(5 * time.Second)
 	defer func() {

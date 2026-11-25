@@ -254,6 +254,8 @@ github.com/fxamacker/cbor/v2 v2.9.4 h1:xwjVlxEMR3S605oUlgBjKLTTeGFciYPGYCtF/35LK
 github.com/fxamacker/cbor/v2 v2.9.4/go.mod h1:vM4b+DJCtHn+zz7h3FFp/hDAI9WNWCsZj23V5ytsSxQ=
 github.com/getsentry/sentry-go v0.50.0 h1:gkO59rn/i0RCAXUUTflC5QVbTQGPXbaFabs2olVzc9g=
 github.com/getsentry/sentry-go v0.50.0/go.mod h1:+xsDuN+SoRN/xfs1hdq78wnrE3omIZf+FCuh9FOW1C8=
+github.com/getsentry/sentry-go/otel v0.50.0 h1:MlUtdu7dN4POvAde4qlrzC0h3DPniZA3IFdjCuZwAKA=
+github.com/getsentry/sentry-go/otel v0.50.0/go.mod h1:OfwS7wmoL6iHwUJsvmUV7FsKMdLs/wZTIi7t75sPMHg=
 github.com/getsentry/sentry-go/otel/otlp v0.50.0 h1:mmKr7wsrSnleAabOTYzlNWrOzN5pdkl2IPV6as+W8iU=
 github.com/getsentry/sentry-go/otel/otlp v0.50.0/go.mod h1:3SLOxr/akXyaI5Qlb7aqhLIU4W3efiQTqINKORTVqDA=
 github.com/glasskube/pkg/crypto v0.2.1 h1:AW8GK5m99xVGGRPWLN+DuzmtFxzxheKchBKxf3f+2xo=

@@ -23,6 +23,7 @@ require (
 	github.com/exaring/otelpgx v0.13.0
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/getsentry/sentry-go v0.50.0
+	github.com/getsentry/sentry-go/otel v0.50.0
 	github.com/getsentry/sentry-go/otel/otlp v0.50.0
 	github.com/glasskube/pkg/crypto v0.2.1
 	github.com/glasskube/pkg/seekbuf v0.1.2
