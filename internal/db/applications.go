@@ -286,10 +286,9 @@ func GetApplicationWithEntitlementOwnerID(
 			`, pgx.NamedArgs{"ownerID": customerOrganizationID, "id": id}); err != nil {
 		return nil, fmt.Errorf("failed to query applications: %w", err)
 	} else if applications, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.Application]); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, distrerr.ErrNotFound
-		}
 		return nil, fmt.Errorf("failed to get application: %w", err)
+	} else if len(applications) == 0 {
+		return nil, distrerr.ErrNotFound
 	} else {
 		return &mergeApplications(applications)[0], nil
 	}
