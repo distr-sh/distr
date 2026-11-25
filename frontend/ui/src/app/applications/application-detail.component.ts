@@ -196,14 +196,6 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   readonly isVersionFormExpanded = signal(false);
 
   ngOnInit() {
-    this.filterForm.controls.showArchived.valueChanges.pipe(takeUntil(this.destroyed$)).subscribe((showArchived) => {
-      if (!showArchived) {
-        const archivedIds = new Set(
-          (this.application()?.versions ?? []).filter((version) => isArchived(version)).map((version) => version.id)
-        );
-        this.selectedVersionIds.update((ids) => new Set([...ids].filter((id) => !archivedIds.has(id))));
-      }
-    });
     this.newVersionForm.controls.kubernetes.controls.chartType.valueChanges
       .pipe(takeUntil(this.destroyed$))
       .subscribe((type) => {
@@ -227,6 +219,16 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   protected readonly autoUpdatesPlan = upgradePlan({requiresAnyOf: ['auto_updates']});
 
   private readonly application = toSignal(this.application$);
+  private readonly visibleVersions = toSignal(this.visibleVersions$);
+
+  /** Only the selected versions the table shows, so that a bulk action never touches a row hidden by the filter. */
+  protected readonly selectedVersions = computed(() =>
+    (this.visibleVersions() ?? []).filter((version) => version.id && this.selectedVersionIds().has(version.id))
+  );
+  protected readonly isAllVersionsSelected = computed(() => {
+    const visibleCount = this.visibleVersions()?.length ?? 0;
+    return visibleCount > 0 && this.selectedVersions().length === visibleCount;
+  });
 
   protected readonly isChartNameColumnVisible = computed(
     () => this.application()?.versions?.some((version) => !!version.chartName) ?? false
@@ -464,7 +466,7 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   }
 
   async bulkArchiveVersions(app: Application) {
-    const versions = (app.versions ?? []).filter((version) => this.isVersionSelected(version) && !isArchived(version));
+    const versions = this.selectedVersions().filter((version) => !isArchived(version));
     if (versions.length === 0) {
       this.toast.info('All selected versions are already archived');
       return;
@@ -510,7 +512,7 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   }
 
   async bulkDeleteVersions(application: Application) {
-    const versions = (application.versions ?? []).filter((version) => this.isVersionSelected(version));
+    const versions = this.selectedVersions();
     if (
       !(await firstValueFrom(
         this.overlay.confirm({
@@ -621,12 +623,13 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
     }
 
     this.selectedVersionIds.update((ids) => {
-      if (this.isVersionSelected(version)) {
-        ids.delete(id);
-        return ids;
+      const next = new Set(ids);
+      if (next.has(id)) {
+        next.delete(id);
       } else {
-        return ids.add(id);
+        next.add(id);
       }
+      return next;
     });
   }
 
@@ -634,20 +637,14 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
     return version.id !== undefined && this.selectedVersionIds().has(version.id);
   }
 
-  protected toggleAllVersionsSelected(versions: ApplicationVersion[]) {
-    if (this.isAllVersionsSelected(versions)) {
+  protected toggleAllVersionsSelected() {
+    if (this.isAllVersionsSelected()) {
       this.selectedVersionIds.set(new Set());
     } else {
-      this.selectedVersionIds.set(new Set(versions.map((v) => v.id).filter((id) => id !== undefined)));
+      this.selectedVersionIds.set(
+        new Set((this.visibleVersions() ?? []).map((v) => v.id).filter((id) => id !== undefined))
+      );
     }
-  }
-
-  protected isAllVersionsSelected(versions: ApplicationVersion[]): boolean {
-    return (
-      this.selectedVersionIds().size > 0 &&
-      versions.length === this.selectedVersionIds().size &&
-      versions.every((version) => this.isVersionSelected(version))
-    );
   }
 
   toggleResourcePreview(index: number) {

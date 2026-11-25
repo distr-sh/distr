@@ -98,19 +98,17 @@
                 <tr>
                   @if (auth.hasAnyRole('read_write', 'admin')) {
                     <td class="px-1 py-3">
-                      @let versions = this.visibleVersions$ | async;
-                      @let all = isAllVersionsSelected(versions ?? []);
                       <input
                         type="checkbox"
                         class="distr-checkbox"
-                        [checked]="all"
-                        [indeterminate]="!all && selectedVersionIds().size > 0"
-                        (change)="toggleAllVersionsSelected(versions ?? [])" />
+                        [checked]="isAllVersionsSelected()"
+                        [indeterminate]="!isAllVersionsSelected() && selectedVersions().length > 0"
+                        (change)="toggleAllVersionsSelected()" />
                     </td>
                   }
-                  @if (selectedVersionIds().size > 0) {
+                  @if (selectedVersions().length > 0) {
                     <td class="px-3 text-sm normal-case" [attr.colspan]="versionColumnCount()">
-                      {{ selectedVersionIds().size }} selected
+                      {{ selectedVersions().length }} selected
                       <button
                         (click)="bulkArchiveVersions(application)"
                         class="distr-btn-secondary ms-2 items-center px-3 py-1 text-center text-sm font-medium">
