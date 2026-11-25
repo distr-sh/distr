@@ -274,16 +274,17 @@ func LockApplicationExclusive(ctx context.Context, applicationID uuid.UUID) erro
 func GetApplicationWithEntitlementOwnerID(
 	ctx context.Context,
 	customerOrganizationID uuid.UUID,
-	id uuid.UUID,
+	applicationID uuid.UUID,
 ) (*types.Application, error) {
 	db := internalctx.GetDb(ctx)
 	if rows, err := db.Query(ctx, `
 			SELECT DISTINCT `+applicationWithEntitledVersionsOutputExpr+`
 			FROM ApplicationEntitlement al
 				LEFT JOIN Application a ON al.application_id = a.id
-			WHERE al.customer_organization_id = @ownerID AND a.id = @id AND (al.expires_at IS NULL OR al.expires_at > now())
+			WHERE al.customer_organization_id = @customerOrganizationId AND a.id = @applicationId
+				AND (al.expires_at IS NULL OR al.expires_at > now())
 			ORDER BY a.name
-			`, pgx.NamedArgs{"ownerID": customerOrganizationID, "id": id}); err != nil {
+			`, pgx.NamedArgs{"customerOrganizationId": customerOrganizationID, "applicationId": applicationID}); err != nil {
 		return nil, fmt.Errorf("failed to query applications: %w", err)
 	} else if applications, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.Application]); err != nil {
 		return nil, fmt.Errorf("failed to get application: %w", err)
