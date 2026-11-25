@@ -14,11 +14,13 @@ func TestActivityFeedEntryToAPI_UserVisibility(t *testing.T) {
 	customerOrg := uuid.New()
 	partnerOrg := uuid.New()
 	userName := "Jane Doe"
+	imageID := uuid.New()
+	imageURL := mapping.CreateImageURL(&imageID)
 
-	vendor := types.ActivityUser{Name: &userName}
-	partner := types.ActivityUser{Name: &userName, PartnerOrganizationID: &partnerOrg}
-	customer := types.ActivityUser{Name: &userName, CustomerOrganizationID: &customerOrg}
-	deleted := types.ActivityUser{Name: &userName, Deleted: true}
+	vendor := types.ActivityUser{Name: &userName, ImageID: &imageID}
+	partner := types.ActivityUser{Name: &userName, ImageID: &imageID, PartnerOrganizationID: &partnerOrg}
+	customer := types.ActivityUser{Name: &userName, ImageID: &imageID, CustomerOrganizationID: &customerOrg}
+	deleted := types.ActivityUser{Name: &userName, ImageID: &imageID, Deleted: true}
 
 	tests := []struct {
 		name           string
@@ -26,9 +28,9 @@ func TestActivityFeedEntryToAPI_UserVisibility(t *testing.T) {
 		viewerPartner  *uuid.UUID
 		user           types.ActivityUser
 		wantUser       bool
-		wantName       bool
+		wantIdentity   bool
 	}{
-		{name: "vendor viewer sees deleted user", user: deleted, wantUser: true, wantName: true},
+		{name: "vendor viewer sees deleted user", user: deleted, wantUser: true, wantIdentity: true},
 		{
 			name:          "partner viewer knows vendor user by organization",
 			viewerPartner: &partnerOrg,
@@ -40,7 +42,7 @@ func TestActivityFeedEntryToAPI_UserVisibility(t *testing.T) {
 			viewerPartner: &partnerOrg,
 			user:          partner,
 			wantUser:      true,
-			wantName:      true,
+			wantIdentity:  true,
 		},
 		{name: "partner viewer does not see deleted user", viewerPartner: &partnerOrg, user: deleted},
 		{
@@ -54,7 +56,7 @@ func TestActivityFeedEntryToAPI_UserVisibility(t *testing.T) {
 			viewerCustomer: &customerOrg,
 			user:           customer,
 			wantUser:       true,
-			wantName:       true,
+			wantIdentity:   true,
 		},
 		{name: "customer viewer does not see deleted user", viewerCustomer: &customerOrg, user: deleted},
 	}
@@ -71,10 +73,13 @@ func TestActivityFeedEntryToAPI_UserVisibility(t *testing.T) {
 			g.Expect(result.User).NotTo(BeNil())
 			g.Expect(result.User.CustomerOrganizationID).To(Equal(tt.user.CustomerOrganizationID))
 			g.Expect(result.User.PartnerOrganizationID).To(Equal(tt.user.PartnerOrganizationID))
-			if tt.wantName {
+			g.Expect(result.User.Deleted).To(Equal(tt.user.Deleted))
+			if tt.wantIdentity {
 				g.Expect(result.User.Name).To(HaveValue(Equal(userName)))
+				g.Expect(result.User.ImageURL).To(Equal(imageURL))
 			} else {
 				g.Expect(result.User.Name).To(BeNil())
+				g.Expect(result.User.ImageURL).To(BeNil())
 			}
 		})
 	}
