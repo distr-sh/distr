@@ -53,7 +53,7 @@ jobs:
           node-version-file: 'package.json'
           cache: pnpm
       - name: Regenerate THIRD_PARTY_LICENSES.md and NOTICE
-        # keep in sync with the build:third-party-licenses tasks in mise.toml
+        # keep in sync with the build:third-party-licenses task in mise.toml
         run: |
           pnpm install --frozen-lockfile
           mkdir -p dist && pnpm licenses list --prod --json > dist/npm-licenses.json

@@ -156,14 +156,13 @@ description = "Generate values.schema.json from values.yaml and its helm-docs co
 run = 'schema'
 dir = "deploy/charts/distr"
 
-[tasks."build:third-party-licenses:npm"]
-description = "Write the licenses of the production npm packages to dist/npm-licenses.json"
-run = "mkdir -p dist && pnpm licenses list --prod --json > dist/npm-licenses.json"
-
 [tasks."build:third-party-licenses"]
 description = "Generate THIRD_PARTY_LICENSES.md and NOTICE from the Go modules, the npm packages and the bundled components"
-depends = ["build:third-party-licenses:npm"]
-run = "go -C hack/third-party-licenses run . --npm ../../dist/npm-licenses.json"
+run = [
+  "mkdir -p dist",
+  "pnpm licenses list --prod --json > dist/npm-licenses.json",
+  "go -C hack/third-party-licenses run . --npm ../../dist/npm-licenses.json",
+]
 
 [tasks."format:frontend"]
 run = ['pnpm dedupe', 'pnpm format']
