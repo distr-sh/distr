@@ -166,9 +166,13 @@ export default defineConfig({
                   ],
                 },
                 {
-                  label: 'Monitoring',
+                  label: 'Notifications',
                   items: [
-                    {autogenerate: {directory: 'docs/controllers/monitoring'}},
+                    {
+                      autogenerate: {
+                        directory: 'docs/controllers/notifications',
+                      },
+                    },
                   ],
                 },
                 {
