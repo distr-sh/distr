@@ -16,6 +16,8 @@ func ActivityFeedEntryToAPI(e activityfeed.Entry) api.ActivityFeedEntry {
 		Detail:                   e.Detail,
 		CustomerOrganizationID:   e.CustomerOrganizationID,
 		CustomerOrganizationName: e.CustomerOrganizationName,
+		PartnerOrganizationID:    e.PartnerOrganizationID,
+		PartnerOrganizationName:  e.PartnerOrganizationName,
 	}
 	if e.User != nil {
 		result.UserName = &e.User.Name

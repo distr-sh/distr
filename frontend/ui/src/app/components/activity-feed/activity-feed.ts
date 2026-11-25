@@ -13,6 +13,12 @@ export interface ActivityFeedCustomer {
   name: string;
 }
 
+export interface ActivityFeedPartner {
+  id: string;
+  /** Missing for a partner looking at its own members. */
+  name?: string;
+}
+
 export interface ActivityFeedItem {
   id: string;
   createdAt: string;
@@ -23,6 +29,7 @@ export interface ActivityFeedItem {
   detail?: string;
   user?: ActivityFeedUser;
   customer?: ActivityFeedCustomer;
+  partner?: ActivityFeedPartner;
 }
 
 export function toActivityFeedItems(entries: ActivityFeedEntry[]): ActivityFeedItem[] {
@@ -39,5 +46,8 @@ export function toActivityFeedItems(entries: ActivityFeedEntry[]): ActivityFeedI
       entry.customerOrganizationId && entry.customerOrganizationName
         ? {id: entry.customerOrganizationId, name: entry.customerOrganizationName}
         : undefined,
+    partner: entry.partnerOrganizationId
+      ? {id: entry.partnerOrganizationId, name: entry.partnerOrganizationName}
+      : undefined,
   }));
 }

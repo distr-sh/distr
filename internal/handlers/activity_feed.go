@@ -46,6 +46,9 @@ type activityScope struct {
 	viewer       types.ActivityViewer
 	// artifacts loads the artifacts visible to the scope once for every source that needs them.
 	artifacts func() ([]types.ArtifactWithDownloads, error)
+	// users loads the members of the scope once for every source that needs them: those of the single customer
+	// organization a feed covers, or else every user the vendor or partner manages, its own members included.
+	users func() ([]types.UserAccountWithUserRole, error)
 }
 
 func (s activityScope) customerOrgID() *uuid.UUID {
@@ -73,6 +76,7 @@ var organizationActivitySources = []activitySource{
 	artifactTagActivity,
 	internalDeploymentRevisionActivity,
 	internalDeploymentTargetActivity,
+	teamMemberActivity,
 }
 
 // customerActivitySources return the activity of the customer organizations in the scope.
@@ -112,7 +116,31 @@ func activityFeedScope(ctx context.Context, customerOrgID *uuid.UUID) (activityS
 	scope.artifacts = sync.OnceValues(func() ([]types.ArtifactWithDownloads, error) {
 		return visibleArtifacts(ctx, ownCustomerOrgID)
 	})
+	isSingleCustomer := customerOrgID != nil || scope.customerOrg != nil
+	customerOrgs := scope.customerOrgs
+	partnerOrgID := scope.viewer.PartnerOrganizationID
+	scope.users = sync.OnceValues(func() ([]types.UserAccountWithUserRole, error) {
+		return activityUsers(ctx, isSingleCustomer, customerOrgs, partnerOrgID)
+	})
 	return scope, nil
+}
+
+func activityUsers(
+	ctx context.Context,
+	isSingleCustomer bool,
+	customerOrgs []types.CustomerOrganization,
+	partnerOrgID *uuid.UUID,
+) ([]types.UserAccountWithUserRole, error) {
+	switch {
+	case isSingleCustomer && len(customerOrgs) == 0:
+		return nil, nil
+	case isSingleCustomer:
+		return db.GetUserAccountsByCustomerOrgID(ctx, customerOrgs[0].ID)
+	case partnerOrgID != nil:
+		return db.GetUserAccountsByPartnerOrgID(ctx, *partnerOrgID)
+	default:
+		return db.GetUserAccountsByOrgID(ctx, *auth.Authentication.Require(ctx).CurrentOrgID())
+	}
 }
 
 // activitySources leaves the activity that belongs to no customer organization out of the feed of one customer.
@@ -269,24 +297,47 @@ func customerCreatedActivity(_ context.Context, scope activityScope, since time.
 	return activityfeed.CustomerOrganizations(scope.customerOrgs, since), nil
 }
 
-func customerUserActivity(ctx context.Context, scope activityScope, since time.Time) ([]activityfeed.Entry, error) {
-	auth := auth.Authentication.Require(ctx)
-	var users []types.UserAccountWithUserRole
-	var err error
-	switch {
-	case len(scope.customerOrgs) == 0:
+func customerUserActivity(_ context.Context, scope activityScope, since time.Time) ([]activityfeed.Entry, error) {
+	if len(scope.customerOrgs) == 0 {
 		return nil, nil
-	case len(scope.customerOrgs) == 1:
-		users, err = db.GetUserAccountsByCustomerOrgID(ctx, scope.customerOrgs[0].ID)
-	case scope.viewer.PartnerOrganizationID != nil:
-		users, err = db.GetUserAccountsByPartnerOrgID(ctx, *scope.viewer.PartnerOrganizationID)
-	default:
-		users, err = db.GetUserAccountsByOrgID(ctx, *auth.CurrentOrgID())
-	}
-	if err != nil {
+	} else if users, err := scope.users(); err != nil {
 		return nil, fmt.Errorf("failed to get customer users: %w", err)
+	} else {
+		return activityfeed.CustomerUsers(users, since), nil
 	}
-	return activityfeed.CustomerUsers(users, since), nil
+}
+
+// teamMemberActivity returns the new members of the vendor and its partners to the vendor, and those of its own
+// organization to a partner.
+func teamMemberActivity(ctx context.Context, scope activityScope, since time.Time) ([]activityfeed.Entry, error) {
+	if scope.customerOrg != nil {
+		return nil, nil
+	} else if users, err := scope.users(); err != nil {
+		return nil, fmt.Errorf("failed to get team members: %w", err)
+	} else if partnerOrgs, err := teamPartnerOrgs(ctx, scope, users); err != nil {
+		return nil, err
+	} else {
+		return activityfeed.TeamMembers(users, partnerOrgs, since), nil
+	}
+}
+
+// teamPartnerOrgs returns the partner organizations the vendor sees the new members of named with, which a
+// partner does not need for its own members.
+func teamPartnerOrgs(
+	ctx context.Context,
+	scope activityScope,
+	users []types.UserAccountWithUserRole,
+) ([]types.PartnerOrganizationWithUsage, error) {
+	auth := auth.Authentication.Require(ctx)
+	if !scope.viewer.IsVendor || !slices.ContainsFunc(users, func(user types.UserAccountWithUserRole) bool {
+		return user.PartnerOrganizationID != nil
+	}) {
+		return nil, nil
+	} else if partnerOrgs, err := db.GetPartnerOrganizationsByOrganizationID(ctx, *auth.CurrentOrgID()); err != nil {
+		return nil, fmt.Errorf("failed to get partner organizations: %w", err)
+	} else {
+		return partnerOrgs, nil
+	}
 }
 
 func customerDeploymentTargetActivity(

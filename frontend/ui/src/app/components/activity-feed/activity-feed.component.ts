@@ -1,10 +1,12 @@
 import {DatePipe} from '@angular/common';
 import {Component, computed, inject, input, signal} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {Params, RouterLink} from '@angular/router';
 import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
 import {
   faAddressBook,
   faBox,
+  faBuilding,
   faClockRotateLeft,
   faCube,
   faDashboard,
@@ -17,6 +19,7 @@ import {
 import {RelativeDatePipe} from '../../../util/dates';
 import {never} from '../../../util/exhaust';
 import {CustomerHomeCollapsibleComponent} from '../../home/customer/customer-home-collapsible.component';
+import {organizationSettingsTabs} from '../../organization-settings/organization-settings-navigation';
 import {AuthService} from '../../services/auth.service';
 import {AvatarComponent} from '../avatar.component';
 import {CardHeadingComponent} from '../card-heading.component';
@@ -33,6 +36,12 @@ interface ActivityEntry {
   queryParams?: Params;
   user?: {name: string; imageUrl?: string; isVendor: boolean};
   customerName?: string;
+  partnerName?: string;
+}
+
+interface LinkPermissions {
+  isAdmin: boolean;
+  canOpenTeamSettings: boolean;
 }
 
 @Component({
@@ -69,7 +78,10 @@ export class ActivityFeedComponent {
    */
   public readonly fillHeight = input(false);
 
+  private readonly canOpenTeamSettings = toSignal(organizationSettingsTabs.canOpen('team'), {initialValue: false});
+
   protected readonly faAddressBook = faAddressBook;
+  protected readonly faBuilding = faBuilding;
   protected readonly faClockRotateLeft = faClockRotateLeft;
 
   protected readonly expanded = signal(false);
@@ -79,7 +91,10 @@ export class ActivityFeedComponent {
     const vendorName = this.vendorName();
     const customerOrganizationId = this.customerOrganizationId();
     const shouldShowCustomer = viewer !== 'customer' && customerOrganizationId === undefined;
-    const isAdmin = this.auth.hasRole('admin');
+    const permissions: LinkPermissions = {
+      isAdmin: this.auth.hasRole('admin'),
+      canOpenTeamSettings: this.canOpenTeamSettings(),
+    };
     return this.activity().map((activity) => {
       const byVendor =
         activity.type === 'application_version_created' ||
@@ -93,8 +108,8 @@ export class ActivityFeedComponent {
         action: action(activity),
         icon: icon(activity),
         ...(customerOrganizationId === undefined
-          ? link(activity, viewer, isAdmin)
-          : customerTabLink(activity, viewer, isAdmin, customerOrganizationId)),
+          ? link(activity, viewer, permissions)
+          : customerTabLink(activity, viewer, permissions, customerOrganizationId)),
         user:
           viewer === 'customer' && byVendor
             ? vendorName
@@ -102,6 +117,7 @@ export class ActivityFeedComponent {
               : undefined
             : activity.user && {...activity.user, isVendor: false},
         customerName: shouldShowCustomer ? activity.customer?.name : undefined,
+        partnerName: viewer === 'vendor' ? activity.partner?.name : undefined,
       };
     });
   });
@@ -131,15 +147,17 @@ function icon({type}: ActivityFeedItem): IconDefinition {
     case 'support_bundle_resolved':
     case 'support_bundle_canceled':
       return faLifeRing;
+    case 'team_member_joined':
+      return faUserPlus;
     default:
       return never(type);
   }
 }
 
 function link(
-  {type, resourceId, resourceName, customer}: ActivityFeedItem,
+  {type, resourceId, resourceName, customer, partner}: ActivityFeedItem,
   viewer: ActivityFeedViewer,
-  isAdmin: boolean
+  {isAdmin, canOpenTeamSettings}: LinkPermissions
 ): Pick<ActivityEntry, 'link' | 'queryParams'> {
   switch (type) {
     case 'application_version_created':
@@ -171,6 +189,14 @@ function link(
     case 'support_bundle_resolved':
     case 'support_bundle_canceled':
       return {link: `/support/${resourceId}`};
+    case 'team_member_joined':
+      if (viewer === 'vendor') {
+        if (partner) {
+          return {link: `/partners/${partner.id}/users`};
+        }
+        return canOpenTeamSettings ? {link: '/settings/organization/team'} : {};
+      }
+      return isAdmin ? {link: '/team'} : {};
     default:
       return never(type);
   }
@@ -179,14 +205,15 @@ function link(
 function customerTabLink(
   activity: ActivityFeedItem,
   viewer: ActivityFeedViewer,
-  isAdmin: boolean,
+  permissions: LinkPermissions,
   customerOrganizationId: string
 ): Pick<ActivityEntry, 'link' | 'queryParams'> {
   const tab = (tab: CustomerDetailTabId) => ({link: `/customers/${customerOrganizationId}/${tab}`});
   switch (activity.type) {
     case 'application_version_created':
     case 'artifact_version_created':
-      return link(activity, viewer, isAdmin);
+    case 'team_member_joined':
+      return link(activity, viewer, permissions);
     case 'artifact_version_first_pulled':
       return {...tab('registry'), queryParams: {artifactId: activity.resourceId}};
     case 'customer_created':
@@ -237,6 +264,8 @@ function action({type, subject, detail}: ActivityFeedItem): string {
       return `support request ${subject} resolved`;
     case 'support_bundle_canceled':
       return `support request ${subject} canceled`;
+    case 'team_member_joined':
+      return `${subject} joined`;
     default:
       return never(type);
   }

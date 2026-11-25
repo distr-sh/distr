@@ -32,6 +32,7 @@ const (
 	EntryTypeSupportBundleUploaded      EntryType = "support_bundle_uploaded"
 	EntryTypeSupportBundleResolved      EntryType = "support_bundle_resolved"
 	EntryTypeSupportBundleCanceled      EntryType = "support_bundle_canceled"
+	EntryTypeTeamMemberJoined           EntryType = "team_member_joined"
 )
 
 type User struct {
@@ -56,6 +57,8 @@ type Entry struct {
 	// organization, such as a new application version.
 	CustomerOrganizationID   *uuid.UUID
 	CustomerOrganizationName *string
+	PartnerOrganizationID    *uuid.UUID
+	PartnerOrganizationName  *string
 }
 
 func newUser(name *string, imageID *uuid.UUID) *User {
@@ -203,6 +206,42 @@ func CustomerUsers(users []types.UserAccountWithUserRole, since time.Time) []Ent
 				Subject:                name,
 				CustomerOrganizationID: user.CustomerOrganizationID,
 			})
+		}
+	}
+	return result
+}
+
+// TeamMembers returns an entry for every user who joined the vendor or a partner after since, leaving out the
+// members of customer organizations. A partner member is named with its partner organization if it is among
+// partnerOrgs.
+func TeamMembers(
+	users []types.UserAccountWithUserRole,
+	partnerOrgs []types.PartnerOrganizationWithUsage,
+	since time.Time,
+) []Entry {
+	partnerNames := make(map[uuid.UUID]string, len(partnerOrgs))
+	for _, partnerOrg := range partnerOrgs {
+		partnerNames[partnerOrg.ID] = partnerOrg.Name
+	}
+	var result []Entry
+	for _, user := range users {
+		if user.CustomerOrganizationID == nil && user.JoinedOrgAt.After(since) {
+			name := cmp.Or(user.Name, user.Email)
+			entry := Entry{
+				ID:                    user.ID,
+				CreatedAt:             user.JoinedOrgAt,
+				Type:                  EntryTypeTeamMemberJoined,
+				ResourceID:            user.ID,
+				ResourceName:          name,
+				Subject:               name,
+				PartnerOrganizationID: user.PartnerOrganizationID,
+			}
+			if user.PartnerOrganizationID != nil {
+				if partnerName, ok := partnerNames[*user.PartnerOrganizationID]; ok {
+					entry.PartnerOrganizationName = &partnerName
+				}
+			}
+			result = append(result, entry)
 		}
 	}
 	return result

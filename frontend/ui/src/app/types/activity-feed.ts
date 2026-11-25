@@ -11,7 +11,8 @@ export type ActivityFeedEntryType =
   | 'support_bundle_created'
   | 'support_bundle_uploaded'
   | 'support_bundle_resolved'
-  | 'support_bundle_canceled';
+  | 'support_bundle_canceled'
+  | 'team_member_joined';
 
 export interface ActivityFeedEntry {
   id: string;
@@ -25,4 +26,6 @@ export interface ActivityFeedEntry {
   userImageUrl?: string;
   customerOrganizationId?: string;
   customerOrganizationName?: string;
+  partnerOrganizationId?: string;
+  partnerOrganizationName?: string;
 }
