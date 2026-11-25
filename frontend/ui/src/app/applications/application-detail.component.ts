@@ -518,7 +518,11 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
         this.overlay.confirm({
           message: {
             message: `Really delete ${versions.length} versions? This cannot be undone.`,
-            alert: {type: 'info', message: 'Versions that a deployment uses will be skipped.'},
+            alert: {
+              type: 'info',
+              message:
+                'Versions that a deployment uses or that are the only version of an entitlement will be skipped.',
+            },
           },
         })
       ))
