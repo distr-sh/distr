@@ -9,10 +9,10 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import logViewerResourceDropdownLight from '~/assets/docs/controllers/monitoring/logs-and-metrics/log-viewer-resource-dropdown-light.png';
-import logViewerResourceDropdownDark from '~/assets/docs/controllers/monitoring/logs-and-metrics/log-viewer-resource-dropdown-dark.png';
-import enableContLogsLight from '~/assets/docs/controllers/monitoring/logs-and-metrics/enable-cont-logs-light.png';
-import enableContLogsDark from '~/assets/docs/controllers/monitoring/logs-and-metrics/enable-cont-logs-dark.png';
+import logViewerResourceDropdownLight from '~/assets/docs/controllers/monitoring/logs-and-metrics/log-viewer-resource-dropdown-light.webp';
+import logViewerResourceDropdownDark from '~/assets/docs/controllers/monitoring/logs-and-metrics/log-viewer-resource-dropdown-dark.webp';
+import logCollectionSettingsLight from '~/assets/docs/controllers/monitoring/logs-and-metrics/log-collection-settings-light.webp';
+import logCollectionSettingsDark from '~/assets/docs/controllers/monitoring/logs-and-metrics/log-collection-settings-dark.webp';
 
 Distr gives you observability for every deployment target via **logs** that let you dig into what happened, and **metrics** that track resource usage over time.
 
@@ -46,15 +46,16 @@ Configure healthchecks so Distr can distinguish between **Running** (no checks c
 
 The log viewer is a dedicated page for inspecting all log data associated with a deployment target. Open it by clicking the deployment target name, clicking **Inspect** on a deployment, or selecting **Controller Logs** from the **⋮** menu.
 
-Once open, use the breadcrumb dropdowns to switch between deployment targets and views. The view dropdown lets you choose what to inspect:
+Once open, use the breadcrumb dropdowns to choose what to inspect:
 
-- **Controller Logs**: Raw output from the Distr controller process: connection events, reconciliation cycles, errors. Always available.
-- **Container resources**: Application container logs (e.g. `backend-1`, `proxy-1`). Only available when [log collection is enabled](#container-logs). You can select several resources at once to see their logs interleaved. **Inspect** preselects all [active resources](#active-and-archived-resources) of the deployment.
+- **Deployment target**: switch to another deployment target.
+- **Controller Logs or a deployment**: **Controller Logs** shows the raw output from the Distr controller process: connection events, reconciliation cycles, errors. It is always available. Pick a deployment instead to see the logs of its containers.
+- **Services**: the containers or Kubernetes resources of the selected deployment (e.g. `backend-1`, `proxy-1`). Only available when [log collection is enabled](#container-logs). Select several at once to see their logs interleaved, or use **Select all** and **Select none**. **Inspect** preselects all [active resources](#active-and-archived-resources) of the deployment.
 
 <ThemedImage
   lightSrc={logViewerResourceDropdownLight}
   darkSrc={logViewerResourceDropdownDark}
-  alt="Log viewer with view dropdown showing Deployment Status, Controller Logs, and container resources"
+  alt="Log viewer with the services dropdown open and two resources of a deployment selected"
 />
 
 The log viewer auto-refreshes every 10 seconds. Use the **From** and **To** fields to view a specific time window, or the **Filter** field to search with plain text or a regular expression. Turn on **Exclude** to hide the matching entries instead. You can pin any log entry by clicking the thumbtack icon on hover. The row stays sticky while you scroll, making it easy to compare entries.
@@ -79,16 +80,16 @@ Controller logs show the raw output from the Distr controller process itself: co
 
 Container logs show the output from your application containers. Log collection can be configured in two places:
 
-- **When creating a deployment**: The deployment form includes an **Enable log collection** toggle in the configuration step. It is enabled by default.
-- **After deployment**: Click the **⋮** menu on the deployment to enable or disable log collection at any time.
+- **When creating a deployment**: The deployment configuration step includes an **Enable log collection** checkbox. It is enabled by default.
+- **After deployment**: Click the **⋮** menu on the deployment target, select **Settings** and check or uncheck **Collect application logs**, then click **Update**.
 
 <ThemedImage
-  lightSrc={enableContLogsLight}
-  darkSrc={enableContLogsDark}
-  alt="Enable container log collection"
+  lightSrc={logCollectionSettingsLight}
+  darkSrc={logCollectionSettingsDark}
+  alt="Settings drawer of a deployment target with Collect application logs checked"
 />
 
-The first logs should appear within 30 seconds. To disable, open the same menu and select **Disable log collection**.
+The first logs should appear within 30 seconds. Log collection applies to every deployment of the target.
 
 <Aside type="note">
   Your application must produce logs to stdout/stderr. If it doesn't, the
@@ -112,8 +113,8 @@ Metrics give you visibility into the resource usage of the host or cluster runni
 ### Enabling Metrics
 
 1. Navigate to the deployment target in the Deployments view.
-2. Click the **⋮** menu and select **Edit**.
-3. Enable the metrics toggle.
+2. Click the **⋮** menu and select **Settings**.
+3. Check **Report Metrics** and click **Update**.
 
 Once enabled, the controller scrapes and reports metrics every 30 seconds.
 

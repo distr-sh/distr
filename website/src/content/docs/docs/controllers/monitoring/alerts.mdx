@@ -8,6 +8,9 @@ sidebar:
 ---
 
 import {Aside} from '@astrojs/starlight/components';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import alertsLight from '~/assets/docs/controllers/monitoring/alerts/alerts-light.webp';
+import alertsDark from '~/assets/docs/controllers/monitoring/alerts/alerts-dark.webp';
 
 Alerts notify selected users by email when a monitored deployment becomes unhealthy or when host resource usage exceeds a configured threshold.
 
@@ -27,7 +30,11 @@ Under **Customers** in the [Vendor Portal](/docs/vendor-portal/), you can enable
 
 **Customer-managed deployments**: Customers configure their own alerts and choose who in their organization gets notified.
 
-![Alerts configuration in the Vendor Portal](../../../../../assets/docs/controllers/monitoring/alerts/alerts-dark.png)
+<ThemedImage
+  lightSrc={alertsLight}
+  darkSrc={alertsDark}
+  alt="Notifications page with the Alert Notification drawer open, a status change trigger and two deployments selected"
+/>
 
 ## How to Configure Alerts
 

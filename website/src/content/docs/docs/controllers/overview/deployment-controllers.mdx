@@ -9,10 +9,10 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import controllerApplicationsLight from '~/assets/docs/controllers/overview/deployment-controllers/controller-applications-light.png';
-import controllerApplicationsDark from '~/assets/docs/controllers/overview/deployment-controllers/controller-applications-dark.png';
-import controllerDeploymentLight from '~/assets/docs/controllers/overview/deployment-controllers/controller-deployment-light.png';
-import controllerDeploymentDark from '~/assets/docs/controllers/overview/deployment-controllers/controller-deployment-dark.png';
+import controllerApplicationsLight from '~/assets/docs/controllers/overview/deployment-controllers/controller-applications-light.webp';
+import controllerApplicationsDark from '~/assets/docs/controllers/overview/deployment-controllers/controller-applications-dark.webp';
+import controllerDeploymentLight from '~/assets/docs/controllers/overview/deployment-controllers/controller-deployment-light.webp';
+import controllerDeploymentDark from '~/assets/docs/controllers/overview/deployment-controllers/controller-deployment-dark.webp';
 
 Deployment controllers run inside customer environments alongside vendor applications. They connect Distr to deployment targets and manage the full deployment lifecycle while requiring minimal access to customer infrastructure.
 
@@ -35,16 +35,16 @@ For [BYOC](/docs/use-cases/byoc-bring-your-own-cloud/) and other Terraform use c
   alter deployments.
 </Aside>
 
-## Controller Section in the Vendor Portal
+## Controllers in the Vendor Portal
 
-The Controllers section of the Vendor Portal has two parts.
+Two pages of the Vendor Portal work with the Distr controllers: **Applications** and **Deployments**, both in the sidebar.
 
 ### Applications
 
 <ThemedImage
   lightSrc={controllerApplicationsLight}
   darkSrc={controllerApplicationsDark}
-  alt="Applications interface"
+  alt="Applications page listing Docker and Kubernetes applications with their number of versions"
 />
 
 The Applications section is where you define your software offerings: Docker Compose files or Helm charts, environment variable templates, and application versions. This is the foundation for all deployments.
@@ -57,10 +57,10 @@ The Applications section is where you define your software offerings: Docker Com
 <ThemedImage
   lightSrc={controllerDeploymentLight}
   darkSrc={controllerDeploymentDark}
-  alt="Deployments interface"
+  alt="Deployments page with one card per deployment target and the status of each deployment"
 />
 
-The Deployments section is the central health and management dashboard for all deployment targets. Use it to monitor real-time deployment status, view logs, and track state across all customer environments.
+The Deployments page shows every deployment target as a card, with the status of each deployment and the resource usage of the host or cluster. Filter it by customer, application or status to find the targets that need attention, and open a target to view its logs.
 
 For status indicators, log collection, and metrics, see [Logs & Metrics](/docs/controllers/logs-and-metrics/).
 
@@ -68,7 +68,7 @@ For status indicators, log collection, and metrics, see [Logs & Metrics](/docs/c
 
 Each deployment target card has a **⋮** (vertical ellipsis) menu in its top-right corner:
 
-- **Edit**: rename the target or change its configuration
+- **Settings**: rename the target or change its configuration, such as metrics reporting, automatic controller updates and log collection
 - **Update Controller**: apply a pending controller version update (only shown when an update is available). See [Controller Updates](#controller-updates) for details.
 - **Notes**: add internal notes visible to your team
 - **Controller Logs**: open the controller log viewer. See [Logs & Metrics](/docs/controllers/logs-and-metrics/#controller-logs) for details.

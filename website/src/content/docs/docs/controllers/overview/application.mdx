@@ -8,6 +8,19 @@ sidebar:
 ---
 
 import {Tabs, TabItem} from '@astrojs/starlight/components';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import createDockerApplicationLight from '~/assets/docs/controllers/overview/application/create-docker-application-light.webp';
+import createDockerApplicationDark from '~/assets/docs/controllers/overview/application/create-docker-application-dark.webp';
+import dockerApplicationDetailLight from '~/assets/docs/controllers/overview/application/docker-application-detail-light.webp';
+import dockerApplicationDetailDark from '~/assets/docs/controllers/overview/application/docker-application-detail-dark.webp';
+import dockerVersionFormLight from '~/assets/docs/controllers/overview/application/docker-version-form-light.webp';
+import dockerVersionFormDark from '~/assets/docs/controllers/overview/application/docker-version-form-dark.webp';
+import createHelmApplicationLight from '~/assets/docs/controllers/overview/application/create-helm-application-light.webp';
+import createHelmApplicationDark from '~/assets/docs/controllers/overview/application/create-helm-application-dark.webp';
+import helmVersionFormLight from '~/assets/docs/controllers/overview/application/helm-version-form-light.webp';
+import helmVersionFormDark from '~/assets/docs/controllers/overview/application/helm-version-form-dark.webp';
+import helmApplicationDetailLight from '~/assets/docs/controllers/overview/application/helm-application-detail-light.webp';
+import helmApplicationDetailDark from '~/assets/docs/controllers/overview/application/helm-application-detail-dark.webp';
 
 This guide walks you through creating applications in Distr. You can create two types of applications: **Docker** applications (using Docker Compose) and **Helm** applications (using Kubernetes Helm charts).
 
@@ -29,18 +42,26 @@ Therefore, if you want to onboard a new Docker App, you need to have a Docker Co
 
 In the Distr web interface, navigate to the **Applications** section in the sidebar and click on the **Add application** button in the top right corner.
 
-You will be asked to enter a name and select the type of the application:
+You will be asked to enter a name, select the type of the application and pick a [versioning strategy](#versioning-strategy):
 
-![Add application](../../../../../assets/docs/controllers/overview/application/docker_add_application.png)
+<ThemedImage
+  lightSrc={createDockerApplicationLight}
+  darkSrc={createDockerApplicationDark}
+  alt="Create Application modal with the name Gitea and the Docker Compose type selected"
+/>
 
 After you have clicked on the **Create Application** button, you will be redirected to the detailed view of this application.
 In this view you can manage the versions of the application.
 
-![Application Detail View](../../../../../assets/docs/controllers/overview/application/docker_add_application.png)
+<ThemedImage
+  lightSrc={dockerApplicationDetailLight}
+  darkSrc={dockerApplicationDetailDark}
+  alt="Application detail page with the list of versions"
+/>
 
 ### Creating a first version
 
-To add a first version to your Docker App, enter the version name and your Docker Compose file in the "New Version" form.
+To add a first version to your Docker App, expand **New Version** below the list of versions and enter the version name and your Docker Compose file.
 In this example we will upload a file containing Gitea and a Postgres database,
 whose source can be found [here](https://github.com/docker/awesome-compose/blob/master/gitea-postgres/compose.yaml) (we additionally pin the version to `1.23.1`
 and make the password an environment variable).
@@ -49,17 +70,18 @@ You can optionally add a template for the environment variables that your Docker
 The template will be shown to the user when they deploy this version to a deployment environment.
 In this example we enter a reminder for the user to set the database password, as the deployment would fail otherwise.
 
-![Add version](../../../../../assets/docs/controllers/overview/application/docker_add_version.png)
+<ThemedImage
+  lightSrc={dockerVersionFormLight}
+  darkSrc={dockerVersionFormDark}
+  alt="New Version form with a Docker Compose file for Gitea and an environment file template"
+/>
 
 Click on the **Create New Version** button to add the version to your Docker App.
 
 ### Adding further versions
 
-After you have created the version, you can see it in the list of versions:
-
-![Version list](../../../../../assets/docs/controllers/overview/application/docker_manage_versions_copy.png)
-
-You can use the **Copy from** button to create a new version based on the existing one.
+After you have created the version, it shows up in the list of versions on the same page.
+Click **Copy from** next to a version to fill the **New Version** form with its contents and create a new version based on it.
 
 If you are looking for a more automated and integrated experience in creating new versions,
 take a look at our [GitHub Action](/docs/integrations/gh-action/) or [SDKs](/docs/integrations/sdk/).
@@ -78,19 +100,25 @@ You should also have access to a [Kubernetes](/glossary/kubernetes/) cluster and
 
 In the Distr web interface, navigate to the **Applications** section in the sidebar and click on the **Add application** button in the top right corner.
 
-You will be asked to enter a name. Change the type of the application **Kubernetes**:
+You will be asked to enter a name. Change the type of the application to **Helm / Kubernetes**:
 
-![Add application](../../../../../assets/docs/controllers/overview/application/kubernetes_create.png)
+<ThemedImage
+  lightSrc={createHelmApplicationLight}
+  darkSrc={createHelmApplicationDark}
+  alt="Create Application modal with the name Podinfo and the Helm / Kubernetes type selected"
+/>
 
-After you have clicked on the **Create** button, the list of applications will show your new app.
+After you have clicked on the **Create Application** button, you will be redirected to the detailed view of this application.
 
 ### Creating a first version
 
-To add a new version to your Helm App, click on the **Manage versions** button in the application list.
+To add a version to your Helm App, expand **New Version** below the list of versions and enter a name and the details of the Helm chart:
 
-A modal will open where you can add a new version by entering a name and the corresponding data about the Helm chart:
-
-![Add version](../../../../../assets/docs/controllers/overview/application/kubernetes_version.png)
+<ThemedImage
+  lightSrc={helmVersionFormLight}
+  darkSrc={helmVersionFormDark}
+  alt="New Version form with the OCI chart URL and chart version of podinfo and a customer values template"
+/>
 
 **Base Values and Template**
 
@@ -102,15 +130,19 @@ The template will also be shown later on in the deployment process, so the user 
 
 Both files are optional.
 
-Click on the **Create** button to add the version to your Helm App.
+Click on the **Create New Version** button to add the version to your Helm App.
 
 ### Adding a new version
 
 After you have created the version, you can see it in the list of versions:
 
-![Version list](../../../../../assets/docs/controllers/overview/application/kubernetes_version_manage.png)
+<ThemedImage
+  lightSrc={helmApplicationDetailLight}
+  darkSrc={helmApplicationDetailDark}
+  alt="Application detail page of a Helm application with its chart URL and chart version per version"
+/>
 
-You can use the **Copy from** button to create a new version based on the existing one.
+Click **Copy from** next to a version to fill the **New Version** form with its contents and create a new version based on it.
 
 If you are looking for a more automated and integrated experience in creating new versions, take a look at our [SDKs](/docs/integrations/sdk/).
 
