@@ -9,8 +9,10 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import entitlementFormDark from '~/assets/docs/platform/licenses/entitlements/application-entitlement-form-dark.png';
-import entitlementFormLight from '~/assets/docs/platform/licenses/entitlements/application-entitlement-form-light.png';
+import entitlementFormDark from '~/assets/docs/platform/licenses/entitlements/application-entitlement-form-dark.webp';
+import entitlementFormLight from '~/assets/docs/platform/licenses/entitlements/application-entitlement-form-light.webp';
+import registryCredentialsDark from '~/assets/docs/platform/licenses/entitlements/registry-credentials-dark.webp';
+import registryCredentialsLight from '~/assets/docs/platform/licenses/entitlements/registry-credentials-light.webp';
 
 This guide walks you through how to use Application Entitlements to control which application versions your end-customers can access and deploy through Distr controllers.
 
@@ -65,7 +67,7 @@ The customer can now access and deploy the assigned application version/s direct
 <ThemedImage
   lightSrc={entitlementFormLight}
   darkSrc={entitlementFormDark}
-  alt="Application Entitlement create form showing name, expiration date, application selector, version picker, and optional registry credentials"
+  alt="Application Entitlement create form showing name, expiration date, application selector, the All versions and Specific versions options and optional registry credentials"
 />
 
 ## Choosing the granted versions
@@ -80,4 +82,8 @@ An entitlement for specific versions can grow with your releases. Enter a regula
 
 If your images are stored in a private [OCI registry](/glossary/oci-container-artifact-registry/), you'll need to provide access credentials. You can configure these credentials in the lower section of the entitlement configuration panel. Once set, the application versions will be available at the deployment target for as long as the entitlement is valid.
 
-![OCI-registry-auth](../../../../../assets/docs/platform/licenses/OCI-Registry-auth.png)
+<ThemedImage
+  lightSrc={registryCredentialsLight}
+  darkSrc={registryCredentialsDark}
+  alt="External Registry Configuration section of an application entitlement with registry URL, username and password"
+/>

@@ -9,10 +9,10 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import artifactsLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-artifacts-light.png';
-import artifactsDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-artifacts-dark.png';
-import artifactUIDetailsLight from '~/assets/docs/platform/customer-portal/customer-view/artifact-ui-details-light.png';
-import artifactUIDetailsDark from '~/assets/docs/platform/customer-portal/customer-view/artifact-ui-details-dark.png';
+import artifactsLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-artifacts-light.webp';
+import artifactsDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-artifacts-dark.webp';
+import artifactUIDetailsLight from '~/assets/docs/platform/customer-portal/customer-view/artifact-ui-details-light.webp';
+import artifactUIDetailsDark from '~/assets/docs/platform/customer-portal/customer-view/artifact-ui-details-dark.webp';
 
 As an end customer, you will be given access to a [Customer Portal](/docs/platform/customer-portal/) by the software vendor.
 The portal provides access to the artifact registry for downloading software distributed by your vendor.
@@ -35,7 +35,7 @@ Navigate to **Artifacts** in the sidebar to browse the artifacts your vendor has
 
 ### 2. Explore artifact details
 
-Click on the artifact name to see details like available versions, creation date, and a download counter:
+Click on the artifact to see its versions with their tags, age, size and digest, the command to pull or install it and a download counter:
 
 <ThemedImage
   lightSrc={artifactUIDetailsLight}
@@ -67,4 +67,4 @@ helm pull registry.distr.sh/slug/vendor-helm-chart:1.0.0
 
 ### 5. Deploy the artifacts
 
-Refer to the deployment instructions in your [Customer Portal](/docs/platform/customer-portal/) dashboard or coordinate directly with your vendor for specific deployment guidance.
+Refer to the instructions on the home page of your [Customer Portal](/docs/platform/customer-portal/) or coordinate directly with your vendor for specific deployment guidance.

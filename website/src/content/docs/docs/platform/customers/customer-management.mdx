@@ -9,14 +9,14 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import featuresLight from '~/assets/docs/platform/customers/customer-management/customer-features-dropdown-light.png';
-import featuresDark from '~/assets/docs/platform/customers/customer-management/customer-features-dropdown-dark.png';
-import customerManagementLight from '~/assets/docs/platform/customers/customer-management/customer-management-light.png';
-import customerManagementDark from '~/assets/docs/platform/customers/customer-management/customer-management-dark.png';
-import manageLinksLight from '~/assets/docs/platform/customers/customer-management/manage-links-light.png';
-import manageLinksDark from '~/assets/docs/platform/customers/customer-management/manage-links-dark.png';
-import portalLinksLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-links-light.png';
-import portalLinksDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-links-dark.png';
+import featuresLight from '~/assets/docs/platform/customers/customer-management/customer-features-light.webp';
+import featuresDark from '~/assets/docs/platform/customers/customer-management/customer-features-dark.webp';
+import customerManagementLight from '~/assets/docs/platform/customers/customer-management/customer-management-light.webp';
+import customerManagementDark from '~/assets/docs/platform/customers/customer-management/customer-management-dark.webp';
+import manageLinksLight from '~/assets/docs/platform/customers/customer-management/manage-links-light.webp';
+import manageLinksDark from '~/assets/docs/platform/customers/customer-management/manage-links-dark.webp';
+import portalLinksLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-links-light.webp';
+import portalLinksDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-links-dark.webp';
 
 The **Customers** section in the [Vendor Portal](/docs/vendor-portal/) is where you create and manage customer accounts, invite customer users, manage customer-specific secrets, configure links, and control which features each customer can use. This guide walks you through the customer management interface and common tasks.
 
@@ -37,7 +37,7 @@ From the Customers page you can:
 - **Manage links** that appear in that customer's [Customer Portal](/docs/platform/customer-portal/) sidebar
 - **Enable or disable features** per customer: Deployments, [Alerts](/docs/controllers/alerts/), Artifacts, [Update Notifications](/docs/controllers/update-notifications/), [Support](/docs/platform/support-bundles/) and [Security](/docs/platform/vulnerability-management/)
 
-Use the **Filter customers** search bar to find customers, and **+ Create Customer** to add a new one.
+The list shows each customer's deployments, update state, license and support requests at a glance. Use the **Filter customers** search bar and the update state and license filters to find customers, and **+ Create Customer** to add a new one.
 
 ## Creating a customer
 
@@ -80,13 +80,13 @@ You can add links for each customer, for example to your documentation, a suppor
 To add a link:
 
 1. In the **Customers** list, open the customer.
-2. Select the **Links** tab.
-3. Click **+ Create Link** and enter a **name** and the **URL**.
+2. Select the **Settings** tab.
+3. In the **Sidebar Links** panel, click **+ Add link** and enter a **name** and the **link**.
 
 <ThemedImage
   lightSrc={manageLinksLight}
   darkSrc={manageLinksDark}
-  alt="Manage links page for a customer with a configured Documentation link"
+  alt="Create Link dialog on the Settings tab of a customer, next to an existing Documentation link"
 />
 
 Existing links can be edited or deleted at any time, and changes are visible to the customer immediately. This is how a configured link shows up in the Customer Portal sidebar:
@@ -107,21 +107,21 @@ You can control which features are available to each customer organization. The 
 - **Update Notifications**: deciding which of their own users hears about a new application or artifact version
 - **Support**: ability to create support requests and submit diagnostic bundles
 - **Security**: access to the security advisories you publish (requires the Business plan)
-- **Settings**: a settings page for the customer's administrators, where they choose the [controller image repository](/docs/platform/branding/#controller-image-repository) of their deployment targets (requires the Business plan)
-- **Identity Provider**: a [portal domain and identity provider](/docs/platform/custom-identity-provider/#letting-a-customer-bring-its-own-provider) of the customer's own, configured on its settings page (requires Settings and the Business plan)
+- **Advanced Settings**: a settings page for the customer's administrators, where they choose the [controller image repository](/docs/platform/branding/#controller-image-repository) of their deployment targets (requires the Business plan)
+- **Identity Provider**: a [portal domain and identity provider](/docs/platform/custom-identity-provider/#letting-a-customer-bring-its-own-provider) of the customer's own, configured on its settings page (requires Advanced Settings and the Business plan)
 
-Open the customer and switch individual features on or off in the **Features** panel of its **Overview** tab. The tab of a disabled feature explains what that means for the customer and lets you enable the feature from there.
+Open the customer and switch individual features on or off in the **Features** panel of its **Settings** tab. The tab of a disabled feature explains what that means for the customer and lets you enable the feature from there.
 
 <ThemedImage
   lightSrc={featuresLight}
   darkSrc={featuresDark}
-  alt="Customer features dropdown showing Deployments, Alerts, Artifacts and Support"
+  alt="Features panel on the Settings tab of a customer with toggles for Deployments, Alerts, Artifacts, Update Notifications, Support, Security, Advanced Settings and Identity Provider"
 />
 
 A few things to note:
 
 - **Alerts** depends on **Deployments**. Enabling Alerts automatically enables Deployments; disabling Deployments automatically disables Alerts.
-- **Identity Provider** depends on **Settings** in the same way.
+- **Identity Provider** depends on **Advanced Settings** in the same way.
 - **Support** and **Artifacts** are independent and can be toggled without affecting other features.
 - **Update Notifications** needs **Deployments** or **Artifacts** and covers whichever of them the customer has, since a customer can only watch what it can reach. Disabling the last of the two disables Update Notifications as well.
 - **Deployments** and **Artifacts** are enabled by default for new customers. **Alerts**, **Update Notifications** and **Support** must be explicitly enabled.

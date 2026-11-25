@@ -9,8 +9,8 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import licenseKeyFormDark from '~/assets/docs/platform/licenses/license-keys/license-key-form-dark.png';
-import licenseKeyFormLight from '~/assets/docs/platform/licenses/license-keys/license-key-form-light.png';
+import licenseKeyFormDark from '~/assets/docs/platform/licenses/license-keys/license-key-form-dark.webp';
+import licenseKeyFormLight from '~/assets/docs/platform/licenses/license-keys/license-key-form-light.webp';
 
 This guide walks you through how to use License Keys to issue cryptographically signed tokens that your application can verify at runtime to enforce usage limits, seat counts, feature flags, or any other constraint you define.
 
@@ -35,6 +35,7 @@ When you request a token for a license key, Distr generates a signed JWT. Your a
 4. Fill in the form:
    - **Name** (required): must be unique within your organization
    - **Description** (optional)
+   - **License Template** (optional, shown once your organization has license templates): fills in the dates and the payload from the template
    - **Not Before**: the date from which the token is valid (defaults to today)
    - **Expires At**: the date the token expires (defaults to one year from today)
    - **Payload**: a JSON object with your custom claims (see [Payload](#payload) below)
@@ -43,7 +44,7 @@ When you request a token for a license key, Distr generates a signed JWT. Your a
 <ThemedImage
   lightSrc={licenseKeyFormLight}
   darkSrc={licenseKeyFormDark}
-  alt="License Key create form showing name, description, Not Before and Expires At date pickers, payload JSON editor, and customer field"
+  alt="License Key create form showing name, description, license template, Not Before and Expires At date pickers, payload JSON editor and customer"
 />
 
 <Aside type="note">
