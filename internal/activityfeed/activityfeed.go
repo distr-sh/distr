@@ -23,7 +23,7 @@ const (
 	EntryTypeArtifactVersionCreated     EntryType = "artifact_version_created"
 	EntryTypeArtifactVersionFirstPulled EntryType = "artifact_version_first_pulled"
 	EntryTypeCustomerCreated            EntryType = "customer_created"
-	EntryTypeCustomerUserJoined         EntryType = "customer_user_joined"
+	EntryTypeCustomerUserAdded          EntryType = "customer_user_added"
 	EntryTypeDeploymentRevisionCreated  EntryType = "deployment_revision_created"
 	EntryTypeDeploymentTargetCreated    EntryType = "deployment_target_created"
 	EntryTypeLicenseKeyCreated          EntryType = "license_key_created"
@@ -32,7 +32,7 @@ const (
 	EntryTypeSupportBundleUploaded      EntryType = "support_bundle_uploaded"
 	EntryTypeSupportBundleResolved      EntryType = "support_bundle_resolved"
 	EntryTypeSupportBundleCanceled      EntryType = "support_bundle_canceled"
-	EntryTypeTeamMemberJoined           EntryType = "team_member_joined"
+	EntryTypeTeamMemberAdded            EntryType = "team_member_added"
 )
 
 type User struct {
@@ -190,8 +190,9 @@ func CustomerOrganizations(customerOrgs []types.CustomerOrganization, since time
 	return result
 }
 
-// CustomerUsers returns an entry for every user who joined a customer organization after since, leaving out the
-// members of the vendor and of partners.
+// CustomerUsers returns an entry for every user added to a customer organization after since, leaving out the
+// members of the vendor and of partners. A user is added when invited, whether or not the invitation is ever
+// accepted.
 func CustomerUsers(users []types.UserAccountWithUserRole, since time.Time) []Entry {
 	var result []Entry
 	for _, user := range users {
@@ -200,7 +201,7 @@ func CustomerUsers(users []types.UserAccountWithUserRole, since time.Time) []Ent
 			result = append(result, Entry{
 				ID:                     user.ID,
 				CreatedAt:              user.JoinedOrgAt,
-				Type:                   EntryTypeCustomerUserJoined,
+				Type:                   EntryTypeCustomerUserAdded,
 				ResourceID:             user.ID,
 				ResourceName:           name,
 				Subject:                name,
@@ -211,7 +212,7 @@ func CustomerUsers(users []types.UserAccountWithUserRole, since time.Time) []Ent
 	return result
 }
 
-// TeamMembers returns an entry for every user who joined the vendor or a partner after since, leaving out the
+// TeamMembers returns an entry for every user added to the vendor or a partner after since, leaving out the
 // members of customer organizations. A partner member is named with its partner organization if it is among
 // partnerOrgs.
 func TeamMembers(
@@ -230,7 +231,7 @@ func TeamMembers(
 			entry := Entry{
 				ID:                    user.ID,
 				CreatedAt:             user.JoinedOrgAt,
-				Type:                  EntryTypeTeamMemberJoined,
+				Type:                  EntryTypeTeamMemberAdded,
 				ResourceID:            user.ID,
 				ResourceName:          name,
 				Subject:               name,

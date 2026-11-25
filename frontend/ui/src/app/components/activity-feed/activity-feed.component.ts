@@ -133,7 +133,7 @@ function icon({type}: ActivityFeedItem): IconDefinition {
       return faDownload;
     case 'customer_created':
       return faAddressBook;
-    case 'customer_user_joined':
+    case 'customer_user_added':
       return faUserPlus;
     case 'deployment_revision_created':
       return faDashboard;
@@ -147,7 +147,7 @@ function icon({type}: ActivityFeedItem): IconDefinition {
     case 'support_bundle_resolved':
     case 'support_bundle_canceled':
       return faLifeRing;
-    case 'team_member_joined':
+    case 'team_member_added':
       return faUserPlus;
     default:
       return never(type);
@@ -170,7 +170,7 @@ function link(
       return {link: viewer === 'customer' ? `/artifacts/${resourceId}` : `/registry/${resourceId}`};
     case 'customer_created':
       return {link: `/customers/${resourceId}`};
-    case 'customer_user_joined':
+    case 'customer_user_added':
       if (viewer === 'customer') {
         return isAdmin ? {link: '/team'} : {};
       }
@@ -189,7 +189,7 @@ function link(
     case 'support_bundle_resolved':
     case 'support_bundle_canceled':
       return {link: `/support/${resourceId}`};
-    case 'team_member_joined':
+    case 'team_member_added':
       if (viewer === 'vendor') {
         if (partner) {
           return {link: `/partners/${partner.id}/users`};
@@ -212,13 +212,13 @@ function customerTabLink(
   switch (activity.type) {
     case 'application_version_created':
     case 'artifact_version_created':
-    case 'team_member_joined':
+    case 'team_member_added':
       return link(activity, viewer, permissions);
     case 'artifact_version_first_pulled':
       return {...tab('registry'), queryParams: {artifactId: activity.resourceId}};
     case 'customer_created':
       return tab('overview');
-    case 'customer_user_joined':
+    case 'customer_user_added':
       return tab('users');
     case 'deployment_revision_created':
     case 'deployment_target_created':
@@ -246,8 +246,8 @@ function action({type, subject, detail}: ActivityFeedItem): string {
       return `artifact ${subject}:${detail} pulled for the first time`;
     case 'customer_created':
       return `customer ${subject} created`;
-    case 'customer_user_joined':
-      return `${subject} joined`;
+    case 'customer_user_added':
+      return `user ${subject} added`;
     case 'deployment_revision_created':
       return `version ${detail} of ${subject} deployed`;
     case 'deployment_target_created':
@@ -264,8 +264,8 @@ function action({type, subject, detail}: ActivityFeedItem): string {
       return `support request ${subject} resolved`;
     case 'support_bundle_canceled':
       return `support request ${subject} canceled`;
-    case 'team_member_joined':
-      return `${subject} joined`;
+    case 'team_member_added':
+      return `team member ${subject} added`;
     default:
       return never(type);
   }

@@ -3,7 +3,7 @@ export type ActivityFeedEntryType =
   | 'artifact_version_created'
   | 'artifact_version_first_pulled'
   | 'customer_created'
-  | 'customer_user_joined'
+  | 'customer_user_added'
   | 'deployment_revision_created'
   | 'deployment_target_created'
   | 'license_key_created'
@@ -12,7 +12,7 @@ export type ActivityFeedEntryType =
   | 'support_bundle_uploaded'
   | 'support_bundle_resolved'
   | 'support_bundle_canceled'
-  | 'team_member_joined';
+  | 'team_member_added';
 
 export interface ActivityFeedEntry {
   id: string;
