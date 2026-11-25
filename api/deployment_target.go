@@ -141,11 +141,11 @@ func (s *DeploymentTargetSettings) Validate(deploymentType types.DeploymentType)
 		}
 	case types.DeploymentTypeDocker:
 		if s.Resources != nil {
-			return validation.NewValidationFailedError("DeploymentTarget with type \"docker\" must not have resources")
+			return validation.NewValidationFailedError("deployment target with type \"docker\" must not have resources")
 		}
 		if len(s.PodAnnotations) > 0 || len(s.NodeSelector) > 0 || len(s.Tolerations) > 0 {
 			return validation.NewValidationFailedError(
-				"DeploymentTarget with type \"docker\" must not have pod annotations, node selector or tolerations",
+				"deployment target with type \"docker\" must not have pod annotations, node selector or tolerations",
 			)
 		}
 	}

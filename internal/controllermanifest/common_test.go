@@ -100,9 +100,9 @@ func TestKubernetesManifestRendersPodScheduling(t *testing.T) {
 		{Key: "CriticalAddonsOnly", Operator: "Exists", Effect: "NoSchedule"},
 		{Key: "example.com/dedicated", Value: "yes"},
 	}
-	g.Expect(setJSON(data, "podAnnotations", annotations, true)).To(Succeed())
-	g.Expect(setJSON(data, "nodeSelector", nodeSelector, true)).To(Succeed())
-	g.Expect(setJSON(data, "tolerations", tolerations, true)).To(Succeed())
+	g.Expect(setJSON(data, "podAnnotations", annotations)).To(Succeed())
+	g.Expect(setJSON(data, "nodeSelector", nodeSelector)).To(Succeed())
+	g.Expect(setJSON(data, "tolerations", tolerations)).To(Succeed())
 
 	var deployment *appsv1.Deployment
 	decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewBufferString(render(g, dt, data)), 4096)

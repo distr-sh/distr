@@ -177,8 +177,7 @@ func DeploymentTargetTolerationToInternal(toleration api.DeploymentTargetTolerat
 	}
 }
 
-// nilIfEmpty and tolerationsToInternal store an empty collection as NULL, which the docker type check in the
-// database relies on.
+// nilIfEmpty and tolerationsToInternal store an empty collection as NULL for the type check constraint.
 func nilIfEmpty[M ~map[K]V, K comparable, V any](value M) M {
 	if len(value) == 0 {
 		return nil
