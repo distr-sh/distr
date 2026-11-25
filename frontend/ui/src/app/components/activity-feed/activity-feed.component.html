@@ -44,7 +44,7 @@
                     <app-avatar
                       [image]="user.imageUrl"
                       [name]="user.name"
-                      [imageIsLogo]="user.isVendor"
+                      [imageIsLogo]="!!user.isOrganization"
                       initialsClass="text-[0.5rem]"
                       class="distr-home-avatar" />
                     <span class="font-medium text-gray-700 dark:text-gray-300">{{ user.name }}</span>

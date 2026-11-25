@@ -177,9 +177,11 @@ func GetRecentApplicationVersions(
 ) ([]types.ApplicationVersionEvent, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		`SELECT av.id, av.created_at, a.id AS application_id, a.name AS application_name, av.name
+		`SELECT av.id, av.created_at, a.id AS application_id, a.name AS application_name, av.name,
+			`+activityUserOutputExpr+` AS created_by
 		FROM Application a
 			JOIN ApplicationVersion av ON av.application_id = a.id
+			`+activityUserJoinExpr("av.created_by_user_account_id", "a.organization_id")+`
 		WHERE a.organization_id = @orgId
 			AND av.created_at > @since
 			AND av.archived_at IS NULL

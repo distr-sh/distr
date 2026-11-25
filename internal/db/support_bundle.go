@@ -317,43 +317,32 @@ func GetCustomerSupportBundleEvents(
 	ctx context.Context,
 	orgID uuid.UUID,
 	customerOrgIDs []uuid.UUID,
-	viewer types.ActivityViewer,
 	since time.Time,
 	limit int,
 ) ([]types.CustomerSupportBundleEvent, error) {
-	const member = `
-		LEFT JOIN Organization_UserAccount j ON j.user_account_id = u.id AND j.organization_id = sb.organization_id`
-	userName := activityUserExpr("name", "sb.customer_organization_id")
-	userImageID := activityUserExpr("image_id", "sb.customer_organization_id")
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		`SELECT * FROM (
 			SELECT sb.id AS support_bundle_id, sb.customer_organization_id, sb.created_at, sb.title,
 				NULL::TEXT AS status,
-				`+userName+` AS user_name,
-				`+userImageID+` AS user_image_id
+				`+activityUserOutputExpr+` AS user_account
 			FROM SupportBundle sb
-				LEFT JOIN UserAccount u ON u.id = sb.created_by_user_account_id
-				`+member+`
+				`+activityUserJoinExpr("sb.created_by_user_account_id", "sb.organization_id")+`
 			WHERE sb.organization_id = @orgId
 				AND sb.customer_organization_id = any(@customerOrgIds)
 				AND sb.created_at > @since
 			UNION ALL
 			SELECT sb.id, sb.customer_organization_id, sb.status_changed_at, sb.title, sb.status::TEXT,
-				`+userName+`,
-				`+userImageID+`
+				`+activityUserOutputExpr+`
 			FROM SupportBundle sb
-				LEFT JOIN UserAccount u ON u.id = sb.status_changed_by_user_account_id
-				`+member+`
+				`+activityUserJoinExpr("sb.status_changed_by_user_account_id", "sb.organization_id")+`
 			WHERE sb.organization_id = @orgId
 				AND sb.customer_organization_id = any(@customerOrgIds)
 				AND sb.status_changed_at > @since
 		) events
 		ORDER BY created_at DESC
 		LIMIT @limit`,
-		activityViewerArgs(viewer, pgx.NamedArgs{
-			"orgId": orgID, "customerOrgIds": customerOrgIDs, "since": since, "limit": limit,
-		}),
+		pgx.NamedArgs{"orgId": orgID, "customerOrgIds": customerOrgIDs, "since": since, "limit": limit},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query customer support bundle events: %w", err)

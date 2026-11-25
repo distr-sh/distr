@@ -11,11 +11,12 @@ import (
 
 // ApplicationVersionEvent is the release of an application version with what an activity feed shows.
 type ApplicationVersionEvent struct {
-	ID              uuid.UUID `db:"id"`
-	CreatedAt       time.Time `db:"created_at"`
-	ApplicationID   uuid.UUID `db:"application_id"`
-	ApplicationName string    `db:"application_name"`
-	Name            string    `db:"name"`
+	ID              uuid.UUID     `db:"id"`
+	CreatedAt       time.Time     `db:"created_at"`
+	ApplicationID   uuid.UUID     `db:"application_id"`
+	ApplicationName string        `db:"application_name"`
+	Name            string        `db:"name"`
+	CreatedBy       *ActivityUser `db:"created_by"`
 }
 
 type ApplicationVersion struct {

@@ -1,3 +1,5 @@
+import {Actor} from './actor';
+
 export type ActivityFeedEntryType =
   | 'application_version_created'
   | 'artifact_version_created'
@@ -22,8 +24,7 @@ export interface ActivityFeedEntry {
   resourceName: string;
   subject: string;
   detail?: string;
-  userName?: string;
-  userImageUrl?: string;
+  user?: Actor;
   customerOrganizationId?: string;
   customerOrganizationName?: string;
   partnerOrganizationId?: string;

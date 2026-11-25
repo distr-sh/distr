@@ -1,12 +1,8 @@
 import {ActivityFeedEntry, ActivityFeedEntryType} from '../../types/activity-feed';
+import {Actor} from '../../types/actor';
 
 /** Who looks at the activity, which decides where its entries link to and whether they name their customer. */
 export type ActivityFeedViewer = 'customer' | 'vendor' | 'partner';
-
-export interface ActivityFeedUser {
-  name: string;
-  imageUrl?: string;
-}
 
 export interface ActivityFeedCustomer {
   id: string;
@@ -27,7 +23,7 @@ export interface ActivityFeedItem {
   resourceName: string;
   subject: string;
   detail?: string;
-  user?: ActivityFeedUser;
+  user?: Actor;
   customer?: ActivityFeedCustomer;
   partner?: ActivityFeedPartner;
 }
@@ -41,7 +37,7 @@ export function toActivityFeedItems(entries: ActivityFeedEntry[]): ActivityFeedI
     resourceName: entry.resourceName,
     subject: entry.subject,
     detail: entry.detail,
-    user: entry.userName ? {name: entry.userName, imageUrl: entry.userImageUrl} : undefined,
+    user: entry.user,
     customer:
       entry.customerOrganizationId && entry.customerOrganizationName
         ? {id: entry.customerOrganizationId, name: entry.customerOrganizationName}

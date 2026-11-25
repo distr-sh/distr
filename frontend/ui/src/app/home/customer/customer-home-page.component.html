@@ -67,12 +67,7 @@
       @if (activityShown()) {
         <div class="relative">
           @if (activity(); as activity) {
-            <app-activity-feed
-              [activity]="activity"
-              viewer="customer"
-              [vendorName]="vendorName()"
-              [vendorLogo]="vendorLogo()"
-              [fillHeight]="besideActivity" />
+            <app-activity-feed [activity]="activity" viewer="customer" [fillHeight]="besideActivity" />
           } @else {
             <app-loading-card layout="timeline" />
           }
