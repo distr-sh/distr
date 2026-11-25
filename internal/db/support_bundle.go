@@ -299,7 +299,7 @@ var supportBundleWithDetailsOutputExpr = `
 	scu.image_id AS status_changed_by_image_id,
 	scuj.customer_organization_id AS status_changed_by_customer_organization_id,
 	scuj.partner_organization_id AS status_changed_by_partner_organization_id,
-	sb.status_changed_at IS NOT NULL AND scuj.user_account_id IS NULL AS status_changed_by_deleted
+	sb.status IN ('resolved', 'canceled') AND scuj.user_account_id IS NULL AS status_changed_by_deleted
 `
 
 const supportBundleWithDetailsJoinExpr = `
