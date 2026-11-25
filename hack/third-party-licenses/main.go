@@ -1,24 +1,27 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"embed"
 	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
+	"go/build"
 	"io"
 	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"slices"
 	"strings"
 	"text/template"
 
 	"github.com/github/go-spdx/v2/spdxexp"
 	"github.com/google/go-licenses/v2/licenses"
+	"github.com/spf13/pflag"
 	"golang.org/x/text/collate"
 	"golang.org/x/text/language"
 	"k8s.io/klog/v2"
@@ -123,20 +126,29 @@ type goModule struct {
 	licenses map[string]string
 }
 
-type shippedImages struct {
-	order []string
-	via   map[string][]string
+// sortedNames lists the names collected in a set, which are often found more than once, in the order shown in the
+// generated files:
+//
+//	| Used for                       | Example content                                        |
+//	| ------------------------------ | ------------------------------------------------------ |
+//	| how a component is shipped     | Docker Compose, Helm chart, base of `Dockerfile.distr` |
+//	| packages sharing a text        | github.com/aws/aws-sdk-go-v2, @sentry/core             |
+//	| dependencies of the Helm chart | postgresql, rustfs, loki                               |
+func sortedNames(names map[string]struct{}) []string {
+	return slices.SortedFunc(maps.Keys(names), collator.CompareString)
 }
 
-func (s *shippedImages) add(ref, via string) {
+type shippedImages map[string]map[string]struct{}
+
+func (s shippedImages) add(ref, via string) {
 	image := stripTag(ref)
 	if ownImages.MatchString(image) {
 		return
 	}
-	if _, ok := s.via[image]; !ok {
-		s.order = append(s.order, image)
+	if s[image] == nil {
+		s[image] = map[string]struct{}{}
 	}
-	s.via[image] = appendUnique(s.via[image], via)
+	s[image][via] = struct{}{}
 }
 
 type generator struct {
@@ -149,8 +161,8 @@ type generator struct {
 }
 
 func main() {
-	npmReport := flag.String("npm", "", "the output of `pnpm licenses list --prod --json`")
-	flag.Parse()
+	npmReport := pflag.String("npm", "", "the output of `pnpm licenses list --prod --json`")
+	pflag.Parse()
 	klog.LogToStderr(false)
 	klog.SetOutput(io.Discard)
 	if err := run(*npmReport); err != nil {
@@ -161,7 +173,7 @@ func main() {
 
 func run(npmReport string) error {
 	if npmReport == "" {
-		return errors.New("-npm is required")
+		return errors.New("--npm is required")
 	}
 	npmReport, err := filepath.Abs(npmReport)
 	if err != nil {
@@ -275,19 +287,20 @@ func (c *textCollection) section() string {
 		names []string
 		text  string
 	}
-	var groups []*group
-	byText := map[string]*group{}
+	namesByText := map[string]map[string]struct{}{}
 	for _, t := range c.texts {
-		if byText[t.text] == nil {
-			byText[t.text] = &group{text: t.text}
-			groups = append(groups, byText[t.text])
+		if namesByText[t.text] == nil {
+			namesByText[t.text] = map[string]struct{}{}
 		}
-		byText[t.text].names = appendUnique(byText[t.text].names, t.name)
+		namesByText[t.text][t.name] = struct{}{}
 	}
-	for _, group := range groups {
-		slices.SortFunc(group.names, collator.CompareString)
+	groups := make([]group, 0, len(namesByText))
+	for text, names := range namesByText {
+		groups = append(groups, group{names: sortedNames(names), text: text})
 	}
-	slices.SortStableFunc(groups, func(a, b *group) int { return collator.CompareString(a.names[0], b.names[0]) })
+	slices.SortFunc(groups, func(a, b group) int {
+		return cmp.Or(collator.CompareString(a.names[0], b.names[0]), strings.Compare(a.text, b.text))
+	})
 	var section strings.Builder
 	for _, group := range groups {
 		fmt.Fprintf(&section, "\n--- %s\n\n%s\n", strings.Join(group.names, ", "), group.text)
@@ -319,35 +332,33 @@ func (g *generator) components() (string, error) {
 	listedCharts := map[string]bool{}
 	var rows [][]string
 	for _, c := range components {
-		var via []string
+		via := map[string]struct{}{}
 		for _, image := range c.Images {
 			listedImages[image] = true
-			for _, v := range images.via[image] {
-				via = appendUnique(via, v)
-			}
+			maps.Copy(via, images[image])
 		}
 		for _, chart := range c.Charts {
 			listedCharts[chart] = true
-			if slices.Contains(charts, chart) {
-				via = appendUnique(via, "Helm chart")
+			if _, ok := charts[chart]; ok {
+				via["Helm chart"] = struct{}{}
 			}
 		}
 		if len(via) == 0 {
-			g.errorf(`components.json lists "%s", which is no longer shipped`, c.Name)
+			g.errorf(`%s lists "%s", which is no longer shipped`, componentsFile, c.Name)
 		}
 		rows = append(rows, []string{
 			c.Name,
 			c.License,
-			strings.Join(via, ", "),
+			strings.Join(sortedNames(via), ", "),
 			link(strings.TrimPrefix(c.Source, "https://"), c.Source),
 		})
 	}
-	for _, image := range images.order {
+	for _, image := range slices.Sorted(maps.Keys(images)) {
 		if !listedImages[image] {
 			g.errorf("image %s is shipped but missing from %s", image, componentsFile)
 		}
 	}
-	for _, chart := range charts {
+	for _, chart := range sortedNames(charts) {
 		if !listedCharts[chart] {
 			g.errorf("chart %s is a dependency of the Helm chart but missing from %s", chart, componentsFile)
 		}
@@ -355,8 +366,8 @@ func (g *generator) components() (string, error) {
 	return table([]string{"Component", "License", "Shipped as", "Source"}, rows), nil
 }
 
-func findShippedImages() (*shippedImages, error) {
-	found := &shippedImages{via: map[string][]string{}}
+func findShippedImages() (shippedImages, error) {
+	found := shippedImages{}
 	composeFiles, err := filepath.Glob("deploy/docker/*/docker-compose.yaml")
 	if err != nil {
 		return nil, err
@@ -400,15 +411,15 @@ func findShippedImages() (*shippedImages, error) {
 	return found, nil
 }
 
-func findShippedCharts() ([]string, error) {
+func findShippedCharts() (map[string]struct{}, error) {
 	chart, err := os.ReadFile("deploy/charts/distr/Chart.yaml")
 	if err != nil {
 		return nil, err
 	}
-	var charts []string
+	charts := map[string]struct{}{}
 	if deps := chartDeps.FindStringSubmatch(string(chart)); deps != nil {
 		for _, match := range chartDepName.FindAllStringSubmatch(deps[1], -1) {
-			charts = appendUnique(charts, match[1])
+			charts[match[1]] = struct{}{}
 		}
 	}
 	return charts, nil
@@ -495,18 +506,14 @@ func (g *generator) backend(ctx context.Context) (string, error) {
 		}
 	}
 
-	goVersion, err := goCommand("env", "GOVERSION")
-	if err != nil {
+	if err := g.licenses.add("Go standard library", filepath.Join(build.Default.GOROOT, "LICENSE")); err != nil {
 		return "", err
 	}
-	if goRoot, err := goCommand("env", "GOROOT"); err != nil {
-		return "", err
-	} else if err := g.licenses.add("Go standard library", filepath.Join(goRoot, "LICENSE")); err != nil {
-		return "", err
-	}
-	rows := [][]string{
-		{"Go standard library", strings.TrimPrefix(goVersion, "go"), link("BSD-3-Clause", "https://go.dev/LICENSE")},
-	}
+	rows := [][]string{{
+		"Go standard library",
+		strings.TrimPrefix(runtime.Version(), "go"),
+		link("BSD-3-Clause", "https://go.dev/LICENSE"),
+	}}
 	slices.SortStableFunc(modules, func(a, b *goModule) int { return collator.CompareString(a.name, b.name) })
 	for _, module := range modules {
 		names := slices.SortedFunc(maps.Keys(module.licenses), collator.CompareString)
@@ -683,11 +690,4 @@ func table(header []string, rows [][]string) string {
 
 func stripTag(image string) string {
 	return imageTag.ReplaceAllString(imageDigest.ReplaceAllString(image, ""), "")
-}
-
-func appendUnique(list []string, value string) []string {
-	if slices.Contains(list, value) {
-		return list
-	}
-	return append(list, value)
 }

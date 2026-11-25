@@ -266,7 +266,7 @@ jobs:
         # keep in sync with the build:third-party-licenses tasks in mise.toml
         run: |
           pnpm licenses list --prod --json > dist/npm-licenses.json
-          go -C hack/third-party-licenses run . -npm ../../dist/npm-licenses.json
+          go -C hack/third-party-licenses run . --npm ../../dist/npm-licenses.json
 
       - name: Login to GitHub Container Registry (tag only)
         if: ${{ startsWith(github.ref, 'refs/tags/') }}

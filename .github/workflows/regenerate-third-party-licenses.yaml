@@ -57,7 +57,7 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
           mkdir -p dist && pnpm licenses list --prod --json > dist/npm-licenses.json
-          go -C hack/third-party-licenses run . -npm ../../dist/npm-licenses.json
+          go -C hack/third-party-licenses run . --npm ../../dist/npm-licenses.json
       - name: Check that THIRD_PARTY_LICENSES.md and NOTICE are up to date
         # Renovate changes the dependencies without running the generator, so the push job below commits for it
         if: ${{ !startsWith(github.head_ref, 'renovate/') }}
