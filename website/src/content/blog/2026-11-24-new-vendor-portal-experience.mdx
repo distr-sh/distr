@@ -1,6 +1,6 @@
 ---
 title: 'Introducing a new Vendor Portal experience'
-description: 'More intuitive navigation, an actionable home page and a better way to manage your customers.'
+description: 'Simpler navigation, a home page that shows what needs your attention and one page per customer.'
 publishDate: 2026-11-24
 lastUpdated: 2026-11-24
 slug: 'new-vendor-portal-experience'
@@ -24,30 +24,26 @@ import deploymentsLight from '~/assets/blog/2026-11-24-new-vendor-portal-experie
 import deploymentsDark from '~/assets/blog/2026-11-24-new-vendor-portal-experience/deployments-dark.webp';
 import customerActivityLight from '~/assets/blog/2026-11-24-new-vendor-portal-experience/customer-activity-light.webp';
 import customerActivityDark from '~/assets/blog/2026-11-24-new-vendor-portal-experience/customer-activity-dark.webp';
-import commandPaletteLight from '~/assets/blog/2026-11-24-new-vendor-portal-experience/command-palette-light.webp';
-import commandPaletteDark from '~/assets/blog/2026-11-24-new-vendor-portal-experience/command-palette-dark.webp';
-import contextSwitcherLight from '~/assets/blog/2026-11-24-new-vendor-portal-experience/context-switcher-light.webp';
-import contextSwitcherDark from '~/assets/blog/2026-11-24-new-vendor-portal-experience/context-switcher-dark.webp';
-import customerHomeLight from '~/assets/blog/2026-11-24-new-vendor-portal-experience/customer-home-light.webp';
-import customerHomeDark from '~/assets/blog/2026-11-24-new-vendor-portal-experience/customer-home-dark.webp';
+import commandPaletteLight from '~/assets/docs/product/vendor-portal/command-palette-light.webp';
+import commandPaletteDark from '~/assets/docs/product/vendor-portal/command-palette-dark.webp';
+import contextSwitcherLight from '~/assets/docs/platform/customers/customer-lens/context-switcher-light.webp';
+import contextSwitcherDark from '~/assets/docs/platform/customers/customer-lens/context-switcher-dark.webp';
+import customerHomeLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-home-light.webp';
+import customerHomeDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-home-dark.webp';
 
-Over the past few months, we've collected feedback from our users in customer conversations and feedback calls, and analyzed how vendors use Distr in their day-to-day operations. We looked at how teams navigate the platform, which actions they perform most frequently and how they manage their customers and software deployments.
+Over the past few months we spent a lot of time in customer conversations and feedback calls. We also looked at how vendors use Distr day to day: how they move through the Vendor Portal, which actions they repeat most and how they keep track of their customers and deployments.
 
-As more of our customers grow and manage an increasing number of deployments across different environments, it became clear that our existing dashboard was no longer providing the level of visibility they needed. Managing dozens of deployments requires a different approach than managing just a handful.
+One thing kept coming up. The old dashboard worked well for vendors with a handful of deployments. With dozens of them it stopped being useful, because a card per deployment target doesn't tell you much once there are fifty of those cards.
 
-With [Distr 4.11](https://github.com/distr-sh/distr/releases/tag/4.11.0), we're introducing a new Vendor Portal experience based on these insights.
+[Distr 4.11](https://github.com/distr-sh/distr/releases/tag/4.11.0) introduces a new Vendor Portal experience built on what we learned.
 
-Our goal was to make navigation more intuitive, simplify everyday workflows and give vendors better visibility into their customers and deployments, regardless of how many customers they serve.
-
-Here's what's new.
+We wanted navigation that needs no explanation, fewer clicks for the things you do every day and a clear picture of your customers and deployments, whether you serve three customers or three hundred. Hardly any of this needed backend changes. Distr already had the data, so we mostly changed where and how the Vendor Portal shows it.
 
 ## An actionable home page
 
-The new home page replaces the previous dashboard. It gives you an immediate overview of your customers and deployments and highlights where your attention is needed.
+The new home page replaces the previous dashboard. Instead of a card for every deployment target, it shows you where to look.
 
-Rather than displaying every individual deployment, the home page focuses on the information that matters most to vendors when managing their customers at scale.
-
-From a single page, you can now see:
+At a glance, it counts what needs your attention across all your customers:
 
 - Failing or unresponsive deployments
 - Customers running or pulling outdated versions of your software
@@ -55,9 +51,9 @@ From a single page, you can now see:
 - Open customer support requests
 - Unresolved security advisories
 
-Each card takes you directly to the relevant section of Distr with the appropriate filters already applied, allowing you to quickly investigate and address issues.
+A click on a card opens the matching page in Distr, filtered where that makes sense, so you go straight from a number to what is behind it.
 
-The home page also provides an overview of your customers and their current status, alongside a history of recent events across your organization.
+Below the cards you find your customers with their current status and a history of recent events in your organization.
 
 New organizations also find the Getting started tutorials here, which walk them through the most common workflows in Distr.
 
@@ -69,11 +65,9 @@ New organizations also find the Getting started tutorials here, which walk them 
 
 ## Everything you need to manage your customers in one place
 
-We've significantly improved how vendors manage their customers in Distr.
+Managing a customer used to mean visiting several pages: one for its users, one for its Customer Portal, one for its features and yet another one for its licenses.
 
-Previously, managing customer users, customizing the Customer Portal, enabling or disabling features and managing licenses meant jumping between several pages.
-
-Each customer now has a dedicated detail page where you can access all relevant information and manage their:
+Now every customer has a detail page with tabs for its:
 
 - Users and access permissions
 - Deployments
@@ -83,11 +77,11 @@ Each customer now has a dedicated detail page where you can access all relevant 
 - Notifications
 - Support bundles
 
-You can also directly customize the customer's portal experience, manage which features are available to them and configure their individual settings without leaving the customer detail page.
+On the same page you customize the customer's portal, choose which features they get and configure their individual settings.
 
-We've also improved the customer list with search and filtering options for update and license status, making it easier to identify customers who require your attention.
+The customer list also got a search and filters for update and license status, so the customers who need your attention are easy to find.
 
-Whether you're onboarding a new customer, adjusting their access to your software or supporting an existing customer, you can now do so from a single place.
+Onboarding a new customer, changing what they can access and helping an existing one now all start on the same page.
 
 <ThemedImage
   alt="The overview of a customer on its detail page"
@@ -97,13 +91,13 @@ Whether you're onboarding a new customer, adjusting their access to your softwar
 
 ## Better visibility and filtering across all your deployments
 
-We've improved the deployments page to make it easier to find and monitor deployments across all your customers and environments.
+The deployments page no longer groups deployments by customer.
 
-Instead of grouping deployments by customer, the page now provides a unified list of all your deployments, with quicker access to relevant filters.
+It shows one list of all your deployments across all customers and environments, with the filters right above it.
 
-You can filter deployments by their current status, including the newly introduced "outdated" status, which helps you quickly identify deployments that are running older versions of your software.
+You can filter by status, including the new "outdated" status for deployments that run an older version of your software.
 
-Combined with the new home page, this makes it significantly easier to identify and investigate issues, especially as the number of deployments you manage grows.
+Together with the home page, this makes problems a lot easier to spot and look into. It also keeps working when the number of deployments grows.
 
 <ThemedImage
   alt="The deployments page with filters"
@@ -111,15 +105,15 @@ Combined with the new home page, this makes it significantly easier to identify 
   darkSrc={deploymentsDark}
 />
 
-## Keep track of what happened with the new activity history
+## Keep track of what happened with the activity history
 
-Understanding what happened across your customers and deployments is just as important as knowing their current status.
+The current status of a deployment rarely tells the whole story. Often you also need to know what happened before.
 
 As of Distr 4.11, the home pages of both the Vendor Portal and the Customer Portal show an activity history.
 
-Vendors can now follow recent events across their organization from a single view, while customers can see the activity relevant to their own environments.
+Vendors follow recent events across their whole organization in one place. Customers see the events in their own environments.
 
-This gives both vendors and customers a better understanding of what has happened, makes it easier to follow changes over time and provides additional context when investigating issues or supporting customers.
+Both sides can follow changes over time. When something breaks, the history is usually the first place to look.
 
 <ThemedImage
   alt="Activity history on the Customer Portal home page"
@@ -129,17 +123,15 @@ This gives both vendors and customers a better understanding of what has happene
 
 ## Simplified navigation and organization settings
 
-As part of the new Vendor Portal experience, we've simplified the main navigation to make frequently used features more accessible.
+We trimmed the main navigation so the features you use most are easier to reach.
 
-Organization-specific settings, including team management, internal deployment secrets, custom domains, authentication, subscription and billing, are now grouped together under Settings.
+Settings that only concern your own organization now live together under Settings: your team, the secrets of your internal deployments, custom domains, authentication, subscription and billing.
 
 ## Get things done faster with the Command Palette
 
-We've introduced several improvements to make navigating Distr and performing everyday tasks more efficient.
+Press <kbd>⌘</kbd>+<kbd>K</kbd> on macOS or <kbd>Ctrl</kbd>+<kbd>K</kbd> on Windows and Linux to open the new Command Palette. From there you jump to any section of the Vendor Portal or straight into a customer's portal.
 
-With the new Command Palette, accessible via `Cmd+K` on macOS or `Ctrl+K` on Windows and Linux, you can quickly navigate between different sections of the Vendor Portal or switch directly to a customer's portal.
-
-We've also introduced keyboard shortcuts for frequently accessed pages, allowing you to navigate Distr even faster.
+The pages you open most often also have keyboard shortcuts of their own.
 
 <ThemedImage
   alt="The Command Palette listing applications, customers, deployments and pages"
@@ -149,15 +141,15 @@ We've also introduced keyboard shortcuts for frequently accessed pages, allowing
 
 ## Experience Distr from your customer's perspective with Customer Lens
 
-When onboarding a customer or helping them troubleshoot an issue, it can be useful to see exactly what they see.
+When you onboard a customer or help them troubleshoot, it helps to see exactly what they see.
 
-With [Customer Lens](/docs/platform/rbac/#customer-lens), you can directly access the Customer Portal of any of your customers using your existing role, without having to create a separate customer account or receive an invitation.
+[Customer Lens](/docs/platform/customer-lens/) opens the Customer Portal of any of your customers with your existing role. You need neither a separate customer account nor an invitation.
 
-This is particularly useful when supporting customers, reviewing their onboarding experience or verifying which features and resources are available to them.
+That makes it the quickest way to support a customer, check what their onboarding looks like or verify which features and resources they can access.
 
-Partners can also use Customer Lens to access the portals of their assigned customers.
+Partners can use Customer Lens for the customers assigned to them.
 
-Customer Lens is accessible through the context switcher and the new Command Palette, making it easy to switch between your Vendor Portal and your customers' portals.
+You open it from the context switcher or the Command Palette. You get back to your Vendor Portal the same way.
 
 <ThemedImage
   alt="Customer Lens in the context switcher"
@@ -167,9 +159,9 @@ Customer Lens is accessible through the context switcher and the new Command Pal
 
 ## An improved experience for your customers
 
-The Vendor Portal isn't the only part of Distr that got a new home page. As of Distr 4.11, the [Customer Portal](/docs/platform/customer-portal/) has one as well.
+The Vendor Portal isn't the only part of Distr with a new home page. As of Distr 4.11, the [Customer Portal](/docs/platform/customer-portal/) has one as well.
 
-Your customers now have a dedicated starting point that brings together the information most relevant to them, including:
+It is where your customers start and brings together what matters to them:
 
 - Their deployments and current status
 - Artifacts available through your registry
@@ -179,13 +171,13 @@ Your customers now have a dedicated starting point that brings together the info
 - Update notification reminders
 - Recent activity and history
 
-The information displayed is tailored to the features you've enabled for each customer and how they consume your software.
+What shows up depends on the features you enabled for each customer and on how they consume your software.
 
-New customers are also guided through their first steps, such as inviting their team, creating their first deployment or downloading an artifact.
+New customers also get a short guide through their first steps, such as inviting their team, creating their first deployment or downloading an artifact.
 
-This makes the Customer Portal more intuitive for both newly onboarded and existing customers, helping them get started, stay informed and manage their software independently.
+This helps new customers get started and gives existing ones a quicker overview, so they can manage your software on their own more often.
 
-All existing Customer Portal functionality remains available.
+Everything else in the Customer Portal works as before.
 
 <ThemedImage
   alt="The new Customer Portal home page"
@@ -195,25 +187,25 @@ All existing Customer Portal functionality remains available.
 
 ## Upgrading to Distr 4.11
 
-The new Vendor Portal experience is available to all Distr Cloud users. If you're self-hosting Distr, you can upgrade to version 4.11 as you would with any other minor release.
+Distr Cloud users already have the new Vendor Portal. If you self-host, upgrade to 4.11 like any other minor release.
 
-No additional configuration is required, and no new environment variables have been introduced. The SDK and controllers remain unchanged, so your existing integrations and customer deployments will continue to work as before.
+You don't need to change any configuration. There are no new environment variables either. The SDK and the controllers are unchanged, so your integrations and your customers' deployments keep working as before.
 
-We do recommend adding a title image to each of your applications on its application page. The Customer Portal home page shows it next to your customers' deployments and artifacts.
+We do recommend adding a title image to each application on its application page. The Customer Portal home page shows it next to your customers' deployments and artifacts.
 
-As part of the updated navigation, some standalone pages have been consolidated into other sections of the platform. Previously bookmarked pages, such as the standalone licenses page, may therefore need to be updated.
+A few standalone pages, such as the licenses page, moved into other sections, so some bookmarks may need updating.
 
-The only removed API endpoint is the one associated with the previous dashboard.
+The only API endpoint we removed is the one behind the previous dashboard.
 
 ## Built with your feedback
 
-A big thank you to all our users who shared their feedback and helped shape the new Distr experience.
+Thank you to everyone who shared feedback with us. A lot of this release started in those conversations.
 
-As our customers continue to grow, we want to ensure that Distr remains just as intuitive and easy to use when managing dozens of deployments as it is when onboarding your first customer.
+Distr should stay as easy to use with dozens of deployments as it is on the day you onboard your first customer.
 
-We'll continue to improve Distr based on your feedback and how you use the platform in your day-to-day operations.
+We'll keep working on that, guided by your feedback and by how you use Distr every day.
 
-We're excited for you to try the new Vendor Portal experience and would love to hear what you think!
+Try the new Vendor Portal and tell us what you think. We especially want to hear about anything that is now harder to find.
 
 - [Join the discussion on GitHub](https://github.com/distr-sh/distr/discussions)
 - [Book a demo call](https://cal.glasskube.com/team/gk/demo?duration=30)
