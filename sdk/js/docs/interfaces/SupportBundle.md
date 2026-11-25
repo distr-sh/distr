@@ -25,9 +25,27 @@
 
 ---
 
+### createdByCustomerOrganizationId?
+
+> `optional` **createdByCustomerOrganizationId?**: `string`
+
+---
+
+### createdByDeleted?
+
+> `optional` **createdByDeleted?**: `boolean`
+
+---
+
 ### createdByImageUrl?
 
 > `optional` **createdByImageUrl?**: `string`
+
+---
+
+### createdByPartnerOrganizationId?
+
+> `optional` **createdByPartnerOrganizationId?**: `string`
 
 ---
 
@@ -97,9 +115,27 @@
 
 ---
 
+### statusChangedByCustomerOrganizationId?
+
+> `optional` **statusChangedByCustomerOrganizationId?**: `string`
+
+---
+
+### statusChangedByDeleted?
+
+> `optional` **statusChangedByDeleted?**: `boolean`
+
+---
+
 ### statusChangedByImageUrl?
 
 > `optional` **statusChangedByImageUrl?**: `string`
+
+---
+
+### statusChangedByPartnerOrganizationId?
+
+> `optional` **statusChangedByPartnerOrganizationId?**: `string`
 
 ---
 

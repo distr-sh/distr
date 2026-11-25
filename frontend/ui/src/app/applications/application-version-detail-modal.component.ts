@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, effect, input, output, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, effect, input, linkedSignal, output} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {Application, ApplicationVersion, ApplicationVersionResource} from '@distr-sh/distr-sdk';
 import {EditorComponent} from '../components/editor.component';
@@ -28,12 +28,15 @@ export interface ApplicationVersionDetail {
 export class ApplicationVersionDetailModalComponent {
   versionDetail = input.required<ApplicationVersionDetail>();
   closed = output<void>();
-  activeTab = signal('link');
+  activeTab = linkedSignal<string>(() => (this.versionDetail().application.type === 'docker' ? 'compose' : 'link'));
 
   versionDetailsForm = new FormGroup({
     name: new FormControl(''),
     linkTemplate: new FormControl(''),
     kubernetes: new FormGroup({
+      chartUrl: new FormControl(''),
+      chartName: new FormControl(''),
+      chartVersion: new FormControl(''),
       baseValues: new FormControl(''),
       template: new FormControl(''),
     }),
@@ -50,7 +53,12 @@ export class ApplicationVersionDetailModalComponent {
       const detail = this.versionDetail();
       this.versionDetailsForm.patchValue({
         linkTemplate: detail.linkTemplate,
-        kubernetes: detail.kubernetes,
+        kubernetes: {
+          ...detail.kubernetes,
+          chartUrl: detail.version.chartUrl,
+          chartName: detail.version.chartName,
+          chartVersion: detail.version.chartVersion,
+        },
         docker: detail.docker,
       });
     });

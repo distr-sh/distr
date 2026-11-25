@@ -1,5 +1,4 @@
 import {DeploymentType} from '@distr-sh/distr-sdk';
-
 export type SupportBundleStatus = 'initialized' | 'created' | 'resolved' | 'canceled';
 
 export interface SupportBundleConfigurationEnvVar {
@@ -42,6 +41,9 @@ export interface SupportBundle {
   createdByUserAccountId?: string;
   createdByUserName?: string;
   createdByImageUrl?: string;
+  createdByCustomerOrganizationId?: string;
+  createdByPartnerOrganizationId?: string;
+  createdByDeleted?: boolean;
   deploymentType: DeploymentType;
   title: string;
   description?: string;
@@ -51,6 +53,9 @@ export interface SupportBundle {
   lastCommentAt?: string;
   statusChangedByUserName?: string;
   statusChangedByImageUrl?: string;
+  statusChangedByCustomerOrganizationId?: string;
+  statusChangedByPartnerOrganizationId?: string;
+  statusChangedByDeleted?: boolean;
   statusChangedAt?: string;
 }
 
@@ -84,6 +89,9 @@ export interface SupportBundleComment {
   userAccountId?: string;
   userName?: string;
   userImageUrl?: string;
+  userCustomerOrganizationId?: string;
+  userPartnerOrganizationId?: string;
+  userDeleted?: boolean;
   content: string;
 }
 

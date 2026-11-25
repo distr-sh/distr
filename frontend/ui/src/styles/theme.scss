@@ -234,7 +234,7 @@
 
   // for cards whose content is too wide for the columns of `distr-card-grid`
   .distr-card-grid-wide {
-    @apply grid grid-cols-1 items-stretch gap-4 2xl:grid-cols-2;
+    @apply grid grid-cols-[repeat(auto-fill,minmax(min(32rem,100%),1fr))] items-stretch gap-4;
   }
 
   .distr-card {

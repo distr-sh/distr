@@ -40,32 +40,36 @@
             <form [formGroup]="inviteFormGroup" (ngSubmit)="inviteAndComplete()">
               <ol
                 class="relative mb-12 ml-4 border-s border-gray-200 text-gray-900 dark:border-gray-700 dark:text-white">
-                <li class="ms-8 mb-10">
-                  <span
-                    class="absolute -inset-s-4 flex size-8 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white dark:bg-gray-700 dark:ring-gray-800">
-                    <fa-icon [icon]="faLightbulb" />
-                  </span>
-                  <h3 class="mt-1 text-lg leading-tight font-medium">Understand the roles</h3>
-                  <p class="mt-2 text-sm">Every teammate is assigned a role that defines what they can do in Distr:</p>
-                  <ul class="mt-3 space-y-2 text-sm">
-                    <li>
-                      <b>Viewer</b> &ndash; read-only access. Can see applications, deployments and artifacts, but
-                      cannot make any changes.
-                    </li>
-                    <li>
-                      <b>User</b> &ndash; read and write access. Can create and manage applications, deployments and
-                      artifacts.
-                    </li>
-                    <li>
-                      <b>Administrator</b> &ndash; full access. Can do everything a User can, plus manage organization
-                      settings and invite or remove teammates.
-                    </li>
-                  </ul>
-                  <p class="mt-3 text-sm">
-                    Learn more about roles and permissions in our
-                    <a [href]="rbacDocsUrl" class="distr-link" target="_blank">RBAC documentation</a>.
-                  </p>
-                </li>
+                @if (isUserRolesEnabled()) {
+                  <li class="ms-8 mb-10">
+                    <span
+                      class="absolute -inset-s-4 flex size-8 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white dark:bg-gray-700 dark:ring-gray-800">
+                      <fa-icon [icon]="faLightbulb" />
+                    </span>
+                    <h3 class="mt-1 text-lg leading-tight font-medium">Understand the roles</h3>
+                    <p class="mt-2 text-sm">
+                      Every teammate is assigned a role that defines what they can do in Distr:
+                    </p>
+                    <ul class="mt-3 space-y-2 text-sm">
+                      <li>
+                        <b>Viewer</b> &ndash; read-only access. Can see applications, deployments and artifacts, but
+                        cannot make any changes.
+                      </li>
+                      <li>
+                        <b>User</b> &ndash; read and write access. Can create and manage applications, deployments and
+                        artifacts.
+                      </li>
+                      <li>
+                        <b>Administrator</b> &ndash; full access. Can do everything a User can, plus manage organization
+                        settings and invite or remove teammates.
+                      </li>
+                    </ul>
+                    <p class="mt-3 text-sm">
+                      Learn more about roles and permissions in our
+                      <a [href]="rbacDocsUrl" class="distr-link" target="_blank">RBAC documentation</a>.
+                    </p>
+                  </li>
+                }
 
                 <li class="ms-8 mb-10">
                   <span
@@ -74,15 +78,24 @@
                   </span>
                   <h3 class="mt-1 text-lg leading-tight font-medium">Add your teammates</h3>
                   <p class="mt-2 text-sm">
-                    Enter the name (optional), email and role of each colleague you want to invite, then send the
-                    invite. Each teammate will receive an email with a link to join your organization.
+                    @if (isUserRolesEnabled()) {
+                      Enter the name (optional), email and role of each colleague you want to invite, then send the
+                      invite.
+                    } @else {
+                      Enter the name (optional) and email of each colleague you want to invite, then send the invite.
+                    }
+                    Each teammate will receive an email with a link to join your organization.
                   </p>
 
-                  <div class="mt-4 grid grid-cols-[1fr_1fr_12rem_auto] gap-x-3" formArrayName="users">
+                  <div
+                    class="mt-4 grid grid-cols-[1fr_1fr_auto] gap-x-3 has-[app-user-role-select]:grid-cols-[1fr_1fr_12rem_auto]"
+                    formArrayName="users">
                     <div class="col-span-full mb-2 grid grid-cols-subgrid gap-x-3 text-sm font-medium">
                       <div>Name</div>
                       <div>Email</div>
-                      <div>Role</div>
+                      @if (isUserRolesEnabled()) {
+                        <div>Role</div>
+                      }
                       <div></div>
                     </div>
                     @for (user of users.controls; track user) {
@@ -110,9 +123,11 @@
                             <div class="mt-1 text-sm text-red-500">Please enter a valid email address.</div>
                           }
                         </div>
-                        <div>
-                          <app-user-role-select formControlName="userRole" selectClass="distr-input" />
-                        </div>
+                        @if (isUserRolesEnabled()) {
+                          <div>
+                            <app-user-role-select formControlName="userRole" selectClass="distr-input" />
+                          </div>
+                        }
                         <button
                           type="button"
                           (click)="removeUser($index)"

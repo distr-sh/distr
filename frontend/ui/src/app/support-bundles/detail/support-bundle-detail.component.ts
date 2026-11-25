@@ -16,14 +16,44 @@ import {ClipComponent} from '../../components/clip.component';
 import {DeploymentTypeBadgeComponent} from '../../components/deployment-type-badge.component';
 import {PageComponent} from '../../components/page.component';
 import {AuthService} from '../../services/auth.service';
+import {actorAuthor, AuthorService} from '../../services/author.service';
 import {OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService, supportBundleZipFileName} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
-import {SupportBundleDetail} from '../../types/support-bundle';
+import {Actor} from '../../types/actor';
+import {SupportBundle, SupportBundleComment, SupportBundleDetail} from '../../types/support-bundle';
 import {supportBundleDeleteConfirm} from '../support-bundle-display';
 import {SupportBundleStatusBadgeComponent} from '../support-bundle-status-badge.component';
 import {buildResourceTree} from './resource-tree';
 import {SupportBundleResourceFolderComponent} from './support-bundle-resource-folder.component';
+
+function createdBy(bundle: SupportBundle): Actor {
+  return {
+    name: bundle.createdByUserName,
+    customerOrganizationId: bundle.createdByCustomerOrganizationId,
+    partnerOrganizationId: bundle.createdByPartnerOrganizationId,
+    deleted: bundle.createdByDeleted,
+  };
+}
+
+function statusChangedBy(bundle: SupportBundle): Actor {
+  return {
+    name: bundle.statusChangedByUserName,
+    customerOrganizationId: bundle.statusChangedByCustomerOrganizationId,
+    partnerOrganizationId: bundle.statusChangedByPartnerOrganizationId,
+    deleted: bundle.statusChangedByDeleted,
+  };
+}
+
+function commentedBy(comment: SupportBundleComment): Actor {
+  return {
+    name: comment.userName,
+    imageUrl: comment.userImageUrl,
+    customerOrganizationId: comment.userCustomerOrganizationId,
+    partnerOrganizationId: comment.userPartnerOrganizationId,
+    deleted: comment.userDeleted,
+  };
+}
 
 @Component({
   selector: 'app-support-bundle-detail',
@@ -73,15 +103,30 @@ export class SupportBundleDetailComponent {
 
   protected readonly resourceTree = computed(() => buildResourceTree(this.bundle()?.resources ?? []));
 
+  private readonly authorContext = toSignal(inject(AuthorService).getContext(), {initialValue: {}});
+
+  protected readonly createdByName = computed(() => {
+    const bundle = this.bundle();
+    return bundle && this.author(createdBy(bundle))?.name;
+  });
+
+  protected readonly statusChangedByName = computed(() => {
+    const bundle = this.bundle();
+    return bundle && this.author(statusChangedBy(bundle))?.name;
+  });
+
   protected readonly timelineEntries = computed<ActivityTimelineEntry[]>(() =>
-    (this.bundle()?.comments ?? []).map((comment) => ({
-      id: comment.id,
-      createdAt: comment.createdAt,
-      userName: comment.userName,
-      userImageUrl: comment.userImageUrl,
-      action: 'commented',
-      body: comment.content,
-    }))
+    (this.bundle()?.comments ?? []).map((comment) => {
+      const commentAuthor = this.author(commentedBy(comment));
+      return {
+        id: comment.id,
+        createdAt: comment.createdAt,
+        userName: commentAuthor?.name,
+        userImageUrl: commentAuthor?.imageUrl,
+        action: 'commented',
+        body: comment.content,
+      };
+    })
   );
 
   private readonly refresh$ = new Subject<void>();
@@ -222,5 +267,9 @@ export class SupportBundleDetailComponent {
     } finally {
       this.submittingComment.set(false);
     }
+  }
+
+  private author(actor: Actor) {
+    return actorAuthor(actor, this.authorContext());
   }
 }

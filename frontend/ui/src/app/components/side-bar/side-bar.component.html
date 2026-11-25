@@ -19,39 +19,32 @@
         }
       </ul>
 
-      @if (!auth.isSuperAdmin() && !hasSubscription() && isFeedbackAlertVisible()) {
+      @if (!auth.isSuperAdmin() && isAnnouncementVisible()) {
         <div id="alert-update" class="rounded-lg bg-gray-50 p-4 dark:bg-gray-700" *appRequireVendor>
           <div class="mb-3 flex items-center justify-between">
-            <span class="distr-badge distr-badge-neutral mr-2">Talk to founders</span>
+            <span class="distr-badge mr-2">New</span>
             <button
               type="button"
               class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-gray-50 p-1 text-gray-500 hover:bg-gray-200 focus:ring-2 focus:ring-gray-400 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
               aria-label="Close"
-              (click)="isFeedbackAlertVisible.set(false)">
+              (click)="dismissAnnouncement()">
               <fa-icon [icon]="faXmark" />
             </button>
           </div>
+          <div class="mb-1 text-sm font-semibold text-gray-900 dark:text-white">
+            Introducing a new Vendor Portal experience
+          </div>
           <div class="mb-3 text-sm text-gray-700 dark:text-gray-300">
-            We just released Distr v4, any feedback helps us building a better product.
+            A new home page, a detail page per customer and a home page for your customers.
           </div>
-          <div class="flex flex-col gap-2">
-            <a
-              [href]="websiteUrl + '/blog/distr-v3-release/'"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="inline-flex items-center text-sm font-medium text-gray-600 hover:underline dark:text-gray-500">
-              Read the announcement
-              <fa-icon [icon]="faArrowRightLong" class="ml-2" />
-            </a>
-            <a
-              href="https://cal.glasskube.com/team/founder/30min"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="inline-flex items-center text-sm font-medium text-gray-600 hover:underline dark:text-gray-500">
-              Book a call
-              <fa-icon [icon]="faArrowRightLong" class="ml-2" />
-            </a>
-          </div>
+          <a
+            [href]="websiteUrl + '/blog/new-vendor-portal-experience/'"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center text-sm font-medium text-gray-600 hover:underline dark:text-gray-500">
+            Read the announcement
+            <fa-icon [icon]="faArrowRightLong" class="ml-2" />
+          </a>
         </div>
       }
 

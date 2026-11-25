@@ -1,20 +1,27 @@
 import {DatePipe} from '@angular/common';
-import {Component, computed, input, signal} from '@angular/core';
+import {Component, computed, inject, input, signal} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {Params, RouterLink} from '@angular/router';
 import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
 import {
   faAddressBook,
   faBox,
+  faBuilding,
   faClockRotateLeft,
   faCube,
   faDashboard,
   faDownload,
   faKey,
   faLifeRing,
+  faServer,
+  faUserPlus,
 } from '@fortawesome/free-solid-svg-icons';
 import {RelativeDatePipe} from '../../../util/dates';
 import {never} from '../../../util/exhaust';
 import {CustomerHomeCollapsibleComponent} from '../../home/customer/customer-home-collapsible.component';
+import {organizationSettingsTabs} from '../../organization-settings/organization-settings-navigation';
+import {AuthService} from '../../services/auth.service';
+import {actorAuthor, Author, AuthorService} from '../../services/author.service';
 import {AvatarComponent} from '../avatar.component';
 import {CardHeadingComponent} from '../card-heading.component';
 import {CustomerDetailTabId} from '../customer-organizations/detail/customer-detail-navigation';
@@ -25,10 +32,17 @@ interface ActivityEntry {
   createdAt: string;
   action: string;
   icon: IconDefinition;
-  link: string;
+  /** Missing for an entry whose page the viewer cannot open. */
+  link?: string;
   queryParams?: Params;
-  user?: {name: string; imageUrl?: string; isVendor: boolean};
+  user?: Author;
   customerName?: string;
+  partnerName?: string;
+}
+
+interface LinkPermissions {
+  isAdmin: boolean;
+  canOpenTeamSettings: boolean;
 }
 
 @Component({
@@ -50,11 +64,10 @@ interface ActivityEntry {
   },
 })
 export class ActivityFeedComponent {
+  private readonly auth = inject(AuthService);
+
   public readonly activity = input.required<ActivityFeedItem[]>();
   public readonly viewer = input.required<ActivityFeedViewer>();
-  /** Shown as the author of what the vendor did, to a customer only. */
-  public readonly vendorName = input<string>();
-  public readonly vendorLogo = input<string>();
   /** For a feed of a single customer, whose entries then link to its tabs instead of naming it. */
   public readonly customerOrganizationId = input<string>();
   /**
@@ -63,40 +76,36 @@ export class ActivityFeedComponent {
    */
   public readonly fillHeight = input(false);
 
+  private readonly canOpenTeamSettings = toSignal(organizationSettingsTabs.canOpen('team'), {initialValue: false});
+  private readonly authorContext = toSignal(inject(AuthorService).getContext(), {initialValue: {}});
+
   protected readonly faAddressBook = faAddressBook;
+  protected readonly faBuilding = faBuilding;
   protected readonly faClockRotateLeft = faClockRotateLeft;
 
   protected readonly expanded = signal(false);
 
   protected readonly entries = computed<ActivityEntry[]>(() => {
     const viewer = this.viewer();
-    const vendorName = this.vendorName();
+    const authorContext = this.authorContext();
     const customerOrganizationId = this.customerOrganizationId();
     const shouldShowCustomer = viewer !== 'customer' && customerOrganizationId === undefined;
-    return this.activity().map((activity) => {
-      const byVendor =
-        activity.type === 'application_version_created' ||
-        activity.type === 'artifact_version_created' ||
-        activity.type === 'license_key_created' ||
-        activity.type === 'license_key_updated' ||
-        activity.type === 'support_bundle_resolved';
-      return {
-        id: `${activity.type}-${activity.id}`,
-        createdAt: activity.createdAt,
-        action: action(activity),
-        icon: icon(activity),
-        ...(customerOrganizationId === undefined
-          ? link(activity, viewer)
-          : customerTabLink(activity, viewer, customerOrganizationId)),
-        user:
-          viewer === 'customer' && byVendor
-            ? vendorName
-              ? {name: vendorName, imageUrl: this.vendorLogo(), isVendor: true}
-              : undefined
-            : activity.user && {...activity.user, isVendor: false},
-        customerName: shouldShowCustomer ? activity.customer?.name : undefined,
-      };
-    });
+    const permissions: LinkPermissions = {
+      isAdmin: this.auth.hasRole('admin'),
+      canOpenTeamSettings: this.canOpenTeamSettings(),
+    };
+    return this.activity().map((activity) => ({
+      id: `${activity.type}-${activity.id}`,
+      createdAt: activity.createdAt,
+      action: action(activity),
+      icon: icon(activity),
+      ...(customerOrganizationId === undefined
+        ? link(activity, viewer, permissions)
+        : customerTabLink(activity, viewer, permissions, customerOrganizationId)),
+      user: actorAuthor(activity.user, authorContext),
+      customerName: shouldShowCustomer ? activity.customer?.name : undefined,
+      partnerName: viewer === 'vendor' ? activity.partner?.name : undefined,
+    }));
   });
 }
 
@@ -108,8 +117,14 @@ function icon({type}: ActivityFeedItem): IconDefinition {
       return faBox;
     case 'artifact_version_first_pulled':
       return faDownload;
+    case 'customer_created':
+      return faAddressBook;
+    case 'customer_user_added':
+      return faUserPlus;
     case 'deployment_revision_created':
       return faDashboard;
+    case 'deployment_target_created':
+      return faServer;
     case 'license_key_created':
     case 'license_key_updated':
       return faKey;
@@ -118,14 +133,17 @@ function icon({type}: ActivityFeedItem): IconDefinition {
     case 'support_bundle_resolved':
     case 'support_bundle_canceled':
       return faLifeRing;
+    case 'team_member_added':
+      return faUserPlus;
     default:
       return never(type);
   }
 }
 
 function link(
-  {type, resourceId, resourceName, customer}: ActivityFeedItem,
-  viewer: ActivityFeedViewer
+  {type, resourceId, resourceName, customer, partner}: ActivityFeedItem,
+  viewer: ActivityFeedViewer,
+  {isAdmin, canOpenTeamSettings}: LinkPermissions
 ): Pick<ActivityEntry, 'link' | 'queryParams'> {
   switch (type) {
     case 'application_version_created':
@@ -136,7 +154,15 @@ function link(
     case 'artifact_version_created':
     case 'artifact_version_first_pulled':
       return {link: viewer === 'customer' ? `/artifacts/${resourceId}` : `/registry/${resourceId}`};
+    case 'customer_created':
+      return {link: `/customers/${resourceId}`};
+    case 'customer_user_added':
+      if (viewer === 'customer') {
+        return isAdmin ? {link: '/team'} : {};
+      }
+      return {link: customer ? `/customers/${customer.id}/users` : '/customers'};
     case 'deployment_revision_created':
+    case 'deployment_target_created':
       return {link: `/deployments/${resourceId}`};
     case 'license_key_created':
     case 'license_key_updated':
@@ -149,6 +175,14 @@ function link(
     case 'support_bundle_resolved':
     case 'support_bundle_canceled':
       return {link: `/support/${resourceId}`};
+    case 'team_member_added':
+      if (viewer === 'vendor') {
+        if (partner) {
+          return {link: `/partners/${partner.id}/users`};
+        }
+        return canOpenTeamSettings ? {link: '/settings/organization/team'} : {};
+      }
+      return isAdmin ? {link: '/team'} : {};
     default:
       return never(type);
   }
@@ -157,16 +191,23 @@ function link(
 function customerTabLink(
   activity: ActivityFeedItem,
   viewer: ActivityFeedViewer,
+  permissions: LinkPermissions,
   customerOrganizationId: string
 ): Pick<ActivityEntry, 'link' | 'queryParams'> {
   const tab = (tab: CustomerDetailTabId) => ({link: `/customers/${customerOrganizationId}/${tab}`});
   switch (activity.type) {
     case 'application_version_created':
     case 'artifact_version_created':
-      return link(activity, viewer);
+    case 'team_member_added':
+      return link(activity, viewer, permissions);
     case 'artifact_version_first_pulled':
       return {...tab('registry'), queryParams: {artifactId: activity.resourceId}};
+    case 'customer_created':
+      return tab('overview');
+    case 'customer_user_added':
+      return tab('users');
     case 'deployment_revision_created':
+    case 'deployment_target_created':
       return {...tab('deployments'), queryParams: {search: activity.resourceName}};
     case 'license_key_created':
     case 'license_key_updated':
@@ -189,8 +230,14 @@ function action({type, subject, detail}: ActivityFeedItem): string {
       return `artifact ${subject}:${detail} published`;
     case 'artifact_version_first_pulled':
       return `artifact ${subject}:${detail} pulled for the first time`;
+    case 'customer_created':
+      return `customer ${subject} created`;
+    case 'customer_user_added':
+      return `user ${subject} added`;
     case 'deployment_revision_created':
       return `version ${detail} of ${subject} deployed`;
+    case 'deployment_target_created':
+      return `deployment ${subject} created`;
     case 'license_key_created':
       return `license key ${subject} issued`;
     case 'license_key_updated':
@@ -203,6 +250,8 @@ function action({type, subject, detail}: ActivityFeedItem): string {
       return `support request ${subject} resolved`;
     case 'support_bundle_canceled':
       return `support request ${subject} canceled`;
+    case 'team_member_added':
+      return `team member ${subject} added`;
     default:
       return never(type);
   }

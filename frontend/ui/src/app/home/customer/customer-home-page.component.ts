@@ -23,7 +23,6 @@ import {LicenseKeysService} from '../../services/license-keys.service';
 import {UpdateNotificationConfigurationsService} from '../../services/notification-configurations.service';
 import {NotificationRecordsService} from '../../services/notification-records.service';
 import {OrganizationBrandingService} from '../../services/organization-branding.service';
-import {OrganizationService} from '../../services/organization.service';
 import {SecretsService} from '../../services/secrets.service';
 import {SupportBundlesService} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
@@ -88,7 +87,6 @@ export class CustomerHomePageComponent {
   private readonly supportBundlesService = inject(SupportBundlesService);
   private readonly activityFeedService = inject(ActivityFeedService);
   private readonly organizationBranding = inject(OrganizationBrandingService);
-  private readonly organizationService = inject(OrganizationService);
   private readonly toast = inject(ToastService);
 
   private readonly canWrite = this.auth.hasAnyRole('read_write', 'admin');
@@ -180,7 +178,6 @@ export class CustomerHomePageComponent {
       })
     )
   );
-  protected readonly vendorLogo = computed(() => this.branding()?.logoImageId);
   protected readonly instructions = computed(() => this.branding()?.description || undefined);
   private readonly instructionsHiddenChoice = linkedSignal(() =>
     storedFlag(sessionStorage, this.instructionsHiddenKey())
@@ -342,7 +339,6 @@ export class CustomerHomePageComponent {
 
   protected readonly activity = toSignal(this.activityFeedService.list().pipe(map(toActivityFeedItems)));
   protected readonly activityShown = computed(() => this.activity()?.length !== 0);
-  protected readonly vendorName = toSignal(this.organizationService.get().pipe(map((org) => org.name)));
 
   protected setInstructionsHidden(hidden: boolean) {
     const key = this.instructionsHiddenKey();

@@ -100,6 +100,34 @@
 
             <div class="mt-4">
               @if (activeTab() === 'link') {
+                @if (detail.application.type === 'kubernetes') {
+                  <div class="mb-4 space-y-2">
+                    <label for="chartUrl" class="distr-label">Chart URL</label>
+                    <input
+                      type="text"
+                      id="chartUrl"
+                      [formControl]="versionDetailsForm.controls.kubernetes.controls.chartUrl"
+                      class="distr-input distr-input-raised" />
+                  </div>
+                  @if (detail.version.chartName) {
+                    <div class="mb-4 space-y-2">
+                      <label for="chartName" class="distr-label">Chart Name</label>
+                      <input
+                        type="text"
+                        id="chartName"
+                        [formControl]="versionDetailsForm.controls.kubernetes.controls.chartName"
+                        class="distr-input distr-input-raised" />
+                    </div>
+                  }
+                  <div class="mb-4 space-y-2">
+                    <label for="chartVersion" class="distr-label">Chart Version</label>
+                    <input
+                      type="text"
+                      id="chartVersion"
+                      [formControl]="versionDetailsForm.controls.kubernetes.controls.chartVersion"
+                      class="distr-input distr-input-raised" />
+                  </div>
+                }
                 <div class="space-y-2">
                   <label for="linkTemplate" class="distr-label"> Version Link Template </label>
                   <input

@@ -13,10 +13,13 @@ import (
 	"github.com/distr-sh/distr/internal/dbencryption"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/license"
+	"github.com/distr-sh/distr/internal/logging"
+	"github.com/distr-sh/distr/internal/migrations"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/svc"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
+	sentryotel "github.com/getsentry/sentry-go/otel"
 	"github.com/spf13/cobra"
 	"github.com/stripe/stripe-go/v87"
 	"go.uber.org/zap"
@@ -49,13 +52,14 @@ func init() {
 
 func runServe(ctx context.Context, opts ServeOptions) {
 	util.Must(sentry.Init(sentry.ClientOptions{
-		Dsn:              env.SentryDSN(),
-		Debug:            env.SentryDebug(),
-		Environment:      env.SentryEnvironment(),
-		EnableTracing:    env.OtelExporterSentryEnabled(),
-		TracesSampleRate: 1.0,
-		Release:          buildconfig.Version(),
-		IgnoreErrors:     []string{context.Canceled.Error()},
+		Dsn:          env.SentryDSN(),
+		Debug:        env.SentryDebug(),
+		Environment:  env.SentryEnvironment(),
+		Release:      buildconfig.Version(),
+		IgnoreErrors: []string{context.Canceled.Error()},
+		Integrations: func(integrations []sentry.Integration) []sentry.Integration {
+			return append(integrations, sentryotel.NewOtelIntegration())
+		},
 	}))
 	defer sentry.Flush(5 * time.Second)
 	defer func() {
@@ -69,7 +73,12 @@ func runServe(ctx context.Context, opts ServeOptions) {
 		stripe.Key = *key
 	}
 
-	registry := util.Require(svc.New(ctx, svc.ExecDbMigration(opts.Migrate)))
+	logger := logging.New()
+	if opts.Migrate {
+		util.Must(migrations.Up(logger))
+	}
+
+	registry := util.Require(svc.New(ctx, logger))
 	defer func() { util.Must(registry.Shutdown(ctx)) }()
 
 	dbCtx := internalctx.WithDb(ctx, registry.GetDbPool())

@@ -7,7 +7,6 @@ import {environment} from '../../../env/env';
 import {RequireVendorDirective} from '../../directives/required-role.directive';
 import {NavigationService} from '../../navigation/navigation.service';
 import {AuthService} from '../../services/auth.service';
-import {OrganizationService} from '../../services/organization.service';
 import {SidebarService} from '../../services/sidebar.service';
 import {SideBarItemComponent} from './side-bar-item.component';
 
@@ -20,7 +19,6 @@ export class SideBarComponent {
   protected readonly auth = inject(AuthService);
   protected readonly sidebar = inject(SidebarService);
   protected readonly navigation = inject(NavigationService);
-  private readonly organizationService = inject(OrganizationService);
 
   protected readonly buildConfig = buildConfig;
   protected readonly edition = environment.edition;
@@ -29,10 +27,14 @@ export class SideBarComponent {
   protected readonly faArrowRightLong = faArrowRightLong;
   protected readonly faXmark = faXmark;
 
-  protected readonly isFeedbackAlertVisible = signal(true);
+  private readonly announcementDismissedKey = 'sidebar.announcementDismissed.new-vendor-portal-experience';
+  protected readonly isAnnouncementVisible = signal(localStorage.getItem(this.announcementDismissedKey) !== 'true');
 
   public readonly isBannerVisible = input<boolean>();
   public readonly isSidebarVisible = input<boolean>();
 
-  protected readonly hasSubscription = this.organizationService.hasSubscription;
+  protected dismissAnnouncement() {
+    localStorage.setItem(this.announcementDismissedKey, 'true');
+    this.isAnnouncementVisible.set(false);
+  }
 }

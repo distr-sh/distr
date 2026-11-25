@@ -100,6 +100,26 @@
 
 ---
 
+### nodeSelector?
+
+> `optional` **nodeSelector?**: `Record`\<`string`, `string`\>
+
+#### Inherited from
+
+[`DeploymentTargetSettings`](DeploymentTargetSettings.md).[`nodeSelector`](DeploymentTargetSettings.md#nodeselector)
+
+---
+
+### podAnnotations?
+
+> `optional` **podAnnotations?**: `Record`\<`string`, `string`\>
+
+#### Inherited from
+
+[`DeploymentTargetSettings`](DeploymentTargetSettings.md).[`podAnnotations`](DeploymentTargetSettings.md#podannotations)
+
+---
+
 ### resources?
 
 > `optional` **resources?**: [`DeploymentTargetResources`](DeploymentTargetResources.md)
@@ -113,6 +133,16 @@
 ### scope?
 
 > `optional` **scope?**: [`DeploymentTargetScope`](../type-aliases/DeploymentTargetScope.md)
+
+---
+
+### tolerations?
+
+> `optional` **tolerations?**: [`DeploymentTargetToleration`](DeploymentTargetToleration.md)[]
+
+#### Inherited from
+
+[`DeploymentTargetSettings`](DeploymentTargetSettings.md).[`tolerations`](DeploymentTargetSettings.md#tolerations)
 
 ---
 

@@ -10,6 +10,8 @@ The component in customer environments is the Distr Controller, never the agent.
 
 That server is called Distr, never Hub. The name holds for user-facing text, for identifiers in configuration users write (Helm values, Compose services, Kubernetes labels) and for file, folder and mise task names. Reintroducing "Hub" anywhere is a regression.
 
+A deployment target is a "deployment" in user-facing text: UI copy, activity feed entries and 4xx bodies. Keep "deployment target" for identifiers, the API and the docs that explain the data model.
+
 "Control plane" is a category, not a name. Keep it where it explains an architecture in general (BYOC, Kubernetes, what a vendor's SaaS does), and never use it as a second name for our own server: write "Distr", not "the Distr control plane" or "the control plane".
 
 ## Repository layout
@@ -57,7 +59,7 @@ Binaries land in `dist/`. Go formatting is configured in `.golangci.yml` and the
 - Reference shared string enums (`types.UserRole`, `types.DomainType`, `types.OIDCProvider`) from `api` instead of duplicating them.
 - Use `new(value)` to obtain a `*T` from a typed value (e.g. `new(types.UserRoleReadOnly)`). Do not use `util.PtrTo`.
 - Use `errors.AsType[E](err)` where the target type is known at the call site, since it needs no pre-declared variable: `if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation`. Keep `errors.As` where the target is an interface a caller passes in.
-- Write 4xx bodies for the end user. The frontend forms display them verbatim (`getFormDisplayedError`), so put anything only a developer can use into the log instead. Name an entity in plain words ("deployment target"), never as its Go type (`DeploymentTarget`).
+- Write 4xx bodies for the end user. The frontend forms display them verbatim (`getFormDisplayedError`), so put anything only a developer can use into the log instead. Name an entity in plain words ("license key"), never as its Go type (`LicenseKey`).
 - Declare the 404 of an entity once in `internal/handlers/not_found.go` and return that variable, never an inline `respond.NotFound(...)`.
 - Scope what a request reads and writes by the customer and partner organization of its auth info (`CurrentCustomerOrgID`, `CurrentPartnerOrgID`), never by the user's membership (`db.GetOrganizationMembership`), since a vendor or partner member can be in the lens of one of its customer organizations (see `lens.Lens`). Read the customer organization a request looks at as `cmp.Or(LensCustomerOrg(), CurrentCustomerOrg())`. Guard what belongs to the membership itself, personal access tokens being the example, with `middleware.RequireNonLensContext`.
 - Answer an id the caller may not reach exactly like a missing one: a path id with its 404, a body or filter id with a 400 (`invalidCustomerScope` for a customer). Never answer it with a 403, which confirms the entity exists; keep 403 for roles, plans and limits. Do not check a filter id that only narrows a query already scoped to the caller (`deploymentTargetFilter`), since an unreachable id matches nothing there.

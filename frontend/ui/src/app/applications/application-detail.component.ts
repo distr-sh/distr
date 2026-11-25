@@ -219,6 +219,16 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   protected readonly autoUpdatesPlan = upgradePlan({requiresAnyOf: ['auto_updates']});
 
   private readonly application = toSignal(this.application$);
+  private readonly visibleVersions = toSignal(this.visibleVersions$);
+
+  /** Only the selected versions the table shows, so that a bulk action never touches a row hidden by the filter. */
+  protected readonly selectedVersions = computed(() =>
+    (this.visibleVersions() ?? []).filter((version) => version.id && this.selectedVersionIds().has(version.id))
+  );
+  protected readonly isAllVersionsSelected = computed(() => {
+    const visibleCount = this.visibleVersions()?.length ?? 0;
+    return visibleCount > 0 && this.selectedVersions().length === visibleCount;
+  });
 
   protected readonly isChartNameColumnVisible = computed(
     () => this.application()?.versions?.some((version) => !!version.chartName) ?? false
@@ -456,21 +466,24 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   }
 
   async bulkArchiveVersions(app: Application) {
+    const versions = this.selectedVersions().filter((version) => !isArchived(version));
+    if (versions.length === 0) {
+      this.toast.info('All selected versions are already archived');
+      return;
+    }
     this.overlay
-      .confirm(`Really archive ${this.selectedVersionIds().size} versions? Existing deployments will continue to work.`)
+      .confirm(`Really archive ${versions.length} versions? Existing deployments will continue to work.`)
       .pipe(
         filter((it) => it === true),
         switchMap(() =>
           this.applicationService.patch(app.id!, {
-            versions: app?.versions
-              ?.filter((version) => this.isVersionSelected(version))
-              .map((version) => ({id: version.id!, archivedAt: new Date().toISOString()})),
+            versions: versions.map((version) => ({id: version.id!, archivedAt: new Date().toISOString()})),
           })
         )
       )
       .subscribe({
         next: () => {
-          this.toast.success(`${this.selectedVersionIds().size} archived`);
+          this.toast.success(`${versions.length} archived`);
           this.selectedVersionIds.set(new Set());
         },
         error: (e) => {
@@ -480,6 +493,63 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
           }
         },
       });
+  }
+
+  async deleteVersion(application: Application, version: ApplicationVersion) {
+    if (!(await firstValueFrom(this.overlay.confirm(`Really delete ${version.name}? This cannot be undone.`)))) {
+      return;
+    }
+    try {
+      await firstValueFrom(this.applicationService.deleteApplicationVersion(application, version));
+      this.selectedVersionIds.update((ids) => new Set([...ids].filter((id) => id !== version.id)));
+      this.toast.success(`${version.name} deleted`);
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    }
+  }
+
+  async bulkDeleteVersions(application: Application) {
+    const versions = this.selectedVersions();
+    if (
+      !(await firstValueFrom(
+        this.overlay.confirm({
+          message: {
+            message: `Really delete ${versions.length} versions? This cannot be undone.`,
+            alert: {
+              type: 'info',
+              message:
+                'Versions that a deployment uses or that are the only version of an entitlement will be skipped.',
+            },
+          },
+        })
+      ))
+    ) {
+      return;
+    }
+    try {
+      const failed = await this.applicationService.deleteApplicationVersions(application, versions);
+      this.selectedVersionIds.set(new Set());
+      const deletedCount = versions.length - failed.length;
+      if (deletedCount > 0) {
+        this.toast.success(`${deletedCount} deleted`);
+      }
+      const skippedByReason = new Map<string, string[]>();
+      for (const {version, error} of failed) {
+        const reason = getFormDisplayedError(error) ?? 'Unknown error';
+        skippedByReason.set(reason, [...(skippedByReason.get(reason) ?? []), version.name]);
+      }
+      for (const [reason, names] of skippedByReason) {
+        this.toast.error(`Skipped ${names.join(', ')}: ${reason}`);
+      }
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    }
   }
 
   async unArchiveVersion(application: Application, version: ApplicationVersion) {
@@ -557,12 +627,13 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
     }
 
     this.selectedVersionIds.update((ids) => {
-      if (this.isVersionSelected(version)) {
-        ids.delete(id);
-        return ids;
+      const next = new Set(ids);
+      if (next.has(id)) {
+        next.delete(id);
       } else {
-        return ids.add(id);
+        next.add(id);
       }
+      return next;
     });
   }
 
@@ -570,22 +641,14 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
     return version.id !== undefined && this.selectedVersionIds().has(version.id);
   }
 
-  protected toggleAllVersionsSelected(versions: ApplicationVersion[]) {
-    versions = versions.filter((version) => !isArchived(version));
-    if (this.isAllVersionsSelected(versions)) {
+  protected toggleAllVersionsSelected() {
+    if (this.isAllVersionsSelected()) {
       this.selectedVersionIds.set(new Set());
     } else {
-      this.selectedVersionIds.set(new Set(versions.map((v) => v.id).filter((id) => id !== undefined)));
+      this.selectedVersionIds.set(
+        new Set((this.visibleVersions() ?? []).map((v) => v.id).filter((id) => id !== undefined))
+      );
     }
-  }
-
-  protected isAllVersionsSelected(versions: ApplicationVersion[]): boolean {
-    versions = versions.filter((version) => !isArchived(version));
-    return (
-      this.selectedVersionIds().size > 0 &&
-      versions.length === this.selectedVersionIds().size &&
-      versions.every((version) => this.isVersionSelected(version))
-    );
   }
 
   toggleResourcePreview(index: number) {

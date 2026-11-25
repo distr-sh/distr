@@ -177,9 +177,11 @@ func GetRecentApplicationVersions(
 ) ([]types.ApplicationVersionEvent, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		`SELECT av.id, av.created_at, a.id AS application_id, a.name AS application_name, av.name
+		`SELECT av.id, av.created_at, a.id AS application_id, a.name AS application_name, av.name,
+			`+activityUserOutputExpr+` AS created_by
 		FROM Application a
 			JOIN ApplicationVersion av ON av.application_id = a.id
+			`+activityUserJoinExpr("av.created_by_user_account_id", "a.organization_id")+`
 		WHERE a.organization_id = @orgId
 			AND av.created_at > @since
 			AND av.archived_at IS NULL
@@ -274,22 +276,23 @@ func LockApplicationExclusive(ctx context.Context, applicationID uuid.UUID) erro
 func GetApplicationWithEntitlementOwnerID(
 	ctx context.Context,
 	customerOrganizationID uuid.UUID,
-	id uuid.UUID,
+	applicationID uuid.UUID,
 ) (*types.Application, error) {
 	db := internalctx.GetDb(ctx)
 	if rows, err := db.Query(ctx, `
 			SELECT DISTINCT `+applicationWithEntitledVersionsOutputExpr+`
 			FROM ApplicationEntitlement al
 				LEFT JOIN Application a ON al.application_id = a.id
-			WHERE al.customer_organization_id = @ownerID AND a.id = @id AND (al.expires_at IS NULL OR al.expires_at > now())
+			WHERE al.customer_organization_id = @customerOrganizationId
+				AND a.id = @applicationId
+				AND (al.expires_at IS NULL OR al.expires_at > now())
 			ORDER BY a.name
-			`, pgx.NamedArgs{"ownerID": customerOrganizationID, "id": id}); err != nil {
+			`, pgx.NamedArgs{"customerOrganizationId": customerOrganizationID, "applicationId": applicationID}); err != nil {
 		return nil, fmt.Errorf("failed to query applications: %w", err)
 	} else if applications, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.Application]); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, distrerr.ErrNotFound
-		}
 		return nil, fmt.Errorf("failed to get application: %w", err)
+	} else if len(applications) == 0 {
+		return nil, distrerr.ErrNotFound
 	} else {
 		return &mergeApplications(applications)[0], nil
 	}
@@ -395,6 +398,25 @@ func UpdateApplicationVersion(ctx context.Context, applicationVersion *types.App
 		*applicationVersion = updated
 		return nil
 	}
+}
+
+// DeleteApplicationVersion fails with distrerr.ErrConflict while a deployment revision references the version.
+func DeleteApplicationVersion(ctx context.Context, id uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	cmd, err := db.Exec(ctx, `DELETE FROM ApplicationVersion WHERE id = @id`, pgx.NamedArgs{"id": id})
+	if err != nil {
+		if isStillReferencedError(err) {
+			err = fmt.Errorf("%w: %w", distrerr.ErrConflict, err)
+		}
+	} else if cmd.RowsAffected() == 0 {
+		err = distrerr.ErrNotFound
+	}
+
+	if err != nil {
+		return fmt.Errorf("could not delete ApplicationVersion: %w", err)
+	}
+
+	return nil
 }
 
 func GetApplicationVersion(ctx context.Context, applicationVersionID uuid.UUID) (*types.ApplicationVersion, error) {

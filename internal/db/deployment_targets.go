@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/distrerr"
@@ -44,7 +45,10 @@ const (
 			dt.resources_cpu_limit,
 			dt.resources_memory_limit
 		) END,
-		dt.docker_endpoint
+		dt.docker_endpoint,
+		dt.pod_annotations,
+		dt.node_selector,
+		dt.tolerations
 	`
 	deploymentTargetOutputExpr = deploymentTargetOutputExprBase +
 		", CASE WHEN co.id IS NOT NULL THEN (" + customerOrganizationOutputExpr + ") END AS customer_organization"
@@ -136,6 +140,43 @@ func GetDeploymentTargetsByScope(
 			)
 		ORDER BY dt.name`,
 		pgx.NamedArgs{"orgID": orgID, "customerOrgID": customerOrgID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query DeploymentTargets: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.DeploymentTarget])
+	if err != nil {
+		return nil, fmt.Errorf("failed to get DeploymentTargets: %w", err)
+	}
+	return result, nil
+}
+
+// GetDeploymentTargetsCreatedSince returns the newest deployment targets the filter matches, at most limit of them.
+// Unlike in GetDeploymentTargets, a zero filter matches none.
+func GetDeploymentTargetsCreatedSince(
+	ctx context.Context,
+	orgID uuid.UUID,
+	filter DeploymentTargetFilter,
+	since time.Time,
+	limit int,
+) ([]types.DeploymentTarget, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT`+deploymentTargetOutputExprBase+`
+		FROM DeploymentTarget dt
+		WHERE dt.organization_id = @orgId
+			AND ((@filterInternal AND dt.customer_organization_id IS NULL)
+				OR dt.customer_organization_id = any(@filterCustomerOrgIds::uuid[]))
+			AND dt.created_at > @since
+		ORDER BY dt.created_at DESC
+		LIMIT @limit`,
+		pgx.NamedArgs{
+			"orgId":                orgID,
+			"filterInternal":       filter.Internal,
+			"filterCustomerOrgIds": filter.CustomerOrganizationIDs,
+			"since":                since,
+			"limit":                limit,
+		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query DeploymentTargets: %w", err)
@@ -253,6 +294,9 @@ func CreateDeploymentTarget(
 		"automaticUpdates":      dt.AutomaticUpdatesEnabled,
 		"customerOrgId":         customerOrgID,
 		"dockerEndpoint":        dt.DockerEndpoint,
+		"podAnnotations":        dt.PodAnnotations,
+		"nodeSelector":          dt.NodeSelector,
+		"tolerations":           dt.Tolerations,
 	}
 
 	if dt.Resources != nil {
@@ -269,11 +313,12 @@ func CreateDeploymentTarget(
 			(name, type, organization_id, namespace, scope, controller_version_id, metrics_enabled,
 				image_cleanup_enabled, deployment_logs_enabled, deployment_logs_after, autoheal_enabled,
 				automatic_updates_enabled, customer_organization_id, resources_cpu_request, resources_memory_request,
-				resources_cpu_limit, resources_memory_limit, docker_endpoint)
+				resources_cpu_limit, resources_memory_limit, docker_endpoint, pod_annotations, node_selector,
+				tolerations)
 			VALUES (@name, @type, @orgId, @namespace, @scope, @controllerVersionId, @metricsEnabled, @imageCleanupEnabled,
 				@deploymentLogsEnabled, @deploymentLogsAfter, @autohealEnabled, @automaticUpdates,
 				@customerOrgId, @resourcesCpuRequest, @resourcesMemoryRequest, @resourcesCpuLimit,
-				@resourcesMemoryLimit, @dockerEndpoint)
+				@resourcesMemoryLimit, @dockerEndpoint, @podAnnotations, @nodeSelector, @tolerations)
 			RETURNING *
 		)
 		SELECT `+deploymentTargetFullOutputExpr+` FROM inserted dt`+deploymentTargetJoinExpr,
@@ -304,6 +349,9 @@ func UpdateDeploymentTarget(ctx context.Context, dt *types.DeploymentTargetFull,
 		"deploymentLogsAfter":   dt.DeploymentLogsAfter,
 		"automaticUpdates":      dt.AutomaticUpdatesEnabled,
 		"dockerEndpoint":        dt.DockerEndpoint,
+		"podAnnotations":        dt.PodAnnotations,
+		"nodeSelector":          dt.NodeSelector,
+		"tolerations":           dt.Tolerations,
 	}
 	if dt.ControllerVersionID != nil {
 		args["controllerVersionId"] = dt.ControllerVersionID
@@ -328,7 +376,10 @@ func UpdateDeploymentTarget(ctx context.Context, dt *types.DeploymentTargetFull,
 				resources_cpu_limit = @cpuLimit,
 				resources_memory_request = @memoryRequest,
 				resources_memory_limit = @memoryLimit,
-				docker_endpoint = @dockerEndpoint `+controllerUpdateStr+`
+				docker_endpoint = @dockerEndpoint,
+				pod_annotations = @podAnnotations,
+				node_selector = @nodeSelector,
+				tolerations = @tolerations `+controllerUpdateStr+`
 			WHERE id = @id AND organization_id = @orgId RETURNING *
 		)
 		SELECT `+deploymentTargetFullOutputExpr+` FROM updated dt`+deploymentTargetJoinExpr,
