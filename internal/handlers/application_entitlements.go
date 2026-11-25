@@ -88,8 +88,6 @@ func createApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 		return invalidEntitlementApplication, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get application: %w", err)
-	} else if resp, err := checkEntitlementVersions(ctx, entitlement); resp != nil || err != nil {
-		return resp, err
 	} else if err := checkRegistryInput(&entitlement); err != nil {
 		return respond.BadRequest(err.Error()), nil
 	} else if err := checkAutoAddVersionRegex(&entitlement); err != nil {
@@ -97,6 +95,8 @@ func createApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 	} else if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 		if err := db.LockApplicationExclusive(ctx, entitlement.ApplicationID); err != nil {
 			return nil, err
+		} else if resp, err := checkEntitlementVersions(ctx, entitlement); resp != nil || err != nil {
+			return resp, err
 		} else if err := db.CreateApplicationEntitlement(
 			ctx, &entitlement.ApplicationEntitlementBase,
 		); errors.Is(err, distrerr.ErrConflict) {
@@ -180,8 +180,6 @@ func updateApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 		return respond.BadRequest("Changing the application is not allowed"), nil
 	} else if _, resp, err := customerScope(ctx, entitlement.CustomerOrganizationID); resp != nil || err != nil {
 		return resp, err
-	} else if resp, err := checkEntitlementVersions(ctx, entitlement); resp != nil || err != nil {
-		return resp, err
 	} else if err := checkRegistryInput(&entitlement); err != nil {
 		return respond.BadRequest(err.Error()), nil
 	} else if err := checkAutoAddVersionRegex(&entitlement); err != nil {
@@ -196,6 +194,8 @@ func updateApplicationEntitlement(r *http.Request) (respond.Responder, error) {
 	if resp, err := runTx(ctx, func(ctx context.Context) (respond.Responder, error) {
 		if err := db.LockApplicationExclusive(ctx, entitlement.ApplicationID); err != nil {
 			return nil, err
+		} else if resp, err := checkEntitlementVersions(ctx, entitlement); resp != nil || err != nil {
+			return resp, err
 		}
 		// The entitlement read by the middleware can be stale by now, since creating or renaming a version adds it
 		// to matching entitlements while holding the same lock.
