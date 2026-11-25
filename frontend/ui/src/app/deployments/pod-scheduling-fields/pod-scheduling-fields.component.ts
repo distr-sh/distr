@@ -1,6 +1,6 @@
 import {Component, input} from '@angular/core';
 import {ReactiveFormsModule} from '@angular/forms';
-import {PodSchedulingFormGroup} from '../../../util/pod-scheduling';
+import {PodSchedulingFormGroup} from './pod-scheduling';
 
 @Component({
   selector: 'app-pod-scheduling-fields',

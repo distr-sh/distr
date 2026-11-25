@@ -26,7 +26,6 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faAddressBook, faCircleCheck, faShip, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, distinctUntilChanged, firstValueFrom, map, of, switchMap, take} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
-import {podSchedulingFormGroup, podSchedulingFromForm} from '../../../util/pod-scheduling';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {
   DOCKER_ENDPOINT_REGEX,
@@ -50,6 +49,7 @@ import {OrganizationService} from '../../services/organization.service';
 import {ToastService} from '../../services/toast.service';
 import {UNLIMITED_QTY} from '../../types/subscription';
 import {DeploymentFormComponent, mapToDeploymentRequest} from '../deployment-form/deployment-form.component';
+import {podSchedulingFormGroup, podSchedulingFromForm} from '../pod-scheduling-fields/pod-scheduling';
 import {PodSchedulingFieldsComponent} from '../pod-scheduling-fields/pod-scheduling-fields.component';
 import {DeploymentQuotaComponent} from './deployment-quota.component';
 import {DeploymentWizardStepperComponent} from './deployment-wizard-stepper.component';

@@ -50,12 +50,6 @@ import {GITHUB_URL, WEBSITE_URL} from '../../../constants';
 import {controllerChangelog} from '../../../data';
 import {dateTimeLocalToISO, isoToDateTimeLocal} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
-import {
-  hasPodScheduling,
-  podSchedulingFormGroup,
-  podSchedulingFromForm,
-  podSchedulingToForm,
-} from '../../../util/pod-scheduling';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {DOCKER_ENDPOINT_REGEX, RESOURCE_QUANTITY_REGEX} from '../../../util/validation';
 import {
@@ -82,6 +76,12 @@ import {DeploymentTargetLatestMetrics} from '../../types/deployment-target-metri
 import {DeploymentModalComponent} from '../deployment-modal.component';
 import {DeploymentRevisionDetailsComponent} from '../deployment-revisions/deployment-revision-details.component';
 import {DeploymentRevisionsTimelineComponent} from '../deployment-revisions/deployment-revisions-timeline.component';
+import {
+  hasPodScheduling,
+  podSchedulingFormGroup,
+  podSchedulingFromForm,
+  podSchedulingToForm,
+} from '../pod-scheduling-fields/pod-scheduling';
 import {PodSchedulingFieldsComponent} from '../pod-scheduling-fields/pod-scheduling-fields.component';
 import {DeploymentAppNameComponent} from './deployment-app-name.component';
 import {DeploymentResourceMetricsComponent} from './deployment-resource-metrics.component';
