@@ -191,6 +191,7 @@ sources = ["api/**/*.go", "cmd/**/*.go", "internal/**/*.go"]
 outputs = []
 
 [tasks.serve]
+alias = "start"
 run = {tasks = ["distr serve"]}
 description = "Shorthand for 'mise run distr serve'"
 
