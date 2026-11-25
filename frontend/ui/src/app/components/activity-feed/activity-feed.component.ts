@@ -21,7 +21,7 @@ import {never} from '../../../util/exhaust';
 import {CustomerHomeCollapsibleComponent} from '../../home/customer/customer-home-collapsible.component';
 import {organizationSettingsTabs} from '../../organization-settings/organization-settings-navigation';
 import {AuthService} from '../../services/auth.service';
-import {actorAuthor, Author, AuthorContext, AuthorService} from '../../services/author.service';
+import {actorAuthor, Author, AuthorService} from '../../services/author.service';
 import {AvatarComponent} from '../avatar.component';
 import {CardHeadingComponent} from '../card-heading.component';
 import {CustomerDetailTabId} from '../customer-organizations/detail/customer-detail-navigation';
@@ -102,26 +102,11 @@ export class ActivityFeedComponent {
       ...(customerOrganizationId === undefined
         ? link(activity, viewer, permissions)
         : customerTabLink(activity, viewer, permissions, customerOrganizationId)),
-      user: author(activity, viewer, authorContext),
+      user: actorAuthor(activity.user, authorContext),
       customerName: shouldShowCustomer ? activity.customer?.name : undefined,
       partnerName: viewer === 'vendor' ? activity.partner?.name : undefined,
     }));
   });
-}
-
-function author(activity: ActivityFeedItem, viewer: ActivityFeedViewer, context: AuthorContext): Author | undefined {
-  if (activity.user) {
-    return actorAuthor(activity.user, context);
-  }
-  switch (activity.type) {
-    // These entries record no user, so a customer sees them as the vendor's.
-    case 'application_version_created':
-    case 'license_key_created':
-    case 'license_key_updated':
-      return viewer === 'customer' ? context.vendor : undefined;
-    default:
-      return undefined;
-  }
 }
 
 function icon({type}: ActivityFeedItem): IconDefinition {

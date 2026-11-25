@@ -94,6 +94,7 @@ func ApplicationVersions(versions []types.ApplicationVersionEvent) []Entry {
 			ResourceName: version.ApplicationName,
 			Subject:      version.ApplicationName,
 			Detail:       new(version.Name),
+			User:         version.CreatedBy,
 		}
 	}
 	return result

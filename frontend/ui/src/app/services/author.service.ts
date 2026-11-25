@@ -60,7 +60,10 @@ export class AuthorService {
  * organization: the partner if it is the viewer's own or the one the viewer's customer organization is assigned to,
  * the vendor otherwise. A deleted user stays anonymous.
  */
-export function actorAuthor(actor: Actor, context: AuthorContext): Author | undefined {
+export function actorAuthor(actor: Actor | undefined, context: AuthorContext): Author | undefined {
+  if (!actor) {
+    return undefined;
+  }
   if (actor.name) {
     return {name: actor.name, imageUrl: actor.imageUrl};
   }
