@@ -561,6 +561,23 @@ func ClearSupportBundleBundleSecret(ctx context.Context, bundleID uuid.UUID) err
 	return nil
 }
 
+// FinalizeSupportBundle keeps the bundle secret of a bundle without resources, so that the customer
+// can run the collect command again after a run that uploaded nothing.
+func FinalizeSupportBundle(ctx context.Context, bundleID uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	if _, err := db.Exec(
+		ctx,
+		`UPDATE SupportBundle
+		SET bundle_secret_expires_at = NULL
+		WHERE id = @id
+			AND EXISTS (SELECT 1 FROM SupportBundleResource WHERE support_bundle_id = @id)`,
+		pgx.NamedArgs{"id": bundleID},
+	); err != nil {
+		return fmt.Errorf("could not finalize support bundle: %w", err)
+	}
+	return nil
+}
+
 func RenewSupportBundleBundleSecret(
 	ctx context.Context,
 	bundle *types.SupportBundle,

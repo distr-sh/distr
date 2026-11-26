@@ -157,7 +157,7 @@ func finalizeSupportBundleHandler(r *http.Request) (respond.Responder, error) {
 
 	if bundle.Status != types.SupportBundleStatusOpen {
 		return respond.BadRequest("support bundle is not open"), nil
-	} else if err := db.ClearSupportBundleBundleSecret(ctx, bundle.ID); err != nil {
+	} else if err := db.FinalizeSupportBundle(ctx, bundle.ID); err != nil {
 		return nil, fmt.Errorf("failed to finalize support bundle: %w", err)
 	} else {
 		return respond.NoContent(), nil
