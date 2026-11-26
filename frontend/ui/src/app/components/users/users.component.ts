@@ -21,11 +21,13 @@ import {filteredByFormControl} from '../../../util/filter';
 import {UserRoleLabelPipe} from '../../../util/user-role';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {PlaceholderDirective} from '../../directives/placeholder.directive';
+import {canOpenSubscription} from '../../organization-settings/subscription/subscription.guard';
 import {AuthService} from '../../services/auth.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
 import {ImageUploadService} from '../../services/image-upload.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
+import {SubscriptionQuantityService} from '../../services/subscription-quantity.service';
 import {ToastService} from '../../services/toast.service';
 import {isInviteMailNotSentError, UsersService} from '../../services/users.service';
 import {AlertComponent} from '../alert/alert.component';
@@ -65,6 +67,7 @@ export class UsersComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly organizationService = inject(OrganizationService);
   private readonly overlay = inject(OverlayService);
+  private readonly subscriptionQuantityService = inject(SubscriptionQuantityService);
   private readonly imageUploadService = inject(ImageUploadService);
   protected readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder).nonNullable;
@@ -135,6 +138,23 @@ export class UsersComponent {
     return org.currentBillableUserAccountCount;
   });
 
+  private readonly quota = viewChild.required(QuotaLimitComponent);
+  private readonly isVendorUserQuantity = computed(
+    () => this.customerOrganizationId() === undefined && this.auth.isVendor()
+  );
+  private readonly canOpenSubscription = toSignal(canOpenSubscription(), {initialValue: false});
+  private readonly canIncreaseQuantity = computed(() => this.isVendorUserQuantity() && this.canOpenSubscription());
+  protected readonly isInviteBlocked = computed(() => this.quota().isLimitReached() && !this.canIncreaseQuantity());
+  protected readonly inviteBlockedReason = computed(() => {
+    if (!this.isInviteBlocked()) {
+      return '';
+    } else if (this.isVendorUserQuantity()) {
+      return 'User limit reached. Ask an administrator of your organization to increase the subscription quantity on the Subscription page.';
+    } else {
+      return 'Limit reached';
+    }
+  });
+
   protected readonly isUserRolesEnabled = inject(FeatureFlagService).isUserRolesEnabled;
 
   protected readonly editRoleUserId = signal<string | null>(null);
@@ -143,7 +163,13 @@ export class UsersComponent {
     userRole: this.fb.control<UserRole>('admin', Validators.required),
   });
 
-  public showInviteDialog(): void {
+  public async showInviteDialog(): Promise<void> {
+    if (
+      this.quota().isLimitReached() &&
+      (!this.canIncreaseQuantity() || !(await this.subscriptionQuantityService.increase(this.overlay, 'user')))
+    ) {
+      return;
+    }
     this.closeInviteDialog();
     this.modalRef = this.overlay.showModal(this.inviteUserDialog());
   }

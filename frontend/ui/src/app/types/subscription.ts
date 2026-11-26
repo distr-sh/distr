@@ -53,6 +53,25 @@ export function subscriptionRank(subscriptionType: SubscriptionType, subscriptio
 
 export type SubscriptionPeriod = 'monthly' | 'yearly';
 
+export function subscriptionPrice(
+  subscriptionType: SubscriptionType,
+  subscriptionPeriod: SubscriptionPeriod,
+  userQty: number,
+  customerQty: number
+): number {
+  let userPrice = 0;
+  let customerPrice = 0;
+
+  if (subscriptionType === 'pro') {
+    userPrice = subscriptionPeriod === 'monthly' ? 29 : 288;
+    customerPrice = subscriptionPeriod === 'monthly' ? 69 : 672;
+  } else if (subscriptionType === 'business') {
+    userPrice = subscriptionPeriod === 'monthly' ? 39 : 384;
+    customerPrice = subscriptionPeriod === 'monthly' ? 159 : 1536;
+  }
+  return userPrice * userQty + customerPrice * customerQty;
+}
+
 export interface SubscriptionLimits {
   maxCustomerOrganizations: number;
   maxUsersPerCustomerOrganization: number;

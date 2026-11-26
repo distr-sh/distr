@@ -11,6 +11,7 @@ import {syncSearchWithQueryParam} from '../../../util/filter';
 import {refreshInBackground} from '../../../util/refresh';
 import {ClickableRowDirective} from '../../directives/clickable-row.directive';
 import {customerLicenseStatusSelectOptions, isCustomerLicenseStatus} from '../../licenses/customer-license-status';
+import {canOpenSubscription} from '../../organization-settings/subscription/subscription.guard';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
 import {ArtifactPullsService} from '../../services/artifact-pulls.service';
@@ -21,6 +22,7 @@ import {FeatureFlagService} from '../../services/feature-flag.service';
 import {LicensesService} from '../../services/licenses.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
+import {SubscriptionQuantityService} from '../../services/subscription-quantity.service';
 import {SupportBundlesService} from '../../services/support-bundles.service';
 import {AlertComponent} from '../alert/alert.component';
 import {AvatarComponent} from '../avatar.component';
@@ -75,6 +77,7 @@ export class CustomerOrganizationsComponent {
   private readonly licensesService = inject(LicensesService);
   private readonly supportBundlesService = inject(SupportBundlesService);
   private readonly overlay = inject(OverlayService);
+  private readonly subscriptionQuantityService = inject(SubscriptionQuantityService);
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly organizationService = inject(OrganizationService);
   protected readonly featureFlags = inject(FeatureFlagService);
@@ -84,6 +87,9 @@ export class CustomerOrganizationsComponent {
   protected readonly currentCustomerOrganizationCount = computed(
     () => this.organization()?.currentCustomerOrganizationCount
   );
+  private readonly quota = viewChild.required(QuotaLimitComponent);
+  private readonly canOpenSubscription = toSignal(canOpenSubscription(), {initialValue: false});
+  protected readonly isCreateBlocked = computed(() => this.quota().isLimitReached() && !this.canOpenSubscription());
 
   private readonly route = inject(ActivatedRoute);
   private readonly queryParams = toSignal(this.route.queryParamMap, {requireSync: true});
@@ -205,7 +211,10 @@ export class CustomerOrganizationsComponent {
     this.router.navigate([], {relativeTo: this.route, queryParams, queryParamsHandling: 'merge', replaceUrl: true});
   }
 
-  protected showCreateDialog() {
+  protected async showCreateDialog() {
+    if (this.quota().isLimitReached() && !(await this.subscriptionQuantityService.increase(this.overlay, 'customer'))) {
+      return;
+    }
     this.closeCreateDialog();
     this.modalRef = this.overlay.showModal(this.createCustomerDialog());
   }

@@ -31,6 +31,7 @@ import {
   isExpiredSubscription,
   SubscriptionInfo,
   SubscriptionPeriod,
+  subscriptionPrice,
   SubscriptionType,
   UNLIMITED_QTY,
 } from '../../types/subscription';
@@ -90,7 +91,8 @@ export class SubscriptionComponent implements OnInit {
   private readonly overlay = inject(OverlayService);
   private readonly fb = inject(NonNullableFormBuilder);
 
-  protected readonly isSubscriptionExpired = inject(OrganizationService).isSubscriptionExpired;
+  private readonly organizationService = inject(OrganizationService);
+  protected readonly isSubscriptionExpired = this.organizationService.isSubscriptionExpired;
   protected readonly isPartnerManagementEnabled = inject(FeatureFlagService).isPartnerManagementEnabled;
 
   protected subscriptionInfo = signal<SubscriptionInfo | undefined>(undefined);
@@ -199,26 +201,7 @@ export class SubscriptionComponent implements OnInit {
     const userQty = values.userAccountQuantity;
     const customerQty = values.customerOrganizationQuantity;
 
-    return this.calculatePrice(subscriptionType, subscriptionPeriod, userQty, customerQty);
-  }
-
-  calculatePrice(
-    subscriptionType: SubscriptionType,
-    subscriptionPeriod: SubscriptionPeriod,
-    userQty: number,
-    customerQty: number
-  ) {
-    let userPrice = 0;
-    let customerPrice = 0;
-
-    if (subscriptionType === 'pro') {
-      userPrice = subscriptionPeriod === 'monthly' ? 29 : 288;
-      customerPrice = subscriptionPeriod === 'monthly' ? 69 : 672;
-    } else if (subscriptionType === 'business') {
-      userPrice = subscriptionPeriod === 'monthly' ? 39 : 384;
-      customerPrice = subscriptionPeriod === 'monthly' ? 159 : 1536;
-    }
-    return userPrice * userQty + customerPrice * customerQty;
+    return subscriptionPrice(subscriptionType, subscriptionPeriod, userQty, customerQty);
   }
 
   async checkout() {
@@ -278,6 +261,9 @@ export class SubscriptionComponent implements OnInit {
   onModalConfirmed(updatedInfo: SubscriptionInfo) {
     this.subscriptionInfo.set(updatedInfo);
     this.hideModal();
+    if (!this.pendingUpdate()?.subscriptionType) {
+      this.organizationService.reload();
+    }
   }
 
   hideModal() {
@@ -289,7 +275,7 @@ export class SubscriptionComponent implements OnInit {
       return 0;
     }
 
-    return this.calculatePrice(
+    return subscriptionPrice(
       info.subscriptionType,
       info.subscriptionPeriod,
       info.subscriptionUserAccountQuantity,
@@ -350,7 +336,7 @@ export class SubscriptionComponent implements OnInit {
         userAccountQuantity: values.userAccountQuantity,
         customerOrganizationQuantity: values.customerOrganizationQuantity,
         oldPrice: this.calculatePriceFor(info),
-        newPrice: this.calculatePrice(
+        newPrice: subscriptionPrice(
           'business',
           info.subscriptionPeriod,
           values.userAccountQuantity,

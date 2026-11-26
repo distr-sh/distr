@@ -23,12 +23,16 @@
         }
       </div>
       <div class="distr-toolbar-actions">
-        <app-quota-limit [usage]="currentCustomerOrganizationCount()" [limit]="limit()" label="customers" #quota />
+        <app-quota-limit [usage]="currentCustomerOrganizationCount()" [limit]="limit()" label="customers" />
         @if (auth.hasAnyRole('read_write', 'admin')) {
           <button
             (click)="showCreateDialog()"
-            [disabled]="quota.isLimitReached()"
-            [title]="quota.isLimitReached() ? 'Customer limit reached' : 'Create Customer'"
+            [disabled]="isCreateBlocked()"
+            [title]="
+              isCreateBlocked()
+                ? 'Customer limit reached. Ask an administrator of your organization to increase the subscription quantity on the Subscription page.'
+                : 'Create Customer'
+            "
             type="button"
             id="createCustomerButton"
             class="distr-btn-secondary flex w-full items-center justify-center px-4 py-2 text-sm font-medium md:w-auto">
