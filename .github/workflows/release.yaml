@@ -1,28 +1,61 @@
-name: Release Please
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: Release
 
 on:
   push:
-    branches:
-      - main
-      - v*.*.x
-  workflow_dispatch:
+    tags:
+      - '*'
 
 jobs:
-  release-please:
-    timeout-minutes: 1
+  build-distr:
+    name: Build Distr
+    uses: ./.github/workflows/build-distr.yaml
+    secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+
+  build-controllers:
+    name: Build Controllers
+    uses: ./.github/workflows/build-controller.yaml
+    secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+
+  create-version:
+    name: Create version (${{ matrix.application.name }})
+    # The versions reference the distr-ee image and hand out the controller images.
+    needs:
+      - build-distr
+      - build-controllers
+    if: ${{ !contains(github.ref_name, '-rc.') }}
+    timeout-minutes: 5
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
-    outputs:
-      releases_created: ${{ steps.release-please.outputs.releases_created }}
-      tag_name: ${{ steps.release-please.outputs.tag_name }}
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        application:
+          - name: enterprise
+            id: ${{ vars.DISTR_ENTERPRISE_APPLICATION_ID }}
+          - name: enterprise-aws
+            id: ${{ vars.DISTR_ENTERPRISE_AWS_APPLICATION_ID }}
+          - name: enterprise-gcp
+            id: ${{ vars.DISTR_ENTERPRISE_GCP_APPLICATION_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Release Please
-        id: release-please
-        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+      - name: Create Distr version
+        uses: distr-sh/distr-create-version-action@13a9244a46f3d9019f1e2a6c0063f88908fafff3 # v1.6.2
         with:
-          token: ${{ secrets.GLASSKUBE_BOT_SECRET }}
-          target-branch: ${{ github.ref_name }}
+          api-token: ${{ secrets.DISTR_TOKEN }}
+          application-id: ${{ matrix.application.id }}
+          version-name: ${{ github.ref_name }}
+          compose-file: ${{ github.workspace }}/deploy/docker/${{ matrix.application.name }}/docker-compose.yaml
+          template-file: ${{ github.workspace }}/deploy/docker/${{ matrix.application.name }}/.env
+          link-template: '{{ .Env.DISTR_HOST }}'
