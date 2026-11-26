@@ -337,11 +337,11 @@ func GetCustomerSupportBundleEvents(
 			SELECT sb.id, sb.customer_organization_id, r.uploaded_at, sb.title, 'uploaded',
 				`+activityUserOutputExpr+`
 			FROM SupportBundle sb
-				INNER JOIN (
-					SELECT support_bundle_id, max(created_at) AS uploaded_at
+				CROSS JOIN LATERAL (
+					SELECT max(created_at) AS uploaded_at
 					FROM SupportBundleResource
-					GROUP BY support_bundle_id
-				) r ON r.support_bundle_id = sb.id
+					WHERE support_bundle_id = sb.id
+				) r
 				`+activityUserJoinExpr("NULL::UUID", "sb.organization_id")+`
 			WHERE sb.organization_id = @orgId
 				AND sb.customer_organization_id = any(@customerOrgIds)
