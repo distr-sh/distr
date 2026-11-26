@@ -1,6 +1,6 @@
 ---
 title: Deployment Controllers
-description: 'Overview of Distr deployment controllers: what they are, how they work, and how to manage them from the Vendor Portal.'
+description: 'Overview of Distr deployment controllers: what they are, how they work and how to manage them from the Vendor Portal.'
 slug: docs/controllers
 sidebar:
   label: Deployment Controllers
@@ -17,15 +17,15 @@ import controllerDeploymentDark from '~/assets/docs/controllers/overview/deploym
 Deployment controllers run inside customer environments alongside vendor applications. They connect Distr to deployment targets and manage the full deployment lifecycle while requiring minimal access to customer infrastructure.
 
 <Aside type="note">
-  Deployment controllers are the key components that enable the [Assisted
+  Deployment controllers are the components that enable the [Assisted
   Self-Managed Customer](/docs/use-cases/assisted-self-managed/) and
   [BYOC](/glossary/byoc-definition/) use cases.
 </Aside>
 
 Distr provides two deployment controllers:
 
-- **[Docker Controller](/docs/controllers/docker-controller/)**: manages Docker Compose deployments on any Linux host. Handles updates, environment variables, container health, and supports Docker Swarm mode.
-- **[Kubernetes Controller](/docs/controllers/kubernetes-controller/)**: manages Helm chart deployments in Kubernetes clusters. Supports cluster- and namespace-scoped permissions, value overrides, and migration of existing releases.
+- **[Docker Controller](/docs/controllers/docker-controller/)**: manages Docker Compose deployments on any Linux host. Handles updates, environment variables and container health, and supports Docker Swarm mode.
+- **[Kubernetes Controller](/docs/controllers/kubernetes-controller/)**: manages Helm chart deployments in Kubernetes clusters. Supports cluster- and namespace-scoped permissions, value overrides and migration of existing releases.
 
 For [BYOC](/docs/use-cases/byoc-bring-your-own-cloud/) and other Terraform use cases, the [infrastructure controllers](/docs/controllers/infrastructure-controllers/) provision the infrastructure your application runs on. They are not a third deployment target type: you release one as a regular Distr application, and the Docker or Kubernetes controller deploys it.
 
@@ -47,7 +47,7 @@ Two pages of the Vendor Portal work with the Distr controllers: **Applications**
   alt="Applications page listing Docker and Kubernetes applications with their number of versions"
 />
 
-The Applications section is where you define your software offerings: Docker Compose files or Helm charts, environment variable templates, and application versions. This is the foundation for all deployments.
+The Applications section is where you define your software offerings: Docker Compose files or Helm charts, environment variable templates and application versions. This is the foundation for all deployments.
 
 - [Create an Application](/docs/controllers/application/): set up Docker and Helm applications
 - [Create a Deployment](/docs/controllers/deployment/): deploy applications to customer environments
@@ -62,7 +62,7 @@ The Applications section is where you define your software offerings: Docker Com
 
 The Deployments page shows every deployment target as a card with the status of each deployment. Targets with [metrics reporting](/docs/controllers/logs-and-metrics/#enabling-metrics) enabled also show the CPU and memory usage of the host or cluster. Filter it by customer, application or status to find the targets that need attention, and open a target to view its logs.
 
-For status indicators, log collection, and metrics, see [Logs & Metrics](/docs/controllers/logs-and-metrics/).
+For status indicators, log collection and metrics, see [Logs & Metrics](/docs/controllers/logs-and-metrics/).
 
 ### Deployment Target Menu
 
@@ -80,4 +80,4 @@ Each deployment target card has a **⋮** (vertical ellipsis) menu in its top-ri
 
 Every deployment target runs a specific controller version, and each Distr instance ships the controller version that matches it. When a target is on an older version, the **Update Controller** action assigns it the version of that instance. The controller notices the change the next time it polls Distr and updates itself. Updating a controller does not restart the deployed application.
 
-Controllers can also update themselves without any interaction. When **automatic controller updates** are enabled for a target, Distr assigns it the current controller version on every start, so upgrading Distr updates those controllers along with it. The option can be set per target when creating a deployment, in the target settings, and in the **Update Controller** dialog. It is enabled by default for new deployment targets and disabled for targets that existed before the option was introduced.
+Controllers can also update themselves without any interaction. When **automatic controller updates** are enabled for a target, Distr assigns it the current controller version on every start, so upgrading Distr updates those controllers along with it. The option can be set per target when creating a deployment, in the target settings and in the **Update Controller** dialog. It is enabled by default for new deployment targets and disabled for targets that existed before the option was introduced.

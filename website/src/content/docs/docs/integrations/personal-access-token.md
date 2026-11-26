@@ -45,7 +45,7 @@ We recommend creating dedicated lower-privilege tokens for automation that does 
 
 ## A token's page
 
-Click **Details / Edit** next to a token to open its page. It shows when the access token was created and the role it acts under, and below that the tokens issued for it, each with its own prefix and the time it was created, expires and was last used. The prefix lets you tell which of your tokens a client is configured with, and only the beginning of it is shown, because a legacy token is nothing but its prefix.
+Click a token in the list to open its page. It shows when the access token was created and the role it acts under, and below that the tokens issued for it, each with its own prefix and the time it was created, expires and was last used. The prefix lets you tell which of your tokens a client is configured with, and only the beginning of it is shown, because a legacy token is nothing but its prefix.
 
 An access token can have at most two tokens at a time. That second slot exists so that you can rotate without downtime, and **Add token** is unavailable while both are in use. An access token expires when the last token issued for it does, because every token that is still valid authenticates it.
 
@@ -57,7 +57,7 @@ Both of an access token's two tokens can be valid at the same time, so that you 
 
 To rotate a token:
 
-1. Click **Add token** on the access token's page and pick the expiry date of the new one. Distr shows you the new token, which is the same prefix with a new second part. Note it down, it is only shown once.
+1. Click **Add token** on the access token's page and pick the expiry date of the new one. Distr shows you the new token, which is the same prefix with a new second part. Note it down, since it is only shown once.
 2. Roll it out everywhere the old one is in use. The "last used" timestamp of the old token tells you whether anything is still authenticating with it.
 3. Delete the old token once its "last used" timestamp stops moving.
 
@@ -73,10 +73,10 @@ A legacy token counts towards the two an access token can have, so you can add e
 
 Migrating is not optional forever: a legacy token that was issued without an expiry date was given one 90 days out when your instance introduced this format, and it stops working on that date whether or not it has been migrated by then.
 
-The two differ in the prefix they start with, because a legacy token is in the hex encoding it was issued in and the new one in the encoding the current format uses. The token's page shows the prefix per entry for exactly that reason.
+A legacy token and the token that replaces it differ in the prefix they start with, because a legacy token is in the hex encoding it was issued in and the new one in the encoding the current format uses. The token's page shows the prefix per entry for exactly that reason.
 
 ## Deleting Personal Access Tokens
 
-On the same page you are also able to delete tokens. Click on the trash icon next to the token you want to delete and confirm the action.
+You can also delete tokens on the same page. Click on the trash icon next to the token you want to delete and confirm the action.
 
 Note that any application using this token will no longer be able to authenticate with the Distr API.

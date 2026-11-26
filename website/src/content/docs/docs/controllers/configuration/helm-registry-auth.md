@@ -11,8 +11,8 @@ Distr is an [OCI artifact registry](/glossary/oci-container-artifact-registry/) 
 As such, it can be used to host container images, [Helm charts](/glossary/helm-chart/) and many other types of artifact.
 Distr requires authentication to access the registry API, but our controllers can inject the relevant credentials where they are needed.
 
-A common use-case is to host both a Helm chart and related container images on Distr.
-In this case the controller has to create a `Secret` resource in the same namespace as the helm release and supply that as an image pull secret to workloads created as part of the Helm release.
+A common use case is to host both a Helm chart and related container images on Distr.
+In this case the controller has to create a `Secret` resource in the same namespace as the Helm release and supply that as an image pull secret to workloads created as part of the Helm release.
 To take advantage of this feature, you have to include one or more `imagePullSecrets` or `pullSecrets` entries in the values.yaml field of your application version where you want the controller to inject the secret name. For example:
 
 ```yaml

@@ -99,7 +99,7 @@ See [Security & Encryption](/docs/self-hosting/security#key-management-service) 
 ## Bot Protection
 
 Registrations can optionally be protected with a [Cloudflare Turnstile](https://www.cloudflare.com/products/turnstile/)
-widget, which blocks automated sign-ups without asking users to solve a puzzle. It is disabled unless **both**
+widget, which blocks automated sign-ups without asking users to solve a puzzle. It is disabled unless both
 variables below are set: the site key renders the widget in the browser and the secret verifies its token on the
 server, so a half-configured widget could only ever reject valid registrations. Distr logs a warning and stays
 unprotected when just one of them is present.
@@ -343,7 +343,7 @@ These values are injected into the compiled frontend at runtime.
 | Variable                            | Required | Default | Description                                       |
 | ----------------------------------- | -------- | ------- | ------------------------------------------------- |
 | `FRONTEND_SENTRY_DSN`               | no       | —       | Sentry DSN for frontend error reporting.          |
-| `FRONTEND_SENTRY_TRACE_SAMPLE_RATE` | no       | —       | Frontend trace sample rate (`0.0`–`1.0`).         |
+| `FRONTEND_SENTRY_TRACE_SAMPLE_RATE` | no       | —       | Frontend trace sample rate (`0.0` to `1.0`).      |
 | `FRONTEND_POSTHOG_TOKEN`            | no       | —       | PostHog project API token for frontend analytics. |
 | `FRONTEND_POSTHOG_API_HOST`         | no       | —       | PostHog API host.                                 |
 | `FRONTEND_POSTHOG_UI_HOST`          | no       | —       | PostHog UI host.                                  |

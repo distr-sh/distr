@@ -67,15 +67,13 @@ With `visibleToCustomers` (defaults to `true`) you control whether a resource is
 
 ### Complete Setup Guide
 
-For a step-by-step guide covering:
+The [Automatic Deployments from GitHub](/docs/integrations/github-actions/) guide covers these topics step by step:
 
 - Creating your application in Distr
 - Setting up Personal Access Tokens
 - Configuring GitHub secrets and variables
 - Setting up automatic deployment updates
 - Troubleshooting and advanced scenarios
-
-See the **[Automatic Deployments from GitHub](/docs/integrations/github-actions/)** guide.
 
 ### Additional Resources
 

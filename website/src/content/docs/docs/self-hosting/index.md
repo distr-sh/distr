@@ -7,9 +7,9 @@ sidebar:
 ---
 
 While the easiest way to use Distr is to use our [hosted offering](/onboarding/), self-hosting is also an option.
-The free and open source Community Edition is the perfect option to try Distr locally on your own machine.
+The free and open source Community Edition is a good way to try Distr locally on your own machine.
 
-Distr comes as a statically compiled Go binary packaged as a container image, and has minimal dependencies:
+Distr comes as a statically compiled Go binary packaged as a container image and has few dependencies:
 
 - A PostgreSQL 18+ database
 - Loki for log processing
@@ -17,7 +17,7 @@ Distr comes as a statically compiled Go binary packaged as a container image, an
 
 Before you get started, review the [System Requirements](/docs/self-hosting/system-requirements/) to make sure your environment is sized correctly.
 
-Check out our [Docker Compose](/docs/self-hosting/docker/) or [Kubernetes](/docs/self-hosting/kubernetes/) deployment options, or find out more information about the inner workings of Distr at [`github.com/distr-sh/distr`](https://github.com/distr-sh/distr/).
+See the [Docker Compose](/docs/self-hosting/docker/) and [Kubernetes](/docs/self-hosting/kubernetes/) deployment options, or find out more about the inner workings of Distr at [`github.com/distr-sh/distr`](https://github.com/distr-sh/distr/).
 
 ## Configuration
 
@@ -55,7 +55,7 @@ also contains the full license texts of the Go modules and npm packages in `/usr
 
 ## Semantic Versioning
 
-We are using [semantic versioning](https://semver.org/) for the releases of Distr, the Distr Controllers and the Distr SDKs.
+We use [semantic versioning](https://semver.org/) for the releases of Distr, the Distr Controllers and the Distr SDKs.
 
 ## Changelog
 

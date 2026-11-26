@@ -1,6 +1,6 @@
 ---
 title: Kubernetes Controller
-description: 'How the Distr Kubernetes controller works: installation, core loop, OCI registry authentication, self-updates, migrating existing releases, and uninstallation.'
+description: 'How the Distr Kubernetes controller works: installation, core loop, OCI registry authentication, self-updates, migrating existing releases and uninstallation.'
 slug: docs/controllers/kubernetes-controller
 sidebar:
   label: Kubernetes Controller
@@ -9,7 +9,7 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 
-The Kubernetes controller manages Kubernetes deployments, handling the complete lifecycle of Helm charts in customer environments. It installs and upgrades charts, monitors Kubernetes resource health, supports customer-specific value overrides, and provides rollback capabilities for failed deployments.
+The Kubernetes controller manages Kubernetes deployments and handles the complete lifecycle of Helm charts in customer environments. It installs and upgrades charts, monitors Kubernetes resource health, supports customer-specific value overrides and can roll back failed deployments.
 
 The [architecture diagram](/docs/controllers/security/kubernetes/#architecture) shows the connections the controller opens, how it runs in the cluster and what it never does.
 
@@ -183,7 +183,7 @@ kubectl label secret "sh.distr.agent.v1.<release-name>" \
 kubectl apply -n <namespace> -f "<distr-connect-url>"
 ```
 
-The controller discovers the tracking secret, adopts the release, and performs an upgrade on the next reconciliation cycle.
+The controller discovers the tracking secret, adopts the release and performs an upgrade on the next reconciliation cycle.
 
 ### Fixing Revision Skew
 
@@ -191,7 +191,7 @@ If the controller reports `actual helm revision is different from latest deploye
 
 **Option A: From the Distr UI**
 
-Open the deployment in the vendor portal, click **Update**, and use the reset button to sync the controller's Helm revision to the current release revision.
+Open the deployment in the vendor portal, click **Update** and use the reset button to sync the controller's Helm revision to the current release revision.
 
 **Option B: Patch the Secret**
 

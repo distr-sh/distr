@@ -10,7 +10,7 @@ sidebar:
 import {Aside} from '@astrojs/starlight/components';
 
 Distr allows you to define dynamic application links that automatically resolve to the correct URL after deployment.
-This enables users to quickly access their deployed applications directly from the Distr interface.
+Users can then open their deployed applications directly from the Distr interface.
 
 This guide explains how to configure application links using Go template syntax with deployment-specific values.
 
@@ -33,7 +33,7 @@ Application links are configured when creating or editing an application version
 
 1. Navigate to the **Applications** section in the Distr web interface
 2. Select your application or create a new one
-3. When creating or editing a version, enter the **Application Link** in the designated field
+3. Enter the link in the **Link Template** field when creating a version, or in **Version Link Template** when editing one
 4. Use Go template syntax with available template variables
 
 The link will be displayed in the deployment card with an "Open" button when the link is non-empty.

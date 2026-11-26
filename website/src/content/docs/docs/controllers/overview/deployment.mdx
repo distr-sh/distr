@@ -31,7 +31,7 @@ import helmDeploymentCreatedDark from '~/assets/docs/controllers/overview/deploy
 import deployAppToTargetLight from '~/assets/docs/controllers/overview/deployment/deploy-app-to-target-light.webp';
 import deployAppToTargetDark from '~/assets/docs/controllers/overview/deployment/deploy-app-to-target-dark.webp';
 
-This step-by-step guide shows you how to create deployments for Docker and Helm applications in Distr. Before creating a deployment, make sure you've already [created an application](/docs/controllers/application/) with at least one version. The deployment flow guides you through selecting a customer, choosing an application, configuring deployment settings, and obtaining the command to install both the Distr controller and your application.
+This step-by-step guide shows you how to create deployments for Docker and Helm applications in Distr. Before creating a deployment, make sure you've already [created an application](/docs/controllers/application/) with at least one version. The deployment flow guides you through selecting a customer, choosing an application, configuring deployment settings and obtaining the command to install both the Distr controller and your application.
 
 <Aside type="note">
   If you're using application entitlements, make sure you've created the
@@ -95,7 +95,7 @@ Pick the version to deploy and, where the customer has license keys, the license
 />
 
 The entered environment variables will be passed unmodified to the `docker compose` process via the `--env-file` argument.
-For more information on how to use them, please refer to [our guide on working with environment variables](/docs/controllers/docker-env/).
+For more information on how to use them, see [our guide on working with environment variables](/docs/controllers/docker-env/).
 
 You can also enable Docker Swarm mode for deployments that should run in swarm mode. See [Docker Swarm](/docs/controllers/docker-controller/#docker-swarm) for more details.
 
@@ -110,10 +110,9 @@ Click **Create Deployment** at the end of the application configuration. Distr c
 />
 
 <Aside type="caution">
-  **Important**: This command will automatically install the Distr controller,
-  which will then automatically install your application. The controller runs in
-  the customer's environment and manages the full lifecycle of your application
-  deployment.
+  This command will automatically install the Distr controller, which will then
+  automatically install your application. The controller runs in the customer's
+  environment and manages the full lifecycle of your application deployment.
 </Aside>
 
 ## Verifying Your Deployment was successful
@@ -188,11 +187,11 @@ Click **Create Deployment** at the end of the application configuration. Distr c
 />
 
 <Aside type="caution">
-  **Important**: This command will automatically install the Distr controller,
-  which will then automatically install your application. The controller runs in
-  the customer's Kubernetes cluster and manages the full lifecycle of your Helm
-  deployment. Make sure the namespace exists in your Kubernetes cluster before
-  executing the command.
+  This command will automatically install the Distr controller, which will then
+  automatically install your application. The controller runs in the customer's
+  Kubernetes cluster and manages the full lifecycle of your Helm deployment.
+  Make sure the namespace exists in your Kubernetes cluster before executing the
+  command.
 </Aside>
 
 ## Verifying Your Deployment was successful
@@ -206,7 +205,7 @@ After running the command, you can check the deployment status in the **Deployme
 
 If you already have a deployment environment of type `docker` or `kubernetes`, you can use it to deploy your application.
 
-Simply navigate to the **Deployments** section and click on the **+ Deploy App** button next to the deployment target you want to use.
+Navigate to the **Deployments** section and click on the **+ Deploy App** button next to the deployment target you want to use.
 
 <ThemedImage
   lightSrc={deployAppToTargetLight}
@@ -230,21 +229,21 @@ The option requires **Allow automatic updates** on the application and is part o
 
 ## Deployment History
 
-Distr keeps a full history of every deployment. Each time a deployment's version or configuration changes, a new revision is recorded, so you can always see what was deployed, when, and by whom.
+Distr keeps a full history of every deployment. Each time a deployment's version or configuration changes, a new revision is recorded, so you can always see what was deployed, when and by whom.
 
-On the **Deployments** page, open the actions menu on a deployment and select **Deployment history**. A timeline opens listing every revision, newest first, with the application version, the user or organization that made the change, and the timestamp. The active revision is marked **(current)**.
+On the **Deployments** page, open the actions menu on a deployment and select **Deployment history**. A timeline opens listing every revision, newest first, with the application version, the user or organization that made the change and the timestamp. The active revision is marked **(current)**.
 
 Select any revision to inspect its full configuration:
 
 - **Docker**: the environment variables and deployment mode used for that revision.
-- **Helm**: the values file, release name, and Helm options (wait strategy, rollback on failure, cleanup on failure, and force conflicts).
+- **Helm**: the values file, release name and Helm options (wait strategy, rollback on failure, cleanup on failure and force conflicts).
 
 This makes it easy to review how a customer's deployment was configured in the past and to troubleshoot changes over time.
 
 ## Related Guides
 
-- [Create an Application](/docs/controllers/application/) - Learn how to create Docker and Helm applications
-- [Application Entitlements](/docs/platform/application-entitlements/) - Control which applications customers can access
-- [Docker Environment Variables](/docs/controllers/docker-env/) - Configure environment variable templates
-- [Helm Chart Registry Auth](/docs/controllers/helm-registry-auth/) - Set up authenticated image pulls
-- [Docker Blue-Green Deployments](/docs/controllers/docker-blue-green-deployments/) - Roll out new versions without downtime
+- [Create an Application](/docs/controllers/application/): learn how to create Docker and Helm applications
+- [Application Entitlements](/docs/platform/application-entitlements/): control which applications customers can access
+- [Docker Environment Variables](/docs/controllers/docker-env/): configure environment variable templates
+- [Helm Chart Registry Auth](/docs/controllers/helm-registry-auth/): set up authenticated image pulls
+- [Docker Blue-Green Deployments](/docs/controllers/docker-blue-green-deployments/): roll out new versions without downtime

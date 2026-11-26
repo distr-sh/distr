@@ -1,6 +1,6 @@
 ---
 title: 'Role-Based Access Control (RBAC)'
-description: 'Understand user roles and permissions, invite users with specific roles, manage access control, and learn how roles differ across subscription plans.'
+description: 'Understand user roles and permissions, invite users with specific roles, manage access control and learn how roles differ across subscription plans.'
 slug: docs/platform/rbac
 sidebar:
   label: Role-Based Access Control (RBAC)
@@ -9,13 +9,13 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 
-Distr provides role-based access control (RBAC) to help you manage who can access and modify different parts of your organization. Understanding roles and permissions is essential for maintaining security and proper access control across your vendor organization and customer organizations.
+Distr uses role-based access control (RBAC) to manage who can access and modify different parts of your vendor organization and your customer organizations.
 
 <Aside type="note">
-  Role-based access control is available in all paid plans (Pro, Business, and
-  Enterprise) as well as the Pro Trial. The free Community Edition only allows
-  one user per customer who will automatically have Administrator privileges.
-  All internal users have Administrator privileges as well.
+  Role-based access control is available in all paid plans (Pro, Business and
+  Enterprise) and in the Pro Trial. The free Community Edition only allows one
+  user per customer, who automatically has Administrator privileges. All
+  internal users have Administrator privileges as well.
 </Aside>
 
 ## Overview of User Roles
@@ -87,7 +87,7 @@ To add team members to your vendor organization:
 4. Enter the user's name, email address and select the role.
 5. Click **Submit**
 
-The invited user will receive an email with a link to set up their account and password. Once they complete registration, they'll have access according to their assigned role.
+The invited user receives an email with a link to set up their account and password. Once they complete registration, they'll have access according to their assigned role.
 
 <Aside type="note">
   In the Community Edition, all users are automatically assigned the
@@ -124,7 +124,7 @@ The invited user receives an email to set up their account. Alternatively, custo
 - All team members have full access to all features
 - Customer organizations can only have one user.
 
-**Use case:** Ideal for small teams or POCs where simplified access control is sufficient.
+**Use case:** Small teams or POCs where simple access control is sufficient.
 
 <Aside type="caution">
   If you upgrade to a paid plan, existing users will automatically be assigned
@@ -142,9 +142,9 @@ The invited user receives an email to set up their account. Alternatively, custo
 - Customer organizations can also use role-based access
 - Multiple customer users per organization with role-based permissions
 - Login with Google, GitHub & Microsoft; the Business plan adds enterprise SSO (bring-your-own OIDC)
-- Full control over who can view, edit, or manage different parts of the platform
+- Full control over who can view, edit or manage different parts of the platform
 
-**Use case:** Ideal for teams that need granular access control and security compliance. Perfect for organizations where different team members need different levels of access to applications, deployments, licenses, and customer management.
+**Use case:** Teams that need granular access control and security compliance, where different team members need different levels of access to applications, deployments, licenses and customer management.
 
 ### Enterprise Plan
 
@@ -156,8 +156,8 @@ The invited user receives an email to set up their account. Alternatively, custo
 - Advanced identity provider integrations, including SAML SSO
 - Fine-grained access control for complex organizational structures
 
-**Use case:** Ideal for large enterprises with complex access requirements and compliance needs.
+**Use case:** Large enterprises with complex access requirements and compliance needs.
 
 ## Managing User Roles
 
-Administrators can edit or remove any user by locating the user, selecting a new role to update their access, or clicking the delete button to remove them entirely.
+Administrators can edit or remove any user: locate the user, then select a new role to update their access or click the delete button to remove them entirely.

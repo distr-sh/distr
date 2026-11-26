@@ -1,6 +1,6 @@
 ---
 title: Kubernetes Compatibility Matrix
-description: Validate your Helm charts against multiple Kubernetes versions in CI/CD, generate compatibility reports, and share them with customers as version resources using the Distr GitHub Action.
+description: Validate your Helm charts against multiple Kubernetes versions in CI/CD, generate compatibility reports and share them with customers as version resources using the Distr GitHub Action.
 slug: docs/platform/kubernetes-compatibility-matrix
 sidebar:
   label: Kubernetes Compatibility Matrix
@@ -27,11 +27,11 @@ The benefits compound as your customer base grows:
 
 - **Catch breaking changes before customers do.** Kubernetes deprecates and removes APIs on a predictable schedule. Automated validation flags issues the moment they appear in your chart, not after a customer upgrade fails.
 - **Reduce support burden.** When every release ships with a tested compatibility matrix, your support team can immediately confirm whether a reported issue is a known incompatibility or something else entirely.
-- **Build customer confidence.** Sharing a compatibility report alongside each version lets customers verify support for their environment before upgrading, without guesswork or back-and-forth.
-- **Eliminate dedicated test infrastructure.** Schema-based validation against Kubernetes OpenAPI specs runs in seconds on a CI runner. There are no clusters to provision, no cloud bills to manage, and no teardown to worry about.
-- **Scale across versions effortlessly.** Adding a new Kubernetes version to your matrix is a one-line change. GitHub Actions runs them all in parallel, so validation time stays constant regardless of how many versions you test.
+- **Build customer confidence.** Sharing a compatibility report alongside each version lets customers verify support for their environment before upgrading instead of guessing or asking your team.
+- **Eliminate dedicated test infrastructure.** Schema-based validation against Kubernetes OpenAPI specs runs in seconds on a CI runner. There are no clusters to provision or tear down and no cloud bills to manage.
+- **Scale across versions.** Adding a new Kubernetes version to your matrix is a one-line change. GitHub Actions runs them all in parallel, so validation time stays constant regardless of how many versions you test.
 
-In this guide, you'll set up a complete compatibility testing pipeline that validates your Helm chart across multiple Kubernetes versions and publishes the results as a version resource in Distr, visible to your customers in their portal.
+This guide sets up a compatibility testing pipeline that validates your Helm chart across multiple Kubernetes versions and publishes the results as a version resource in Distr, visible to your customers in their portal.
 
 By the end of this guide, you'll have:
 
@@ -41,7 +41,7 @@ By the end of this guide, you'll have:
 
 ## Prerequisites for Kubernetes Compatibility Testing
 
-Before starting, ensure you have:
+Before you start, you need:
 
 1. A Distr account with an organization set up
 2. A Helm application configured in Distr (see [Create Application](/docs/controllers/application/))
@@ -70,8 +70,8 @@ Version resources are supplementary markdown content items attached to applicati
 
 The `visibleToCustomers` flag controls visibility:
 
-- When `true`, the resource appears in the customer portal, which is useful for compatibility matrices, release notes, and getting-started guides
-- When `false`, the resource is only visible to vendor team members, which is useful for internal notes, known issues, or deployment checklists
+- When `true`, the resource appears in the customer portal, which is useful for compatibility matrices, release notes and getting-started guides
+- When `false`, the resource is only visible to vendor team members, which is useful for internal notes, known issues or deployment checklists
 
 For teams that need to create versions programmatically outside of GitHub Actions, the Distr SDK supports version resources directly:
 
@@ -123,7 +123,7 @@ hello-distr/
 
 The hello-distr implementation:
 
-- Tests against Kubernetes 1.32.0, 1.33.0, 1.34.0, and 1.35.0
+- Tests against Kubernetes 1.32.0, 1.33.0, 1.34.0 and 1.35.0
 - Uses `fail-fast: false` so all versions are always tested
 - Writes per-version reports to the GitHub Actions job summary for easy review
 - Merges results into a unified `compatibility-matrix.md`

@@ -1,6 +1,6 @@
 ---
 title: Application
-description: Learn how to create Docker and Helm applications in Distr, add versions, and manage your application templates.
+description: Learn how to create Docker and Helm applications in Distr, add versions and manage your application templates.
 slug: docs/controllers/application
 sidebar:
   label: Application
@@ -63,7 +63,7 @@ In this view you can manage the versions of the application.
 
 To add a first version to your Docker App, expand **New Version** below the list of versions and enter the version name and your Docker Compose file.
 In this example we will upload a file containing Gitea and a Postgres database,
-whose source can be found [here](https://github.com/docker/awesome-compose/blob/master/gitea-postgres/compose.yaml) (we additionally pin the version to `1.23.1`
+whose source can be found [here](https://github.com/docker/awesome-compose/blob/master/gitea-postgres/compose.yaml) (we also pin the version to `1.23.1`
 and make the password an environment variable).
 
 You can optionally add a template for the environment variables that your Docker Compose file uses.
@@ -170,7 +170,7 @@ Automatic updates are part of the Business plan and need a versioning strategy o
 
 ## Additional Resources
 
-Each application version can include additional resources: named markdown documents such as release notes, upgrade instructions, or troubleshooting tips.
+Each application version can include additional resources: named markdown documents such as release notes, upgrade instructions or troubleshooting tips.
 To attach them, use the **Add Resource** button in the "New Version" form and provide a name and the markdown content for each resource.
 
 Resources marked as **Visible to customers** are shown to your customers in the Customer Portal when they select that version in the deployment form, so they always see the information matching the version they are deploying.
@@ -189,7 +189,7 @@ Artifacts have a title image of their own, which you set on the artifact detail 
 
 You can rename an application or any of its versions at any time from the application detail page. Click the edit icon next to the application name, or click a version name in the versions table, to edit it inline and save.
 
-Renaming only changes the display name shown in Distr - it does not affect existing deployments or the underlying artifacts.
+Renaming only changes the display name shown in Distr. It does not affect existing deployments or the underlying artifacts.
 
 ## Next Steps
 

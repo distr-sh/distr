@@ -1,6 +1,6 @@
 ---
 title: 'Subscription Management'
-description: 'Manage your Distr subscription, add or remove users and customers, view invoices, and handle billing through the Vendor Portal and Stripe.'
+description: 'Manage your Distr subscription, add or remove users and customers, view invoices and handle billing through the Vendor Portal and Stripe.'
 slug: docs/subscription-management
 sidebar:
   label: Subscription Management
@@ -9,11 +9,11 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 
-Distr offers subscription plans that scale with your software distribution needs. All new organizations start with a **Pro Trial** period, giving you full access to Pro features for up to 30 days to evaluate the platform.
+Distr offers several subscription plans. All new organizations start with a **Pro Trial** period, which gives you full access to Pro features for up to 30 days so you can evaluate the platform.
 
 ## Available Plans
 
-Distr provides three subscription tiers:
+Distr has three subscription tiers:
 
 - **Pro** - For distributing and operating customer installs with license management and RBAC
 - **Business** - For distributing at scale with partner management and full white label
@@ -21,7 +21,7 @@ Distr provides three subscription tiers:
 
 Every plan is available on Distr Cloud or self-hosted in your own environment. This page covers subscriptions on Distr Cloud. If you want to self-host a plan, [contact us](/contact/).
 
-For detailed feature comparisons, limits, and pricing, visit our [pricing page](/pricing/). To understand which plan is right for your needs, see our guide on [choosing a plan](/docs/subscription/).
+For detailed feature comparisons, limits and pricing, visit our [pricing page](/pricing/). To understand which plan is right for your needs, see our guide on [choosing a plan](/docs/subscription/).
 
 <Aside type="tip">
   New organizations start with a 30-day Pro Trial on Distr Cloud (see our [trial
@@ -38,7 +38,7 @@ Subscription management is available in the **Subscription** tab of the Vendor P
 
 1. Log in to the [Vendor Portal](https://app.distr.sh/settings/organization/subscription)
 2. Click **Settings** in the sidebar and open the **Subscription** tab
-3. View your current subscription status, limits, and usage
+3. View your current subscription status, limits and usage
 
 ### Viewing Subscription Details
 
@@ -46,7 +46,7 @@ The Subscription page displays:
 
 - **Current Usage** - How many customers and users you're currently using, along with your registry storage consumption and log retention period
 - **Usage Limits** - Current limits for customer organizations and user accounts
-- **Current Subscription Type** - Your active plan (Pro Trial, Pro, Business, or Enterprise)
+- **Current Subscription Type** - Your active plan (Pro Trial, Pro, Business or Enterprise)
 - **Subscription Renewal Date** - When your current subscription renews
 
 ### Managing Customers and Users Within Your Plan
@@ -71,7 +71,7 @@ Organization admins can upgrade from the Pro plan to the Business plan directly 
 1. Navigate to **Settings** in the Vendor Portal and open the **Subscription** tab
 2. In the **Upgrade to Business** section, review the Business plan features and the estimated cost for your current quantities
 3. Click **Upgrade to Business** and confirm the change
-4. The upgrade takes effect immediately. On a yearly subscription the prorated amount is invoiced and charged immediately, on a monthly subscription it is reflected on your next invoice
+4. The upgrade takes effect immediately. On a yearly subscription the prorated amount is invoiced and charged immediately. On a monthly subscription it is reflected on your next invoice
 
 #### Downgrading or Other Plan Changes
 
@@ -83,7 +83,7 @@ Downgrades and all other plan changes cannot be made through the Vendor Portal:
 
 ### Pro Rata Adjustment
 
-Whenever your subscription changes in the middle of a billing cycle — adding internal users or customers, or upgrading from Pro to Business — Stripe automatically applies a pro rata adjustment:
+Whenever your subscription changes in the middle of a billing cycle (adding internal users or customers, or upgrading from Pro to Business), Stripe automatically applies a pro rata adjustment:
 
 - **Unused Time Credit** - You receive a credit for the unused time on your previous quantities or plan
 - **Remaining Time Charge** - You're charged for the new quantities or plan for the remainder of the current billing cycle
@@ -120,7 +120,7 @@ On a yearly subscription, adding the same 5 customers 6 months into the billing 
 
 #### Reducing Internal Users or Customers During a Billing Cycle
 
-When you downgrade your plan mid-cycle, the new plan and its limits take effect right away. To ensure a smooth transition, make sure your account is already within the limits of the plan you're switching to. If you currently have more customers or users than the new plan allows, you'll need to remove the excess before completing the downgrade.
+When you downgrade your plan mid-cycle, the new plan and its limits take effect right away. Make sure your account is already within the limits of the plan you're switching to. If you currently have more customers or users than the new plan allows, you'll need to remove the excess before completing the downgrade.
 
 Once you're within the new plan's limits:
 
@@ -145,7 +145,7 @@ Subscriptions can be cancelled through the Stripe Customer Portal:
 3. In Stripe, navigate to your subscription
 4. Click **Cancel Subscription**
 5. Your subscription will remain active until the end of your current billing period
-6. Once that period ends, Distr sends you to the subscription page and you cannot use the Vendor Portal until you select a plan again. Your data, customers, and deployments stay intact
+6. Once that period ends, Distr sends you to the subscription page and you cannot use the Vendor Portal until you select a plan again. Your data, customers and deployments stay intact
 
 <Aside type="note">
   After cancelling, you can reactivate your subscription through the Stripe

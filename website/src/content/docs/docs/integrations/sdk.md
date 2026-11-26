@@ -1,6 +1,6 @@
 ---
 title: Distr SDK
-description: Integrate Distr into your applications with our TypeScript/JavaScript SDK for programmatic access to deployments, registries, and more.
+description: Integrate Distr into your applications with our TypeScript/JavaScript SDK for programmatic access to deployments, registries and more.
 sidebar:
   label: Distr SDK
   order: 2
@@ -8,7 +8,7 @@ sidebar:
 
 Distr SDKs are first-party libraries that allow you to interact with the Distr platform programmatically.
 In the simplest case, you can use them as an API wrapper that executes HTTP requests to the [Distr API](/docs/integrations/api/).
-For more high level use cases, they offer services that help you to interact with the Distr platform in a more convenient way, e.g. by providing methods for checking if a deployment is outdated.
+For more high-level use cases, they offer services that help you to interact with the Distr platform in a more convenient way, e.g. by providing methods for checking if a deployment is outdated.
 
 Currently, we offer an SDK for TS/JS, which is available on [npm](https://www.npmjs.com/package/@distr-sh/distr-sdk).
 More languages are planned to be supported in the future.
@@ -26,7 +26,7 @@ Conceptually, the SDK is divided into two parts:
 - A high-level service called `DistrService`, which provides a simplified interface for interacting with the Distr API.
 - A low-level client called `Client`, which provides a more direct interface for interacting with the Distr API.
 
-In order to connect to the Distr API, you have to [create a Personal Access Token (PAT)](/docs/integrations/personal-access-token/) in the Distr web interface.
+To connect to the Distr API, you have to [create a Personal Access Token (PAT)](/docs/integrations/personal-access-token/) in the Distr web interface.
 Optionally, you can specify the URL of the Distr API you want to communicate with. It defaults to `https://app.distr.sh/api/v1`.
 
 ```typescript
@@ -44,4 +44,4 @@ See the [docs](https://github.com/distr-sh/distr/tree/main/sdk/js/docs/README.md
 
 ## Feedback
 
-We are always open to hear what is missing or not working in our SDKs. Please let us know in our [GitHub repository](https://github.com/distr-sh/distr).
+We are always open to hearing what is missing or not working in our SDKs. Please let us know in our [GitHub repository](https://github.com/distr-sh/distr).

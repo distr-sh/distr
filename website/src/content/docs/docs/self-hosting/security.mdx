@@ -98,7 +98,7 @@ By default `JWT_SECRET`, `DATABASE_ENCRYPTION_KEY` and `LICENSE_KEY_PRIVATE_KEY`
 three also accept a ciphertext that Distr unwraps with a key management service during boot, so the key material
 appears in neither your configuration nor a Kubernetes Secret, and reading it becomes an API call that your cloud logs
 and that you can revoke without touching the instance. Keeping a value and the key that opens it apart like this is
-called transient encryption, but it also means losing either part makes the other useless, if you have no backup. Two providers are
+called transient encryption. It also means that, without a backup, losing either part makes the other useless. Two providers are
 supported:
 
 - AWS Key Management Service (KMS)

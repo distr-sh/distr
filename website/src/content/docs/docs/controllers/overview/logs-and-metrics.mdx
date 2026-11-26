@@ -1,6 +1,6 @@
 ---
 title: Logs & Metrics
-description: Monitor deployment health with controller logs, container logs, deployment status indicators, and host metrics collection in Distr.
+description: Monitor deployment health with controller logs, container logs, deployment status indicators and host metrics collection in Distr.
 slug: docs/controllers/logs-and-metrics
 sidebar:
   label: 'Logs & Metrics'
@@ -40,11 +40,11 @@ Clicking the status label (e.g. "Running") opens the revision history of the dep
 Configure healthchecks so Distr can distinguish between **Running** (no checks configured) and **Healthy** (checks passing). Without them, a deployment that starts but serves errors will still show as Running.
 
 - **Docker deployments**: Add a [healthcheck](https://docs.docker.com/reference/compose-file/services/#healthcheck) to your service definition in the Compose file.
-- **Kubernetes deployments**: Configure [container probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/) (liveness, readiness, or startup probes).
+- **Kubernetes deployments**: Configure [container probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/) (liveness, readiness or startup probes).
 
 ## Log Viewer
 
-The log viewer is a dedicated page for inspecting all log data associated with a deployment target. Open it by clicking the deployment target name, clicking **Inspect** on a deployment, or selecting **Controller Logs** from the **⋮** menu.
+The log viewer is a dedicated page for inspecting all log data associated with a deployment target. Open it by clicking the deployment target name, clicking **Inspect** on a deployment or selecting **Controller Logs** from the **⋮** menu.
 
 Once open, use the breadcrumb dropdowns to choose what to inspect:
 
@@ -58,12 +58,12 @@ Once open, use the breadcrumb dropdowns to choose what to inspect:
   alt="Log viewer with the services dropdown open and two resources of a deployment selected"
 />
 
-The log viewer auto-refreshes every 10 seconds. Use the **From** and **To** fields to view a specific time window, or the **Filter** field to search with plain text or a regular expression. Turn on **Exclude** to hide the matching entries instead. You can pin any log entry by clicking the thumbtack icon on hover. The row stays sticky while you scroll, making it easy to compare entries.
+The log viewer auto-refreshes every 10 seconds. Use the **From** and **To** fields to view a specific time window, or the **Filter** field to search with plain text or a regular expression. Turn on **Exclude** to hide the matching entries instead. You can pin any log entry by clicking the thumbtack icon on hover. The row stays sticky while you scroll, so you can compare it with other entries.
 
 <Aside type="note" title="Log availability">
   Logs are available for the last **24 hours** on the Community plan, for the
-  last **30 days** on the Business plan, and for the last **7 days** on all
-  other plans.
+  last **30 days** on the Business plan and for the last **7 days** on all other
+  plans.
 </Aside>
 
 ### Exporting Logs
@@ -74,7 +74,7 @@ A single export contains at most **1,000,000 lines**. When the limit is reached,
 
 ### Controller Logs
 
-Controller logs show the raw output from the Distr controller process itself: connection events, deployment reconciliation cycles, errors, and status reports. These logs belong to the deployment target, not to any individual deployment, and are always available without any setup.
+Controller logs show the raw output from the Distr controller process itself: connection events, deployment reconciliation cycles, errors and status reports. These logs belong to the deployment target, not to any individual deployment, and are always available without any setup.
 
 ### Container Logs
 
@@ -195,7 +195,7 @@ Reconnecting does not affect your running deployments. If your application was r
   default. After that, it can no longer authenticate.
 
 If you use an automated bootstrap script (for example, a cloud-init script,
-an EC2 Auto Scaling launch template, or any script that runs the controller
+an EC2 Auto Scaling launch template or any script that runs the controller
 install command on startup), you must update that script with the new command
 before new instances launch. Instances using the old command fail to connect
 once the reconnect is complete.
@@ -231,7 +231,7 @@ If you do not have direct access to the deployment host, ask the customer to rec
 
 <Aside type="caution">
   **If you use an automated bootstrap script** (e.g. a cloud-init script, an EC2
-  Auto Scaling launch template, or any script that installs the controller on
+  Auto Scaling launch template or any script that installs the controller on
   startup), make sure to update it with the new command after reconnecting. The
   old command contains the previous `targetSecret`, which stops working once a
   controller has connected with the new one. New instances launched with the old

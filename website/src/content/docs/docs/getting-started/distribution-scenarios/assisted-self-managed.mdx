@@ -17,10 +17,10 @@ Applications run in customer-owned environments such as virtual machines or Kube
 
 The lightweight and open source [Distr controllers](/docs/controllers/), installed by the customer in the target environment, handle deployments and updates.
 They pull application definitions and artifacts from Distr, apply customer-defined configurations,
-and report deployment status, logs, and health to both the [vendor](/docs/vendor-portal/) and [customer](/docs/platform/customer-portal/) portals,
+and report deployment status, logs and health to both the [vendor](/docs/vendor-portal/) and [customer](/docs/platform/customer-portal/) portals,
 without exposing internal infrastructure.
 
-The Customer Portal also allows end users, who may not be involved in initial deployment, to configure applications, monitor status, access logs, and trigger updates.
+The Customer Portal also allows end users, who may not be involved in initial deployment, to configure applications, monitor status, access logs and trigger updates.
 This is especially useful in setups where a platform team deploys the application, but another team operates it day-to-day.
 
 ### Solution Architecture
@@ -36,11 +36,11 @@ This is especially useful in setups where a platform team deploys the applicatio
 ### Implementation steps
 
 <Aside type="note">
-  The controller acts only as a facilitator, pulling updates and applying them
-  according to customer-defined policies. It does not provide vendor access to
-  customer infrastructure. When a support case needs a closer look, the customer
-  can let you deploy a [remote access](/docs/integrations/remote-access/)
-  application for the duration of the case.
+  The controller only pulls updates and applies them according to
+  customer-defined policies. It does not provide vendor access to customer
+  infrastructure. When a support case needs a closer look, the customer can let
+  you deploy a [remote access](/docs/integrations/remote-access/) application
+  for the duration of the case.
 </Aside>
 
 <Steps>

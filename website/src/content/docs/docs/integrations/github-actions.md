@@ -53,7 +53,7 @@ First, you need to create an application in Distr that will receive the automate
 
 After creating the application, you'll see the application details page. At the top, you'll find the **Application ID** (a UUID like `7fa566b3-a20e-4b09-814c-5193c1469f7c`).
 
-**Copy this ID** - you'll need it later for the GitHub Action configuration.
+**Copy this ID.** You'll need it later for the GitHub Action configuration.
 
 ## Step 2: Create a Personal Access Token
 
@@ -62,10 +62,10 @@ The GitHub Action needs to authenticate with Distr to create new versions and up
 1. In the Distr web interface, click on your user icon in the top right corner
 2. Select **Personal Access Tokens** from the dropdown menu
 3. Click **Create token** in the top right corner
-4. Enter a descriptive name (e.g., "GitHub Actions - My App")
+4. Enter a descriptive **Label** (e.g., "GitHub Actions - My App")
 5. Set an expiry date (recommended: 1 year from now)
 6. Click **Create**
-7. **Copy the token immediately** - this is the only time you'll see it
+7. **Copy the token immediately.** This is the only time you'll see it.
 
 For detailed instructions with screenshots, see the [Creating a Personal Access Token](/docs/integrations/personal-access-token/) guide.
 
@@ -75,7 +75,7 @@ Now you'll store the PAT and Application ID securely in your GitHub repository.
 
 ### Add the Personal Access Token as a Secret
 
-GitHub Secrets are encrypted and perfect for storing sensitive information like API tokens.
+GitHub Secrets are encrypted and suited for storing sensitive information like API tokens.
 
 1. Go to your GitHub repository
 2. Click on **Settings** (in the repository toolbar)
@@ -141,7 +141,7 @@ Optionally, include:
 
 ## Step 5: Automate Version Management with Release Please (Recommended)
 
-For Docker applications that build and push container images, you need to ensure your Docker Compose file references the correct image tags for each release. Manually updating these tags is error-prone and tedious. **Release Please** automates this process.
+For Docker applications that build and push container images, your Docker Compose file has to reference the correct image tags for each release. Updating these tags by hand is error-prone and tedious. Release Please automates this.
 
 ### Why Release Please is Essential
 
@@ -151,7 +151,7 @@ When you release a new version of your application:
 2. Your `docker-compose.yaml` must reference these exact image tags
 3. The Distr GitHub Action uploads this compose file to Distr
 
-**Without automation**, you'd need to manually update every image tag in your compose file before each release. Release Please solves this by automatically updating version numbers throughout your repository when creating a release.
+Without automation, you'd need to update every image tag in your compose file by hand before each release. Release Please updates the version numbers throughout your repository automatically when it creates a release.
 
 ### How It Works
 
@@ -206,9 +206,9 @@ Create `release-please-config.json` in your repository root:
 }
 ```
 
-**Key settings:**
+The settings in this file:
 
-- **`release-type`** - Set to `"go"`, `"node"`, or `"simple"` based on your project
+- **`release-type`** - Set to `"go"`, `"node"` or `"simple"` based on your project
 - **`extra-files`** - Lists additional files to update with version numbers
 - **`include-v-in-tag`** - Set to `false` to create tags like `0.2.0` instead of `v0.2.0`
 
@@ -268,7 +268,7 @@ Here's how everything works together:
 
 ### Example from hello-distr
 
-The [hello-distr](https://github.com/distr-sh/hello-distr) repository demonstrates this complete setup:
+The [hello-distr](https://github.com/distr-sh/hello-distr) repository uses this complete setup:
 
 **docker-compose.yaml:**
 
@@ -453,7 +453,7 @@ Now it's time to test the complete automation pipeline.
 Before testing, make sure you have at least one deployment target configured:
 
 1. Navigate to **Deployments** in the Distr web interface
-2. Click **Add deployment** to create a test deployment target
+2. Click **New Deployment** to create a test deployment target
 3. Follow the wizard to set up a Docker or Kubernetes deployment target
 4. Deploy an earlier version of your application to this target
 
@@ -596,7 +596,7 @@ This is a critical sequencing issue. In summary:
 2. Use `needs:` in a combined workflow to enforce job order
 3. Set `update-deployments: false` and update manually after images are available
 
-**Quick check:** Look at your GitHub Actions runs - do the build workflows complete _after_ the Distr workflow? If yes, you need to fix the sequencing.
+**Quick check:** Look at your GitHub Actions runs: do the build workflows complete _after_ the Distr workflow? If yes, you need to fix the sequencing.
 
 ### Version Already Exists Error
 
@@ -621,7 +621,7 @@ Now that you have automatic deployments set up, consider:
 ## Additional Resources
 
 - [distr-create-version-action GitHub Repository](https://github.com/distr-sh/distr-create-version-action)
-- [hello-distr Example Application](https://github.com/distr-sh/hello-distr) - Complete example with Release Please, Docker builds, and automatic deployments
+- [hello-distr Example Application](https://github.com/distr-sh/hello-distr) - Complete example with Release Please, Docker builds and automatic deployments
 - [Release Please Documentation](https://github.com/googleapis/release-please) - Automated release management
 - [Conventional Commits Specification](https://www.conventionalcommits.org/) - Commit message format for Release Please
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)

@@ -1,6 +1,6 @@
 ---
 title: License Keys
-description: Create and manage License Keys to issue signed JWT tokens your application can verify to enforce usage limits, seat counts, and feature access.
+description: Create and manage License Keys to issue signed JWT tokens your application can verify to enforce usage limits, seat counts and feature access.
 slug: docs/platform/license-keys
 sidebar:
   label: License Keys
@@ -12,10 +12,10 @@ import ThemedImage from '~/components/util/ThemedImage.astro';
 import licenseKeyFormDark from '~/assets/docs/platform/licenses/license-keys/license-key-form-dark.webp';
 import licenseKeyFormLight from '~/assets/docs/platform/licenses/license-keys/license-key-form-light.webp';
 
-This guide walks you through how to use License Keys to issue cryptographically signed tokens that your application can verify at runtime to enforce usage limits, seat counts, feature flags, or any other constraint you define.
+Use License Keys to issue cryptographically signed tokens that your application can verify at runtime to enforce usage limits, seat counts, feature flags or any other constraint you define.
 
 <Aside type="note">
-  License Keys are a Pro feature available in Pro, Enterprise, and Pro Trial
+  License Keys are a Pro feature available in Pro, Enterprise and Pro Trial
   plans. Learn more about [License
   Management](/docs/platform/license-management/) and [subscription
   plans](/docs/subscription-management/).
@@ -134,7 +134,7 @@ Your application is responsible for deciding what to do when verification fails 
 
 You can update the **description** of an existing license key at any time. The name is set at creation and cannot be changed.
 
-If you need to change the **payload**, **Not Before**, or **Expires At**, Distr generates a new license key with the updated values; the original is not modified. You can view all previously generated license keys in the **Revisions** section of the edit view.
+If you need to change the **payload**, **Not Before** or **Expires At**, Distr generates a new license key with the updated values; the original is not modified. You can view all previously generated license keys in the **Revisions** section of the edit view.
 
 If any active deployments reference this license key, Distr will show you which deployment targets are affected before saving.
 Confirming will save the new revision and automatically trigger a redeployment on those targets.
@@ -196,7 +196,7 @@ The resolved token is passed into the chart at deploy time.
 
 ### Registry-only deployments
 
-For customers who pull artifacts directly from your Distr registry without using deployment controllers, provide them with the token out-of-band. The customer is responsible for injecting it into their own deployment pipeline, typically as an environment variable, a mounted secret file, or a Kubernetes secret.
+For customers who pull artifacts directly from your Distr registry without using deployment controllers, provide them with the token out-of-band. The customer is responsible for injecting it into their own deployment pipeline, typically as an environment variable, a mounted secret file or a Kubernetes secret.
 
 ## Customer portal view
 

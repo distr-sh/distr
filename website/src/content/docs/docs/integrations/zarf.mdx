@@ -1,6 +1,6 @@
 ---
 title: Air-Gapped Deployments with Distr and Zarf
-description: Package your application, Helm chart, and all container images into a single Zarf package, publish it to the Distr registry as an OCI artifact, and let customers deploy it into air-gapped Kubernetes clusters.
+description: Package your application, Helm chart and all container images into a single Zarf package, publish it to the Distr registry as an OCI artifact and let customers deploy it into air-gapped Kubernetes clusters.
 slug: docs/integrations/zarf
 sidebar:
   label: Zarf Integration
@@ -14,10 +14,10 @@ import artifactDetailLight from '~/assets/docs/integrations/zarf/artifact-detail
 import artifactDetailDark from '~/assets/docs/integrations/zarf/artifact-detail-dark.png';
 
 [Zarf](https://zarf.dev) is an open-source tool for delivering software into air-gapped and disconnected environments.
-A Zarf package bundles everything a Kubernetes application needs (Helm charts, container images, and manifests) into a single archive that can be deployed without any access to external registries.
+A Zarf package bundles everything a Kubernetes application needs (Helm charts, container images and manifests) into a single archive that can be deployed without any access to external registries.
 
 Zarf packages are published as standard [OCI artifacts](/glossary/oci-container-artifact-registry/), so the [Distr Artifact Registry](/docs/registry/) can host them like any other artifact.
-You publish packages from your CI pipeline, decide which customer gets access to which package with [artifact entitlements](/docs/platform/artifact-entitlements/), and see per-customer download analytics.
+You publish packages from your CI pipeline, decide which customer gets access to which package with [artifact entitlements](/docs/platform/artifact-entitlements/) and see per-customer download analytics.
 Your customers pull a package once and can then deploy it into clusters that have no internet access at all.
 
 By the end of this guide, you'll have:
@@ -42,11 +42,11 @@ Before starting, ensure you have:
 The delivery pipeline looks like this:
 
 1. Your release workflow builds and pushes your container images and Helm chart
-2. `zarf package create` reads your `zarf.yaml`, resolves the chart (from a local path in this guide, but Helm repositories and Git are also supported), pulls all referenced images, and writes a single `.tar.zst` archive that also includes SBOMs for every image
+2. `zarf package create` reads your `zarf.yaml`, resolves the chart (from a local path in this guide, but Helm repositories and Git are also supported), pulls all referenced images and writes a single `.tar.zst` archive that also includes SBOMs for every image
 3. `zarf package publish` pushes the archive to the Distr registry as an OCI artifact
 4. Your customers deploy directly from the registry with `zarf package deploy oci://...`, or download the package once and carry it across the gap
 
-Once published, the package shows up in your Distr registry UI like any other artifact, including tags, size, and per-customer pull analytics.
+Once published, the package shows up in your Distr registry UI like any other artifact, including tags, size and per-customer pull analytics.
 
 ## Step 1: Create the Zarf Package Definition
 
@@ -77,9 +77,9 @@ components:
       - 'docker.io/postgres:18.4-alpine3.23'
 ```
 
-Key points:
+Notes on this definition:
 
-- `###ZARF_PKG_TMPL_VERSION###` is a Zarf package template. Its value is provided at build time with `--set VERSION=...`, so the package version, chart version, and image tags all stay in sync with your release tag.
+- `###ZARF_PKG_TMPL_VERSION###` is a Zarf package template. Its value is provided at build time with `--set VERSION=...`, so the package version, chart version and image tags all stay in sync with your release tag.
 - `charts[].version` is required, also for `localPath` charts. It must match the `version` in your `Chart.yaml`. If you use [Release Please](https://github.com/googleapis/release-please) as described in the [GitHub guide](/docs/integrations/github-actions/), both are bumped from the same release tag automatically.
 - `images` must list every image your chart deploys, including dependency images such as the PostgreSQL database. Zarf pushes these into the target cluster's internal registry at deploy time, so nothing is pulled from the internet.
 
@@ -98,7 +98,7 @@ helm dependency build deploy/charts/hello-distr
 zarf package create deploy/zarf --set VERSION=1.0.0 -o build --confirm
 ```
 
-This produces `build/zarf-package-hello-distr-<arch>-1.0.0.tar.zst` containing the chart, all images, and generated SBOMs.
+This produces `build/zarf-package-hello-distr-<arch>-1.0.0.tar.zst` containing the chart, all images and generated SBOMs.
 
 To test it against a local cluster (for example minikube) that has been initialized with `zarf init`:
 
@@ -106,7 +106,7 @@ To test it against a local cluster (for example minikube) that has been initiali
 zarf package deploy build/zarf-package-hello-distr-*-1.0.0.tar.zst --confirm
 ```
 
-Zarf pushes the bundled images into the cluster's internal registry, rewrites the image references, and installs the Helm chart. This is exactly what will happen later in your customer's environment.
+Zarf pushes the bundled images into the cluster's internal registry, rewrites the image references and installs the Helm chart. The same happens later in your customer's environment.
 
 ## Step 3: Publish to the Distr Registry
 
@@ -208,7 +208,7 @@ zarf package deploy oci://registry.distr.sh/your-slug/hello-distr:1.0.0 --confir
 
 ### Fully Air-Gapped Clusters
 
-For environments without any internet access, customers pull the package on a machine that can reach the Distr registry, transfer it across the gap (for example on physical media), and deploy from the local file:
+For environments without any internet access, customers pull the package on a machine that can reach the Distr registry, transfer it across the gap (for example on physical media) and deploy from the local file:
 
 ```shell
 # On a machine with registry access

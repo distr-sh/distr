@@ -15,12 +15,12 @@ They verify that the target system meets the minimum requirements (the correct D
 Deploying software to customer-managed infrastructure means you don't control the environment.
 Without pre-flight checks, deployments can fail silently or produce hard-to-diagnose issues:
 
-- **Docker version mismatches**: A customer runs an outdated Docker CLI that doesn't support features your Compose file relies on (e.g., `docker compose` v2 syntax, health check options, or specific network drivers).
-- **Insufficient resources**: The target machine doesn't have enough CPU cores, RAM, or free disk space to run your application, leading to OOM kills, slow performance, or failed container starts.
-- **Missing dependencies**: Required tools, kernel modules, or system libraries are not installed.
+- **Docker version mismatches**: A customer runs an outdated Docker CLI that doesn't support features your Compose file relies on (e.g., `docker compose` v2 syntax, health check options or specific network drivers).
+- **Insufficient resources**: The target machine doesn't have enough CPU cores, RAM or free disk space to run your application, which leads to OOM kills, slow performance or failed container starts.
+- **Missing dependencies**: Required tools, kernel modules or system libraries are not installed.
 - **Network issues**: The target machine cannot reach required endpoints such as container registries or external APIs.
 
-Pre-flight checks catch these problems **before** deployment begins, giving customers clear, actionable error messages instead of cryptic container failures.
+Pre-flight checks catch these problems **before** deployment begins, so customers get clear, actionable error messages instead of cryptic container failures.
 
 ## How It Works in Distr
 
@@ -46,7 +46,7 @@ The scripts are inlined into a `#!/bin/sh` script, so write them in POSIX shell 
 
 ## Example Pre-Flight Check Scripts
 
-Below are practical shell scripts you can use as pre-flight checks.
+You can use the following shell scripts as pre-flight checks.
 Each script exits with a non-zero status and prints an error message if the check fails.
 
 ### Minimum Docker CLI Version

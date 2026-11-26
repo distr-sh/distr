@@ -1,6 +1,6 @@
 ---
 title: License Management
-description: Control which versions of your software each customer can access, enforce usage limits, and generate signed license tokens using Distr's licensing system.
+description: Control which versions of your software each customer can access, enforce usage limits and generate signed license tokens using Distr's licensing system.
 slug: docs/platform/license-management
 sidebar:
   label: Overview
@@ -9,12 +9,12 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 
-License Management gives you granular control over what your customers can access, deploy, and use. You can restrict which application versions and artifacts each customer sees, and issue cryptographically signed license keys that let your application enforce usage limits and resource constraints at runtime.
+License Management gives you granular control over what your customers can access, deploy and use. You can restrict which application versions and artifacts each customer sees, and issue cryptographically signed license keys that let your application enforce usage limits and resource constraints at runtime.
 
 <Aside type="note">
-  License Management is a **Pro feature** available in Pro, Business,
-  Enterprise, and Pro Trial plans. The free Community Edition does not include
-  license management capabilities. Learn more about [subscription
+  License Management is a Pro feature available in Pro, Business, Enterprise and
+  Pro Trial plans. The free Community Edition does not include license
+  management capabilities. Learn more about [subscription
   plans](/docs/subscription-management/) and [choosing the right
   plan](/docs/subscription/).
 </Aside>
@@ -31,7 +31,7 @@ Entitlements and license keys are separate tools for different purposes. Entitle
 
 ## Finding a customer's licenses
 
-Licenses are managed per customer. In the Vendor Portal sidebar, click **Customers**, open a customer and select the **Licenses** tab. It shows all three types (Application Entitlements, Artifact Entitlements, and License Keys) for that customer in one place.
+Licenses are managed per customer. In the Vendor Portal sidebar, click **Customers**, open a customer and select the **Licenses** tab. It shows all three types (Application Entitlements, Artifact Entitlements and License Keys) for that customer in one place.
 
 The **Customers** list shows the license status of every customer, and its license filter narrows it down to the customers whose licenses have expired, expire soon or who have none.
 
@@ -50,12 +50,12 @@ Learn how to create and manage Application Entitlements in the [Application Enti
 
 ## Artifact Entitlements
 
-Artifact Entitlements control which artifacts and tags customers can pull from your registry. You can grant access to specific tags, all current tags, or all current and future tags.
+Artifact Entitlements control which artifacts and tags customers can pull from your registry. You can grant access to specific tags, all current tags or all current and future tags.
 
 Key properties:
 
 - Can include one or multiple artifacts
-- Tag access options: specific tags, all tags, or all tags including future ones
+- Tag access options: specific tags, all tags or all tags including future ones
 - Once you create your first entitlement, customers only see artifacts they're entitled to (before the first entitlement, all customers see everything)
 - Changes reflect immediately in the customer portal
 
@@ -63,7 +63,7 @@ Learn how to create and manage Artifact Entitlements in the [Artifact Entitlemen
 
 ## License Keys
 
-License Keys let you issue signed tokens that your application can verify to enforce usage limits, seat counts, feature flags, or any other runtime constraint you define.
+License Keys let you issue signed tokens that your application can verify to enforce usage limits, seat counts, feature flags or any other runtime constraint you define.
 
 A license key contains:
 
@@ -93,7 +93,7 @@ Your application verifies the token using the corresponding public key, with no 
   key still exists in Distr.
 </Aside>
 
-Learn how to create and manage License Keys, including how customers inject them into Docker, Helm, and registry-only deployments, in the [License Keys guide](/docs/platform/license-keys/).
+Learn how to create and manage License Keys, including how customers inject them into Docker, Helm and registry-only deployments, in the [License Keys guide](/docs/platform/license-keys/).
 
 ## Use cases
 
@@ -106,10 +106,10 @@ Learn how to create and manage License Keys, including how customers inject them
 
 ## Getting started
 
-1. Ensure you're on the Pro plan or higher
+1. Make sure you're on the Pro plan or higher
 2. Navigate to **Customers** in the Vendor Portal sidebar
 3. Open a customer and select the **Licenses** tab
-4. Create an Application Entitlement, Artifact Entitlement, or License Key from that tab
+4. Create an Application Entitlement, Artifact Entitlement or License Key from that tab
 
 <Aside type="tip">
   If the Licenses tab is locked, make sure you're on the Pro plan or higher. You
