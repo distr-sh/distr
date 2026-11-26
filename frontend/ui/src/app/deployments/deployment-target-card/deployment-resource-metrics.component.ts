@@ -5,7 +5,6 @@ import {rxResource} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleQuestion} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {switchMap, timer} from 'rxjs';
 import {RelativeDatePipe} from '../../../util/dates';
 import {isStale} from '../../../util/model';
 import {BytesPipe} from '../../../util/units';
@@ -42,8 +41,7 @@ export class DeploymentResourceMetricsComponent {
 
   protected readonly metrics = rxResource({
     params: () => ({deploymentId: this.deploymentId()}),
-    stream: ({params}) =>
-      timer(0, 30_000).pipe(switchMap(() => this.metricsService.getDeploymentMetrics(params.deploymentId))),
+    stream: ({params}) => this.metricsService.pollDeploymentMetrics(params.deploymentId),
   });
 
   protected readonly createdAt = computed(() => this.metrics.value()?.createdAt);

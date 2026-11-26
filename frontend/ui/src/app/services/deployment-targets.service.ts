@@ -1,4 +1,4 @@
-import {HttpClient, HttpErrorResponse, HttpParams} from '@angular/common/http';
+import {HttpClient, HttpParams} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {
   CreateDeploymentTargetRequest,
@@ -9,8 +9,9 @@ import {
   PatchDeploymentRequest,
   UpdateDeploymentTargetRequest,
 } from '@distr-sh/distr-sdk';
-import {EMPTY, merge, Observable, retry, shareReplay, Subject, switchMap, tap, timer} from 'rxjs';
+import {merge, Observable, shareReplay, Subject, switchMap, tap, timer} from 'rxjs';
 import {ReactiveList} from './cache';
+import {trackPolling} from './error-toast.interceptor';
 
 export interface DeploymentTargetFilter {
   customerOrganizationIds: string[];
@@ -71,14 +72,10 @@ export class DeploymentTargetsService {
   }
 
   private createPolling(params: HttpParams): Observable<DeploymentTarget[]> {
-    return merge(timer(0, 5000), this.pollRefresh$).pipe(
-      switchMap(() => this.httpClient.get<DeploymentTarget[]>(this.deploymentTargetsBaseUrl, {params})),
-      retry({
-        delay: (e, c) =>
-          e instanceof HttpErrorResponse && (!e.status || e.status >= 500)
-            ? timer(Math.min(Math.pow(c, 2), 30) * 1000)
-            : EMPTY,
-      })
+    return trackPolling((context) =>
+      merge(timer(0, 5000), this.pollRefresh$).pipe(
+        switchMap(() => this.httpClient.get<DeploymentTarget[]>(this.deploymentTargetsBaseUrl, {params, context}))
+      )
     );
   }
 
