@@ -1,7 +1,6 @@
 import {HttpContext} from '@angular/common/http';
 import {signal} from '@angular/core';
 import {map, Observable, tap} from 'rxjs';
-import {polling} from '../../services/error-toast.interceptor';
 import {OrderDirection, TimeseriesOptions} from '../../types/timeseries-options';
 
 export interface TimeseriesEntry {
@@ -26,8 +25,7 @@ export interface TimeseriesSource {
   readonly range: TimeseriesRange;
   load(): Observable<TimeseriesEntry[]>;
   loadBefore(before: Date): Observable<TimeseriesEntry[]>;
-  loadAfter(after: Date): Observable<TimeseriesEntry[]>;
-  pollAfter(after: Date): Observable<TimeseriesEntry[]>;
+  loadAfter(after: Date, context?: HttpContext): Observable<TimeseriesEntry[]>;
 }
 
 export function isLiveRange(range: TimeseriesRange): boolean {
@@ -58,16 +56,12 @@ export class RangeTimeseriesSource<T> implements TimeseriesSource {
     return this.query({});
   }
 
-  loadAfter(after: Date): Observable<TimeseriesEntry[]> {
-    return this.query({after});
+  loadAfter(after: Date, context?: HttpContext): Observable<TimeseriesEntry[]> {
+    return this.query({after}, context);
   }
 
   loadBefore(before: Date): Observable<TimeseriesEntry[]> {
     return this.query({before});
-  }
-
-  pollAfter(after: Date): Observable<TimeseriesEntry[]> {
-    return this.query({after}, polling());
   }
 
   // A cursor narrows the configured range and never replaces it, so paging cannot leave
@@ -106,12 +100,8 @@ export class TimeseriesSourceWithStatus implements TimeseriesSource {
     return this.withStatus(this.source.loadBefore(before));
   }
 
-  loadAfter(after: Date): Observable<TimeseriesEntry[]> {
-    return this.withStatus(this.source.loadAfter(after));
-  }
-
-  pollAfter(after: Date): Observable<TimeseriesEntry[]> {
-    return this.withStatus(this.source.pollAfter(after));
+  loadAfter(after: Date, context?: HttpContext): Observable<TimeseriesEntry[]> {
+    return this.withStatus(this.source.loadAfter(after, context));
   }
 
   private withStatus(entries: Observable<TimeseriesEntry[]>): Observable<TimeseriesEntry[]> {

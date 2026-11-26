@@ -32,6 +32,7 @@ import {distinctBy} from '../../../util/arrays';
 import {downloadBlob} from '../../../util/blob';
 import {displayedInToast, getFormDisplayedError} from '../../../util/errors';
 import {IntersectionObserverDirective} from '../../directives/intersection-observer.directive';
+import {trackPolling} from '../../services/error-toast.interceptor';
 import {ToastService} from '../../services/toast.service';
 import {SpinnerComponent} from '../spinner/spinner.component';
 import {
@@ -134,35 +135,37 @@ export class TimeseriesTableComponent {
           )
         ).pipe(tap((entries) => this.hasMore.set(entries.length >= source.batchSize))),
         live
-          ? initialLoad$.pipe(
-              switchMap(() =>
-                interval(TimeseriesTableComponent.LIVE_INTERVAL_MS).pipe(
-                  tap({
-                    subscribe: () => {
-                      this.polling.set(true);
-                      this.liveResetTimestamp.set(Date.now());
-                    },
-                    next: () => this.liveResetTimestamp.set(Date.now()),
-                    finalize: () => this.polling.set(false),
-                  })
-                )
-              ),
-              exhaustMap(() => {
-                const isFirstPage = nextBefore === null;
-                return source.pollAfter(nextAfter ?? emptyPageCursor).pipe(
-                  tap((entries) => {
-                    if (isFirstPage) {
-                      this.hasMore.set(entries.length >= source.batchSize);
-                    }
-                  }),
-                  catchError((err) => (displayedInToast(err) ? EMPTY : this.handleError(err)))
-                );
-              }),
-              tap((entries) => {
-                if (!newestFirst && entries.length > 0) {
-                  this.autoScrollIfAtBottom();
-                }
-              })
+          ? trackPolling((context) =>
+              initialLoad$.pipe(
+                switchMap(() =>
+                  interval(TimeseriesTableComponent.LIVE_INTERVAL_MS).pipe(
+                    tap({
+                      subscribe: () => {
+                        this.polling.set(true);
+                        this.liveResetTimestamp.set(Date.now());
+                      },
+                      next: () => this.liveResetTimestamp.set(Date.now()),
+                      finalize: () => this.polling.set(false),
+                    })
+                  )
+                ),
+                exhaustMap(() => {
+                  const isFirstPage = nextBefore === null;
+                  return source.loadAfter(nextAfter ?? emptyPageCursor, context).pipe(
+                    tap((entries) => {
+                      if (isFirstPage) {
+                        this.hasMore.set(entries.length >= source.batchSize);
+                      }
+                    }),
+                    catchError((err) => (displayedInToast(err) ? EMPTY : this.handleError(err)))
+                  );
+                }),
+                tap((entries) => {
+                  if (!newestFirst && entries.length > 0) {
+                    this.autoScrollIfAtBottom();
+                  }
+                })
+              )
             )
           : EMPTY
       ).pipe(
