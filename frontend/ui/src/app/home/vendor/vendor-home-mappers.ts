@@ -15,7 +15,7 @@ import {
 import {ApplicationEntitlement} from '../../types/application-entitlement';
 import {LatestArtifactPull} from '../../types/artifact-version-pull';
 import {License} from '../../types/license';
-import {SupportBundle, SupportBundleStatus} from '../../types/support-bundle';
+import {SupportBundle} from '../../types/support-bundle';
 import {
   DeploymentHealth,
   VendorHomeAdvisoryCounts,
@@ -28,8 +28,6 @@ import {
 export const vendorHomeAttentionStatuses: readonly DeploymentDisplayStatus[] = ['error', 'stale'];
 
 export const licenseExpiryWindowDays = 30;
-
-const openSupportBundleStatuses: readonly SupportBundleStatus[] = ['initialized', 'created'];
 
 /**
  * The customers with an expired license key or entitlement, those without one but with one that expires within the
@@ -68,7 +66,7 @@ export function toVendorHomeLicenses(
 }
 
 export function filterOpenSupportBundles(bundles: SupportBundle[]): SupportBundle[] {
-  return bundles.filter((bundle) => openSupportBundleStatuses.includes(bundle.status));
+  return bundles.filter((bundle) => bundle.status === 'open');
 }
 
 /** The advisory statuses the advisories card counts and links to. */

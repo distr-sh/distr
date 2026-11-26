@@ -71,7 +71,7 @@
                   <app-deployment-type-badge [type]="bundle.deploymentType" />
                 </td>
                 <td class="px-4 py-3">
-                  <app-support-bundle-status-badge [status]="bundle.status" />
+                  <app-support-bundle-status-badge [status]="bundle.status" [resourceCount]="bundle.resourceCount" />
                 </td>
                 <td class="px-4 py-3">{{ bundle.createdAt | date: 'medium' }}</td>
                 <td class="px-4 py-3">{{ bundle.resourceCount }}</td>

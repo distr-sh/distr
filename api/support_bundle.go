@@ -133,6 +133,7 @@ type SupportBundle struct {
 	Description                           *string              `json:"description,omitempty"`
 	Status                                string               `json:"status"`
 	ResourceCount                         int64                `json:"resourceCount"`
+	UploadedAt                            *time.Time           `json:"uploadedAt,omitempty"`
 	CommentCount                          int64                `json:"commentCount"`
 	LastCommentAt                         *time.Time           `json:"lastCommentAt,omitempty"`
 	StatusChangedByUserName               *string              `json:"statusChangedByUserName,omitempty"`

@@ -31,6 +31,7 @@ const (
 	EntryTypeSupportBundleCreated       EntryType = "support_bundle_created"
 	EntryTypeSupportBundleUploaded      EntryType = "support_bundle_uploaded"
 	EntryTypeSupportBundleResolved      EntryType = "support_bundle_resolved"
+	EntryTypeSupportBundleReopened      EntryType = "support_bundle_reopened"
 	EntryTypeTeamMemberAdded            EntryType = "team_member_added"
 )
 
@@ -281,20 +282,21 @@ func LicenseKeys(keys []types.LicenseKeyEvent) []Entry {
 	return result
 }
 
-// SupportBundles skips status changes that have no entry type, which is a status a bundle is created in.
 func SupportBundles(events []types.CustomerSupportBundleEvent) []Entry {
 	result := make([]Entry, 0, len(events))
 	for _, event := range events {
-		entryType := EntryTypeSupportBundleCreated
-		if event.Status != nil {
-			switch *event.Status {
-			case types.SupportBundleStatusCreated:
-				entryType = EntryTypeSupportBundleUploaded
-			case types.SupportBundleStatusResolved:
-				entryType = EntryTypeSupportBundleResolved
-			default:
-				continue
-			}
+		var entryType EntryType
+		switch event.Event {
+		case types.SupportBundleEventCreated:
+			entryType = EntryTypeSupportBundleCreated
+		case types.SupportBundleEventUploaded:
+			entryType = EntryTypeSupportBundleUploaded
+		case types.SupportBundleEventResolved:
+			entryType = EntryTypeSupportBundleResolved
+		case types.SupportBundleEventReopened:
+			entryType = EntryTypeSupportBundleReopened
+		default:
+			continue
 		}
 		result = append(result, Entry{
 			ID:                     event.SupportBundleID,

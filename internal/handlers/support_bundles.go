@@ -28,6 +28,8 @@ import (
 	"github.com/oaswrap/spec/option"
 )
 
+const supportBundleSecretValidity = 24 * time.Hour
+
 func SupportBundlesRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Support Bundles"))
 	r.Use(middleware.SupportBundlesCustomerFeatureMiddleware)
@@ -129,7 +131,6 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 					BundleIDRequest
 					api.UpdateSupportBundleStatusRequest
 				}{}))
-
 			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 				Delete("/", respond.Handler(deleteSupportBundleHandler)).
 				With(option.Description("Delete a support bundle")).
@@ -324,7 +325,7 @@ func createSupportBundleHandler(r *http.Request) (respond.Responder, error) {
 	} else {
 		baseURL := customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding)
 
-		expiresAt := time.Now().UTC().Add(24 * time.Hour)
+		expiresAt := time.Now().UTC().Add(supportBundleSecretValidity)
 		bundle := types.SupportBundle{
 			OrganizationID:         *a.CurrentOrgID(),
 			CustomerOrganizationID: *a.CurrentCustomerOrgID(),
@@ -392,7 +393,7 @@ func getSupportBundleDetailHandler(r *http.Request) (respond.Responder, error) {
 				comments, mapping.SupportBundleCommentToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID()),
 			),
 		}
-		if bundle.Status == types.SupportBundleStatusInitialized && bundle.BundleSecretExpiresAt != nil {
+		if bundle.Status == types.SupportBundleStatusOpen && bundle.BundleSecretExpiresAt != nil {
 			org, err := db.GetOrganizationWithBranding(ctx, bundle.OrganizationID)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get organization: %w", err)
@@ -550,48 +551,52 @@ func updateSupportBundleStatusHandler(r *http.Request) (respond.Responder, error
 	if resp != nil {
 		return resp, nil
 	}
-
-	var bundle *types.SupportBundleWithDetails
-	var err error
 	status := types.SupportBundleStatus(request.Status)
-	switch status {
-	case types.SupportBundleStatusResolved:
-		if a.CurrentCustomerOrgID() != nil {
-			return respond.Forbidden("customers cannot resolve support bundles"), nil
-		}
-		bundle, resp, err = requireSupportBundle(r)
-		if resp != nil || err != nil {
-			return resp, err
-		}
-		if bundle.Status == types.SupportBundleStatusResolved {
-			return respond.BadRequest("support request is already resolved"), nil
-		}
-		changedBy := a.CurrentUserID()
-		if bundle.Status == types.SupportBundleStatusInitialized {
-			err = db.RunTxRR(ctx, func(ctx context.Context) error {
-				if err := db.UpdateSupportBundleStatus(
-					ctx, bundle.ID, bundle.OrganizationID, status, &changedBy,
-				); err != nil {
-					return err
-				}
-				return db.ClearSupportBundleBundleSecret(ctx, bundle.ID)
-			})
-		} else {
-			err = db.UpdateSupportBundleStatus(
-				ctx, bundle.ID, bundle.OrganizationID, status, &changedBy,
-			)
-		}
-	default:
-		return respond.BadRequest("only 'resolved' status is allowed"), nil
+	if status != types.SupportBundleStatusOpen && status != types.SupportBundleStatusResolved {
+		return respond.BadRequest("status must be 'open' or 'resolved'"), nil
 	}
 
-	if errors.Is(err, distrerr.ErrNotFound) {
+	if bundle, resp, err := requireSupportBundle(r); resp != nil || err != nil {
+		return resp, err
+	} else if bundle.Status == status {
+		return respond.BadRequest(fmt.Sprintf("support request is already %v", status)), nil
+	} else if err := updateSupportBundleStatus(ctx, bundle, status, a.CurrentUserID()); errors.Is(
+		err, distrerr.ErrNotFound,
+	) {
 		return supportBundleNotFound, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to update support bundle status: %w", err)
 	} else {
 		return respond.NoContent(), nil
 	}
+}
+
+// updateSupportBundleStatus ends collection when a bundle is resolved and gives a bundle without resources a new
+// secret when it is reopened, so the customer can collect it again.
+func updateSupportBundleStatus(
+	ctx context.Context, bundle *types.SupportBundleWithDetails, status types.SupportBundleStatus, userID uuid.UUID,
+) error {
+	var bundleSecret string
+	if status == types.SupportBundleStatusOpen && bundle.ResourceCount == 0 {
+		var err error
+		if bundleSecret, err = security.GenerateAccessKey(); err != nil {
+			return fmt.Errorf("failed to generate collect token: %w", err)
+		}
+	}
+	return db.RunTxRR(ctx, func(ctx context.Context) error {
+		if err := db.UpdateSupportBundleStatus(ctx, bundle.ID, bundle.OrganizationID, status, userID); err != nil {
+			return err
+		} else if status == types.SupportBundleStatusResolved {
+			return db.ClearSupportBundleBundleSecret(ctx, bundle.ID)
+		} else if bundleSecret != "" {
+			return db.RenewSupportBundleBundleSecret(
+				ctx, &bundle.SupportBundle, dbcrypto.String(bundleSecret),
+				time.Now().UTC().Add(supportBundleSecretValidity),
+			)
+		} else {
+			return nil
+		}
+	})
 }
 
 func deleteSupportBundleHandler(r *http.Request) (respond.Responder, error) {

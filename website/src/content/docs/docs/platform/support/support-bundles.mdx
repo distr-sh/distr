@@ -168,7 +168,7 @@ In the detail view:
 
 - **Collected resources** are listed under **Resources** as a folder tree. Click a folder to open it and a file to read its content.
 - **Comments** appear below the resources. Both vendor and customer users can leave comments.
-- Click **Mark as Resolved** to close the request once the issue is addressed.
+- Click **Mark as Resolved** to close the request once the issue is addressed, and **Reopen** to pick up a resolved request again.
 - Click **Delete** to remove the request and its support bundle. The list has a delete button on every row as well.
 
 ## When a bundle is not enough
@@ -183,12 +183,14 @@ When the Support feature is enabled for a customer organization, customers see *
 
 ## Support request status lifecycle
 
-| Status          | Meaning                                                                         |
-| --------------- | ------------------------------------------------------------------------------- |
-| **Initialized** | Request created, collection script not yet run. Secret valid for 24 hours.      |
-| **Created**     | Collection script ran successfully. Resources are attached and ready to review. |
-| **Resolved**    | Vendor has marked the request as resolved.                                      |
+A request is either open or resolved. An open request shows whether a support bundle has been uploaded yet:
 
-Only vendors can resolve a request, including one without an uploaded support bundle. Once resolved, a request cannot be reopened. A request that is no longer needed can be deleted.
+| Status              | Meaning                                                                 |
+| ------------------- | ----------------------------------------------------------------------- |
+| **Awaiting upload** | Request open, collection script not yet run. Secret valid for 24 hours. |
+| **Uploaded**        | Request open, resources are attached and ready to review.               |
+| **Resolved**        | A vendor, partner or customer user has marked the request as resolved.  |
+
+Vendor, partner and customer users with the role **Administrator** or **User** can resolve a request, including one without an uploaded support bundle, and reopen a resolved one. Reopening a request without resources gives the customer a new collection command, valid for 24 hours. A request that is no longer needed can be deleted.
 
 Vendor, partner and customer users with the role **Administrator** or **User** can delete a request in any status. Deleting is permanent: the request, its collected resources and its comments are removed from Distr and cannot be restored.

@@ -26,15 +26,18 @@
             <div class="min-w-0">
               <span class="distr-home-row-title block truncate">{{ bundle.title }}</span>
               <span class="distr-home-row-meta" [title]="bundle.updatedAt | date: 'medium'">
-                @switch (bundle.status) {
-                  @case ('initialized') {
+                @switch (bundle.lastEvent) {
+                  @case ('created') {
                     Created
                   }
-                  @case ('created') {
+                  @case ('uploaded') {
                     Uploaded
                   }
                   @case ('resolved') {
                     Resolved
+                  }
+                  @case ('reopened') {
+                    Reopened
                   }
                 }
                 {{ bundle.updatedAt | relativeDate }}
@@ -43,7 +46,7 @@
                 }
               </span>
             </div>
-            <app-support-bundle-status-badge [status]="bundle.status" />
+            <app-support-bundle-status-badge [status]="bundle.status" [resourceCount]="bundle.resourceCount" />
           </a>
         </li>
       }

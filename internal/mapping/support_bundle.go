@@ -90,6 +90,7 @@ func SupportBundleToAPI(
 			Description:                           bundle.Description,
 			Status:                                string(bundle.Status),
 			ResourceCount:                         bundle.ResourceCount,
+			UploadedAt:                            bundle.UploadedAt,
 			CommentCount:                          bundle.CommentCount,
 			LastCommentAt:                         bundle.LastCommentAt,
 			StatusChangedByCustomerOrganizationID: bundle.StatusChangedByCustomerOrganizationID,

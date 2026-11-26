@@ -115,7 +115,7 @@ func uploadSupportBundleResourceHandler(r *http.Request) (respond.Responder, err
 
 	// The request body size is limited by the requestSize middleware on the route. A multipart form
 	// value does not go through decodeJSON, so it is not trimmed generically.
-	if bundle.Status != types.SupportBundleStatusInitialized {
+	if bundle.Status != types.SupportBundleStatusOpen {
 		return respond.BadRequest("support bundle is not accepting data"), nil
 	} else if err := r.ParseMultipartForm(1 << 20); err != nil {
 		return respond.Error(http.StatusRequestEntityTooLarge, "request body too large"), nil
@@ -155,17 +155,9 @@ func finalizeSupportBundleHandler(r *http.Request) (respond.Responder, error) {
 	ctx := r.Context()
 	bundle := auth.SupportBundleAuthentication.Require(ctx)
 
-	if bundle.Status != types.SupportBundleStatusInitialized {
-		return respond.BadRequest("support bundle is not in initialized state"), nil
-	} else if err := db.RunTxRR(ctx, func(ctx context.Context) error {
-		if err := db.UpdateSupportBundleStatus(
-			ctx, bundle.ID, bundle.OrganizationID, types.SupportBundleStatusCreated, nil,
-		); err != nil {
-			return err
-		}
-
-		return db.ClearSupportBundleBundleSecret(ctx, bundle.ID)
-	}); err != nil {
+	if bundle.Status != types.SupportBundleStatusOpen {
+		return respond.BadRequest("support bundle is not open"), nil
+	} else if err := db.ClearSupportBundleBundleSecret(ctx, bundle.ID); err != nil {
 		return nil, fmt.Errorf("failed to finalize support bundle: %w", err)
 	} else {
 		return respond.NoContent(), nil
