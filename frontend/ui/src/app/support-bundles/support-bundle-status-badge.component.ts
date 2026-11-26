@@ -8,7 +8,7 @@ import {
 
 @Component({
   selector: 'app-support-bundle-status-badge',
-  host: {class: 'distr-badge', '[class]': 'variantClass()'},
+  host: {class: 'distr-badge whitespace-nowrap', '[class]': 'variantClass()'},
   template: `{{ label() }}`,
 })
 export class SupportBundleStatusBadgeComponent {

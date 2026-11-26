@@ -2,19 +2,16 @@
   @if (bundle(); as bundle) {
     <div class="distr-panel mb-6">
       <div class="flex items-start justify-between gap-4">
-        <div>
-          <div class="flex items-center">
-            <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <h1 class="me-1 min-w-0 text-xl font-semibold wrap-break-word text-gray-900 dark:text-white">
               {{ title() }}
             </h1>
-            <app-deployment-type-badge class="ml-3" [type]="bundle.deploymentType" />
-            <app-support-bundle-status-badge
-              class="ml-2"
-              [status]="bundle.status"
-              [resourceCount]="bundle.resources.length" />
+            <app-deployment-type-badge [type]="bundle.deploymentType" />
+            <app-support-bundle-status-badge [status]="bundle.status" [resourceCount]="bundle.resources.length" />
           </div>
           @if (bundle.description) {
-            <p class="mt-3 text-sm text-gray-600 dark:text-gray-400">{{ bundle.description }}</p>
+            <p class="mt-3 text-sm wrap-break-word text-gray-600 dark:text-gray-400">{{ bundle.description }}</p>
           }
           <p class="mt-3 text-xs text-gray-500 dark:text-gray-500">
             Created {{ bundle.createdAt | date: 'medium' }}
