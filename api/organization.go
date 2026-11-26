@@ -8,16 +8,17 @@ import (
 )
 
 type UpdateOrganizationRequest struct {
-	Name                        string  `json:"name"`
-	Slug                        *string `json:"slug"`
-	DockerPreConnectScript      *string `json:"dockerPreConnectScript"`
-	DockerPostConnectScript     *string `json:"dockerPostConnectScript"`
-	DockerConnectScriptIsSudo   bool    `json:"dockerConnectScriptIsSudo"`
-	KubernetesPreConnectScript  *string `json:"kubernetesPreConnectScript"`
-	KubernetesPostConnectScript *string `json:"kubernetesPostConnectScript"`
-	ArtifactVersionMutable      bool    `json:"artifactVersionMutable"`
-	PrePostScriptsEnabled       bool    `json:"prePostScriptsEnabled"`
-	ControllerImageRepository   *string `json:"controllerImageRepository"`
+	Name                                string  `json:"name"`
+	Slug                                *string `json:"slug"`
+	DockerPreConnectScript              *string `json:"dockerPreConnectScript"`
+	DockerPostConnectScript             *string `json:"dockerPostConnectScript"`
+	DockerConnectScriptIsSudo           bool    `json:"dockerConnectScriptIsSudo"`
+	KubernetesPreConnectScript          *string `json:"kubernetesPreConnectScript"`
+	KubernetesPostConnectScript         *string `json:"kubernetesPostConnectScript"`
+	ArtifactVersionMutable              bool    `json:"artifactVersionMutable"`
+	PrePostScriptsEnabled               bool    `json:"prePostScriptsEnabled"`
+	ControllerImageRepository           *string `json:"controllerImageRepository"`
+	ControllerAnyArtifactVersionEnabled bool    `json:"controllerAnyArtifactVersionEnabled"`
 }
 
 func (r *UpdateOrganizationRequest) Normalize() {
@@ -40,11 +41,12 @@ func (r *UpdateOrganizationRequest) ValidateControllerImageRepository() error {
 
 type OrganizationResponse struct {
 	types.Organization
-	SubscriptionLimits               SubscriptionLimits `json:"subscriptionLimits"`
-	CurrentBillableUserAccountCount  int64              `json:"currentBillableUserAccountCount"`
-	CurrentCustomerOrganizationCount int64              `json:"currentCustomerOrganizationCount"`
-	ControllerImageRepository        *string            `json:"controllerImageRepository,omitempty"`
-	DefaultControllerImageRepository string             `json:"defaultControllerImageRepository"`
+	SubscriptionLimits                  SubscriptionLimits `json:"subscriptionLimits"`
+	CurrentBillableUserAccountCount     int64              `json:"currentBillableUserAccountCount"`
+	CurrentCustomerOrganizationCount    int64              `json:"currentCustomerOrganizationCount"`
+	ControllerImageRepository           *string            `json:"controllerImageRepository,omitempty"`
+	DefaultControllerImageRepository    string             `json:"defaultControllerImageRepository"`
+	ControllerAnyArtifactVersionEnabled bool               `json:"controllerAnyArtifactVersionEnabled"`
 }
 
 type OrganizationWebhookResponse struct {

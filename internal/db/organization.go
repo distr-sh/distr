@@ -41,7 +41,8 @@ var (
 		` + organizationStripeSecret.Value("o") + `,
 		` + organizationStripeSecret.IsSetValue("o") + `,
 		o.controller_image_repository,
-		o.registry_redirect_enabled
+		o.registry_redirect_enabled,
+		o.controller_any_artifact_version_enabled
 	`
 	organizationWithUserRoleOutputExpr = organizationOutputExpr + `,
 		j.user_role,
@@ -154,6 +155,7 @@ func UpdateOrganization(ctx context.Context, org *types.Organization) error {
 			kubernetes_pre_connect_script = @kubernetes_pre_connect_script,
 			kubernetes_post_connect_script = @kubernetes_post_connect_script,
 			controller_image_repository = @controller_image_repository,
+			controller_any_artifact_version_enabled = @controller_any_artifact_version_enabled,
 			stripe_webhook_secret = NULL,
 			stripe_webhook_secret_enc = @stripe_webhook_secret_enc
 		WHERE id = @id
@@ -176,6 +178,7 @@ func UpdateOrganization(ctx context.Context, org *types.Organization) error {
 			"kubernetes_pre_connect_script":               org.KubernetesPreConnectScript,
 			"kubernetes_post_connect_script":              org.KubernetesPostConnectScript,
 			"controller_image_repository":                 org.ControllerImageRepository,
+			"controller_any_artifact_version_enabled":     org.ControllerAnyArtifactVersionEnabled,
 			"stripe_webhook_secret_enc":                   stripeWebhookSecretEnc,
 		},
 	)

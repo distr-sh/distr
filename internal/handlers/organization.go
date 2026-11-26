@@ -166,6 +166,11 @@ func applyOrganizationUpdate(
 		needsUpdate = true
 	}
 
+	if request.ControllerAnyArtifactVersionEnabled != org.ControllerAnyArtifactVersionEnabled {
+		org.ControllerAnyArtifactVersionEnabled = request.ControllerAnyArtifactVersionEnabled
+		needsUpdate = true
+	}
+
 	if request.DockerConnectScriptIsSudo != org.DockerConnectScriptIsSudo {
 		org.DockerConnectScriptIsSudo = request.DockerConnectScriptIsSudo
 		needsUpdate = true

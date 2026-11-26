@@ -35,6 +35,10 @@ type Organization struct {
 	// RegistryRedirectEnabled overrides REGISTRY_S3_ALLOW_REDIRECT for the repositories of this organization
 	// when set.
 	RegistryRedirectEnabled *bool `db:"registry_redirect_enabled" json:"-"`
+	// ControllerAnyArtifactVersionEnabled lets a controller pull every version of an artifact its customer holds an
+	// artifact entitlement for, whatever versions the entitlement selects. Listing tags and referrers stays narrowed
+	// to the entitled versions.
+	ControllerAnyArtifactVersionEnabled bool `db:"controller_any_artifact_version_enabled" json:"-"`
 }
 
 func (org *Organization) ConnectScripts(deploymentType DeploymentType) (pre string, post string) {

@@ -85,6 +85,7 @@ export class GeneralSettingsComponent implements OnInit {
     prePostScriptsEnabled: this.fb.control<boolean>(false),
     controllerImageRepositoryEnabled: this.fb.control<boolean>(false),
     controllerImageRepository: this.fb.control<string | undefined>(undefined),
+    controllerAnyArtifactVersionEnabled: this.fb.control<boolean>(false),
   });
   formLoading = signal(false);
 

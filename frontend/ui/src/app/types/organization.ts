@@ -28,6 +28,7 @@ export interface UpdateOrganizationRequest {
   artifactVersionMutable: boolean;
   prePostScriptsEnabled: boolean;
   controllerImageRepository?: string;
+  controllerAnyArtifactVersionEnabled: boolean;
 }
 
 export interface Organization extends BaseModel, Named {
@@ -49,6 +50,7 @@ export interface Organization extends BaseModel, Named {
   stripeWebhookSecretConfigured: boolean;
   controllerImageRepository?: string;
   defaultControllerImageRepository: string;
+  controllerAnyArtifactVersionEnabled: boolean;
 }
 
 export interface OrganizationWithUserRole extends Organization {

@@ -21,6 +21,9 @@ const (
 	// ActionDelete needs the same permissions as ActionWrite, but is also allowed on a pull-through cache artifact.
 	ActionDelete Action = "delete"
 	ActionStat   Action = "stat"
+	// ActionDiscover reads like ActionRead, but lists content rather than pulling it, which is why it stays held
+	// to the entitled versions for a controller whose organization lets controllers pull any version.
+	ActionDiscover Action = "discover"
 )
 
 type Authorizer interface {
@@ -60,7 +63,7 @@ func authorizeWrite(auth authinfo.AuthInfoWithOrganization) error {
 // authorizeAnonymous is the only thing a request without credentials may do: read an artifact that
 // its organization has made public.
 func authorizeAnonymous(ctx context.Context, n *name.Name, action Action) error {
-	if action != ActionRead && action != ActionStat {
+	if action != ActionRead && action != ActionStat && action != ActionDiscover {
 		return ErrAuthenticationRequired
 	} else if err := authorizeAnonymousOrganization(ctx, n); err != nil {
 		return err
@@ -122,6 +125,16 @@ func authorizeOrganization(org *types.Organization, n *name.Name, authorizePubli
 	} else {
 		return false, NewErrAccessDenied("organization slug does not match reference")
 	}
+}
+
+func requiresEntitlement(principal authinfo.AuthInfoWithOrganization) bool {
+	return principal.CurrentCustomerOrgID() != nil && principal.CurrentOrg().HasFeature(types.FeatureLicensing)
+}
+
+func shouldIgnoreEntitledVersions(principal authinfo.AuthInfoWithOrganization, action Action) bool {
+	return principal.CurrentDeploymentTargetID() != nil &&
+		action != ActionDiscover &&
+		principal.CurrentOrg().ControllerAnyArtifactVersionEnabled
 }
 
 // authorizeUpstreamWrite rejects a push to a pull-through cache artifact.
@@ -197,13 +210,14 @@ func (a *authorizer) AuthorizeReference(ctx context.Context, nameStr string, ref
 		return authorizeUpstreamWrite(ctx, n)
 	}
 
-	if principal.CurrentCustomerOrgID() != nil && org.HasFeature(types.FeatureLicensing) {
+	if requiresEntitlement(principal) {
 		err := db.CheckEntitlementForArtifact(ctx,
 			n.OrgName,
 			n.ArtifactName,
 			reference,
 			*principal.CurrentCustomerOrgID(),
 			*principal.CurrentOrgID(),
+			shouldIgnoreEntitledVersions(principal, action),
 		)
 		if errors.Is(err, distrerr.ErrForbidden) {
 			return NewErrAccessDenied("entitlement required")
@@ -253,9 +267,15 @@ func (a *authorizer) AuthorizeBlob(
 		}
 	}
 
-	if principal.CurrentCustomerOrgID() != nil && org.HasFeature(types.FeatureLicensing) {
+	if requiresEntitlement(principal) {
 		err := db.CheckEntitlementForArtifactBlob(
-			ctx, digest.String(), n.ArtifactName, *principal.CurrentCustomerOrgID(), *principal.CurrentOrgID())
+			ctx,
+			digest.String(),
+			n.ArtifactName,
+			*principal.CurrentCustomerOrgID(),
+			*principal.CurrentOrgID(),
+			shouldIgnoreEntitledVersions(principal, action),
+		)
 		if errors.Is(err, distrerr.ErrForbidden) {
 			return NewErrAccessDenied("entitlement required")
 		} else if err != nil {
