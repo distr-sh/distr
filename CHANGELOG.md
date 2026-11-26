@@ -1,5 +1,51 @@
 # Changelog
 
+## [4.12.0](https://github.com/distr-sh/distr/compare/4.11.0...4.12.0) (2026-11-26)
+
+
+### Features
+
+* add application version deletion ([#4072](https://github.com/distr-sh/distr/issues/4072)) ([d118da8](https://github.com/distr-sh/distr/commit/d118da8d591b9958276b990a8243f00e6cf0caed))
+* add more sources for the activity feed ([#4038](https://github.com/distr-sh/distr/issues/4038)) ([edee07b](https://github.com/distr-sh/distr/commit/edee07be7e842f2b717a38d30275611da618f475))
+* configurable pod annotations, node selector and tolerations for the Kubernetes controller ([#3849](https://github.com/distr-sh/distr/issues/3849)) ([74f2829](https://github.com/distr-sh/distr/commit/74f2829e15620faaad9d62a78027bf461eb317ee))
+* **frontend:** add updating subscription on create user/customer ([#4075](https://github.com/distr-sh/distr/issues/4075)) ([dbf29f5](https://github.com/distr-sh/distr/commit/dbf29f5d214743981dd869999d8dc6d36af62aa6))
+* **sdk:** allow extra request headers in the client config ([#4094](https://github.com/distr-sh/distr/issues/4094)) ([96eb3cb](https://github.com/distr-sh/distr/commit/96eb3cb5572cb43ee5085835b262fd7a7109a0e7))
+
+
+### Bug Fixes
+
+* **backend:** return 404 instead of panicking when a customer has no entitlement for an application ([#4062](https://github.com/distr-sh/distr/issues/4062)) ([0fd00ee](https://github.com/distr-sh/distr/commit/0fd00ee60e07e3204d6355b203a7aed9ad28df7b))
+* **deps:** update module github.com/spf13/pflag to v1.1.0 ([#4065](https://github.com/distr-sh/distr/issues/4065)) ([c5f9ff5](https://github.com/distr-sh/distr/commit/c5f9ff51a6af0bfa316d9cb10ff0f518a9e64976))
+* **deps:** update module go.opentelemetry.io/collector/component to v1.72.0 ([#4058](https://github.com/distr-sh/distr/issues/4058)) ([4e473aa](https://github.com/distr-sh/distr/commit/4e473aab8a5205506ee5eb9315a4b0d8abbf51b3))
+* **deps:** update module go.opentelemetry.io/collector/confmap to v1.72.0 ([#4066](https://github.com/distr-sh/distr/issues/4066)) ([59488f3](https://github.com/distr-sh/distr/commit/59488f30aba35a994fc827433cf55d48922a0dd1))
+* **deps:** update module go.opentelemetry.io/collector/receiver to v1.72.0 ([#4068](https://github.com/distr-sh/distr/issues/4068)) ([5926752](https://github.com/distr-sh/distr/commit/59267529db1da6b9061d285afcdf1a400c5ca642))
+* **deps:** update module k8s.io/klog/v2 to v2.140.0 ([#4069](https://github.com/distr-sh/distr/issues/4069)) ([6450e50](https://github.com/distr-sh/distr/commit/6450e50cd94b35f362771b0e333dc8789b61342b))
+* **frontend:** fix permission issues in users tutorial ([#4076](https://github.com/distr-sh/distr/issues/4076)) ([15640ce](https://github.com/distr-sh/distr/commit/15640ce1fce81e493b90cba78525d72f7cf47286))
+* **frontend:** truncate long names in command palette ([#4074](https://github.com/distr-sh/distr/issues/4074)) ([ec1997c](https://github.com/distr-sh/distr/commit/ec1997c3b426b3161c821e5ecf053efc1d23f6eb))
+* prevent support request creation by vendor ([#4073](https://github.com/distr-sh/distr/issues/4073)) ([6867a25](https://github.com/distr-sh/distr/commit/6867a257729337bc5b14af74dbcd4edee3a8b528))
+
+
+### Other
+
+* **backend:** improve sentry tracing ([#4052](https://github.com/distr-sh/distr/issues/4052)) ([f71745d](https://github.com/distr-sh/distr/commit/f71745d4c19f543041451213c7d297852525f5f7))
+* **deps:** update dependency stripe to v1.55.15 ([#4080](https://github.com/distr-sh/distr/issues/4080)) ([8e91f3a](https://github.com/distr-sh/distr/commit/8e91f3a69996c66a3ad1f376d4f087863d134113))
+* **deps:** update hello-distr to v0.4.35 ([#4082](https://github.com/distr-sh/distr/issues/4082)) ([c5c7320](https://github.com/distr-sh/distr/commit/c5c7320464d6731d31bee111393c98ccb32ebe6d))
+* **deps:** update module golang.org/x/net to v0.62.0 [security] ([#4063](https://github.com/distr-sh/distr/issues/4063)) ([0085cb7](https://github.com/distr-sh/distr/commit/0085cb7c0ed4cc2cb4f2ceefda2fe345a7f1004c))
+* **deps:** update postgresql docker tag to v18.12.26 ([#4041](https://github.com/distr-sh/distr/issues/4041)) ([788fa31](https://github.com/distr-sh/distr/commit/788fa313a79b39abc5235b0b231e1adddd8a6137))
+* **frontend:** Hide higher level users on support bundles ([#3993](https://github.com/distr-sh/distr/issues/3993)) ([b0745db](https://github.com/distr-sh/distr/commit/b0745dbc448deabcb5ce3cb12e9c904bdf45f0fc))
+* **frontend:** show deployment target cards in two columns on smaller screens ([#4061](https://github.com/distr-sh/distr/issues/4061)) ([bb17e2c](https://github.com/distr-sh/distr/commit/bb17e2c844439027175421249dbcb28c6b91e8c9))
+
+
+### Docs
+
+* add NOTICE and THIRD_PARTY_LICENSES.md ([#3992](https://github.com/distr-sh/distr/issues/3992)) ([efad4a2](https://github.com/distr-sh/distr/commit/efad4a24f1025e78fa43aa2724663084958f1367))
+* refresh the screenshots for the new UI and restructure the platform docs ([#4078](https://github.com/distr-sh/distr/issues/4078)) ([4601472](https://github.com/distr-sh/distr/commit/4601472652cfc763771ae52fb619bc7b1a14a43e))
+
+
+### Refactoring
+
+* unify author of activity feed entry with support bundle actions ([#4064](https://github.com/distr-sh/distr/issues/4064)) ([7a9f3ef](https://github.com/distr-sh/distr/commit/7a9f3efc280caa3a47cbf014365a7774ef38be23))
+
 ## [4.11.0](https://github.com/distr-sh/distr/compare/4.10.0...4.11.0) (2026-11-25)
 
 
