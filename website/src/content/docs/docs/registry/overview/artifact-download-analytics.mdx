@@ -9,17 +9,18 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import downloadLight from '~/assets/docs/registry/overview/download-light.png';
-import downloadDark from '~/assets/docs/registry/overview/download-dark.png';
+import downloadsLight from '~/assets/screenshots/distr/distr-artifacts-light.webp';
+import downloadsDark from '~/assets/screenshots/distr/distr-artifacts-dark.webp';
 
 Every artifact pull from the Distr registry is recorded automatically.
-The **Downloads** page in the vendor portal gives you a chronological log of every pull, with filters to narrow down exactly what you're looking for and a CSV export for offline analysis.
+The **Downloads** page in the Vendor Portal gives you a chronological log of every pull, with filters to narrow down exactly what you're looking for and a CSV export for offline analysis.
 To open it, click **Registry** in the sidebar and then **Downloads** next to **Add artifact**.
+The **Registry** tab of a customer shows the same log for that customer alone.
 
 <ThemedImage
-  lightSrc={downloadLight}
-  darkSrc={downloadDark}
-  alt="Download analytics table in the Distr vendor portal"
+  lightSrc={downloadsLight}
+  darkSrc={downloadsDark}
+  alt="Downloads page of the Distr Vendor Portal filtered by one customer"
 />
 
 ## What gets tracked

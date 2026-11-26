@@ -11,12 +11,12 @@ import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
 import lightModeRegistry from '~/assets/docs/registry/overview/light-mode-registry.png';
 import darkModeRegistry from '~/assets/docs/registry/overview/dark-mode-registry.png';
-import artifactsListLight from '~/assets/docs/registry/overview/artifacts-list-light.png';
-import artifactsListDark from '~/assets/docs/registry/overview/artifacts-list-dark.png';
-import artifactDetailsLight from '~/assets/docs/registry/overview/artifact-details-light.png';
-import artifactDetailsDark from '~/assets/docs/registry/overview/artifact-details-dark.png';
-import dashboardArtifactViewLight from '~/assets/docs/registry/overview/dashboard-artifact-view-light.png';
-import dashboardArtifactViewDark from '~/assets/docs/registry/overview/dashboard-artifact-view-dark.png';
+import artifactsListLight from '~/assets/docs/registry/overview/artifacts-list-light.webp';
+import artifactsListDark from '~/assets/docs/registry/overview/artifacts-list-dark.webp';
+import artifactDetailsLight from '~/assets/docs/registry/overview/artifact-details-light.webp';
+import artifactDetailsDark from '~/assets/docs/registry/overview/artifact-details-dark.webp';
+import customerArtifactPullsLight from '~/assets/docs/registry/overview/customer-artifact-pulls-light.webp';
+import customerArtifactPullsDark from '~/assets/docs/registry/overview/customer-artifact-pulls-dark.webp';
 
 The Distr Artifact Registry is a built-in, [OCI-compliant](/glossary/oci-container-artifact-registry/) registry designed for AI and software companies
 to distribute Docker images and [Helm Charts](/glossary/helm-chart/), [SBOMs](/glossary/sbom-software-bill-of-materials/) and other OCI artifacts to [self-managed](/glossary/self-hosted-software/) and [BYOC](/glossary/byoc-definition/) environments.
@@ -73,22 +73,22 @@ Want a quick overview of how it works? Watch this short walkthrough:
 
 ### Artifact List
 
-The Artifact List page lets you view all artifacts stored in your registry. It provides an overview of pull counts across all tags, along with insights into which users and customers are using each artifact.
+Click **Registry** in the sidebar to view all artifacts stored in your registry. The list shows the pull count of each artifact across all tags, along with the users and customers who pulled it, and marks [pull-through cache](/docs/registry/pull-through-cache/) and [public](#public-artifacts) artifacts.
 
 <ThemedImage
   lightSrc={artifactsListLight}
   darkSrc={artifactsListDark}
-  alt="Registry artifacts view"
+  alt="Registry page of the Distr Vendor Portal listing all artifacts with their pull counts"
 />
 
 ### Artifact Details
 
-The artifact details page gives you a complete view of all tags associated with a specific artifact. You can see the OCI URL, upload date, and artifact size, along with pull counts for each tag.
+The artifact details page gives you a complete view of all tags associated with a specific artifact. You can see the command to pull it, the upload date and size of every version, along with pull counts and the users and customers who pulled each one.
 
 <ThemedImage
   lightSrc={artifactDetailsLight}
   darkSrc={artifactDetailsDark}
-  alt="Registry artifacts view"
+  alt="Artifact details page with the pull command and the versions of the artifact"
 />
 
 <Aside type="note">
@@ -96,8 +96,8 @@ The artifact details page gives you a complete view of all tags associated with 
   once a tag is pushed to the registry it can't be associated with another
   digest. We believe immutable tags are a safer and more secure default, as they
   guarantee that a given tag always refers to the exact same content. If you
-  need to overwrite existing tags, mutable tags can be enabled on the
-  organization settings page ("Artifact versions are mutable").
+  need to overwrite existing tags, enable **Artifact versions are mutable** in
+  **Settings** under **General**.
 </Aside>
 
 ## Versioning Strategy
@@ -165,14 +165,15 @@ Every anonymous pull is recorded in the [download
 analytics](/docs/registry/analytics/) like any other pull, marked as
 **Anonymous** since there is no user or customer behind it.
 
-## Global Dashboard Artifact View
+## Artifact Pulls per Customer
 
-The main Distr dashboard also provides a global view of which artifacts each end customer has consumed, including version details and a health status.
+To see which artifacts and versions a single customer has pulled, open the customer on the **Customers** page and switch to the **Registry** tab.
+It lists every pull of that customer with the user or deployment that pulled, the IP address, the artifact and the version, and offers the CSV export and the filters of the [Downloads page](/docs/registry/analytics/) except the customer filter and the anonymous user option, since every pull in it belongs to that customer.
 
 <ThemedImage
-  lightSrc={dashboardArtifactViewLight}
-  darkSrc={dashboardArtifactViewDark}
-  alt="Registry artifacts view"
+  lightSrc={customerArtifactPullsLight}
+  darkSrc={customerArtifactPullsDark}
+  alt="Registry tab of a customer listing the artifact pulls of that customer"
 />
 
 ## Artifact Deletion
@@ -267,5 +268,5 @@ Artifacts can be deleted when they are not referenced in any entitlement, includ
 
 - **Check entitlements first**: Before deleting artifacts or tags, verify they are not referenced in customer entitlements
 - **Use caution with tags**: Deleting tags can affect customer access if not done carefully
-- **Monitor usage**: Review the Downloads section to understand which artifacts and versions are actively used
+- **Monitor usage**: Review the Downloads page to understand which artifacts and versions are actively used
 - **Mind the last tag**: Deleting the last tag of an artifact deletes the artifact with it

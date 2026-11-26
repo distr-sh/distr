@@ -166,9 +166,13 @@ export default defineConfig({
                   ],
                 },
                 {
-                  label: 'Monitoring',
+                  label: 'Notifications',
                   items: [
-                    {autogenerate: {directory: 'docs/controllers/monitoring'}},
+                    {
+                      autogenerate: {
+                        directory: 'docs/controllers/notifications',
+                      },
+                    },
                   ],
                 },
                 {
@@ -224,13 +228,9 @@ export default defineConfig({
                   ],
                 },
                 {
-                  label: 'User Management',
+                  label: 'Settings',
                   items: [
-                    {
-                      autogenerate: {
-                        directory: 'docs/platform/user-management',
-                      },
-                    },
+                    {autogenerate: {directory: 'docs/platform/settings'}},
                   ],
                 },
               ],

@@ -4,16 +4,16 @@ description: Apply custom branding and content to the Customer Portal, allowing 
 slug: docs/platform/branding
 sidebar:
   label: Branding & White-Labeling
-  order: 2
+  order: 4
 ---
 
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import brandingConfigLight from '~/assets/docs/platform/customers/branding/branding-config-light.png';
-import brandingConfigDark from '~/assets/docs/platform/customers/branding/branding-config-dark.png';
-import brandingWhiteLabelLight from '~/assets/docs/platform/customers/branding/branding-white-label-light.png';
-import brandingWhiteLabelDark from '~/assets/docs/platform/customers/branding/branding-white-label-dark.png';
-import brandedCustomerPortalLight from '~/assets/docs/platform/customers/branding/branded-customer-portal-light.png';
-import brandedCustomerPortalDark from '~/assets/docs/platform/customers/branding/branded-customer-portal-dark.png';
+import brandingConfigLight from '~/assets/docs/platform/customers/branding/branding-config-light.webp';
+import brandingConfigDark from '~/assets/docs/platform/customers/branding/branding-config-dark.webp';
+import brandingWhiteLabelLight from '~/assets/docs/platform/customers/branding/branding-white-label-light.webp';
+import brandingWhiteLabelDark from '~/assets/docs/platform/customers/branding/branding-white-label-dark.webp';
+import brandedCustomerPortalLight from '~/assets/docs/platform/customers/branding/branded-customer-portal-light.webp';
+import brandedCustomerPortalDark from '~/assets/docs/platform/customers/branding/branded-customer-portal-dark.webp';
 import {Aside} from '@astrojs/starlight/components';
 
 The Branding tab of the Customer Portal page in the Vendor Portal allows you to apply your own branding to the UI that customers use to deploy and manage your software.
@@ -74,7 +74,7 @@ None of these settings require a custom domain: they apply to all logged-in user
 <ThemedImage
   lightSrc={brandingWhiteLabelLight}
   darkSrc={brandingWhiteLabelDark}
-  alt="White-label section of the Branding page"
+  alt="White-label section of the Branding tab"
 />
 
 ## Custom Domains
@@ -104,7 +104,7 @@ A domain is only used for links, mails, controller manifests and registry URLs o
   immediately and its TLS certificate is no longer renewed.
 </Aside>
 
-A customer that needs its own hostname and its own identity provider, rather than sharing your customer portal domain, can get one: grant it the **Identity Provider** feature on the **Overview** tab of the customer, described in [Custom Identity Provider](/docs/platform/custom-identity-provider/#letting-a-customer-bring-its-own-provider).
+A customer that needs its own hostname and its own identity provider, rather than sharing your customer portal domain, can get one: grant it the **Identity Provider** feature on the **Settings** tab of the customer, described in [Custom Identity Provider](/docs/platform/custom-identity-provider/#letting-a-customer-bring-its-own-provider).
 
 <Aside type="caution" title="Login methods on your custom domain">
   The Google, GitHub and Microsoft sign-in buttons are configured for the Distr
@@ -128,7 +128,7 @@ To have your customers pull them from another registry, enable **Use an external
 The setting applies to all of your customers.
 
 A single customer can pull from a repository of its own, so that its deployment targets show neither Distr nor your registry domain.
-Grant the customer the **Settings** feature on its **Overview** tab (requires the Business plan), then set the repository in its **Settings** tab, or let its administrators set it on their own **Settings** page.
+Grant the customer the **Advanced Settings** feature on its **Settings** tab (requires the Business plan), then set the repository in the **Advanced Settings** panel of the same tab, or let its administrators set it on their own **Settings** page.
 It takes precedence over the repository of your organization.
 
 Only the prefix can be changed. Distr appends the image names `docker-controller`, `docker-autoheal` and `kubernetes-controller` with the controller version as the tag, so your registry has to host the images under these names.

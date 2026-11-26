@@ -1,0 +1,51 @@
+---
+import LinkButton from '~/components/overwrites/LinkButton.astro';
+import weave from '~/assets/customers/weave/logo-mono.svg';
+import ozgar from '~/assets/customers/ozgar-ai/logo-mono.svg';
+import basedash from '~/assets/customers/basedash/logo-mono.svg';
+import candor from '~/assets/customers/candor/logo-mono.svg';
+
+const customers = [
+  {name: 'Weave', logo: weave, href: '/case-studies/weave/'},
+  {name: 'Ozgar AI', logo: ozgar, href: '/case-studies/ozgar-ai/'},
+  {name: 'Basedash', logo: basedash, href: '/case-studies/basedash/'},
+  {name: 'Candor', logo: candor, href: '/case-studies/candor/'},
+];
+---
+
+<section
+  class="py-10 md:py-16 bg-gray-50 dark:bg-gray-800"
+  aria-labelledby="customer-logos-label">
+  <div class="container mx-auto px-4 max-w-6xl text-center">
+    <p
+      id="customer-logos-label"
+      class="text-sm font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-8 md:mb-12">
+      Trusted by teams shipping self-hosted software
+    </p>
+    <ul class="not-content flex flex-wrap items-center justify-center gap-x-14 gap-y-10 md:gap-x-24 list-none p-0 m-0">
+      {customers.map(customer => (
+        <li class="m-0">
+          <a
+            href={customer.href}
+            class="block opacity-70 hover:opacity-100 transition-opacity">
+            <img
+              src={customer.logo.src}
+              alt={`${customer.name} case study`}
+              class="h-8 md:h-11 w-auto dark:invert"
+              loading="lazy"
+            />
+          </a>
+        </li>
+      ))}
+    </ul>
+    <div class="mt-8 md:mt-12">
+      <LinkButton
+        href="/case-studies/"
+        variant="minimal"
+        icon="lucide:arrow-right"
+        iconPlacement="end">
+        Read the case studies
+      </LinkButton>
+    </div>
+  </div>
+</section>

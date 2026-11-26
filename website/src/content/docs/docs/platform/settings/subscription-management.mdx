@@ -1,0 +1,219 @@
+---
+title: 'Subscription Management'
+description: 'Manage your Distr subscription, add or remove users and customers, view invoices, and handle billing through the Vendor Portal and Stripe.'
+slug: docs/subscription-management
+sidebar:
+  label: Subscription Management
+  order: 4
+---
+
+import {Aside} from '@astrojs/starlight/components';
+
+Distr offers subscription plans that scale with your software distribution needs. All new organizations start with a **Pro Trial** period, giving you full access to Pro features for up to 30 days to evaluate the platform.
+
+## Available Plans
+
+Distr provides three subscription tiers:
+
+- **Pro** - For distributing and operating customer installs with license management and RBAC
+- **Business** - For distributing at scale with partner management and full white label
+- **Enterprise** - For organizations using Distr as their complete commercial platform
+
+Every plan is available on Distr Cloud or self-hosted in your own environment. This page covers subscriptions on Distr Cloud. If you want to self-host a plan, [contact us](/contact/).
+
+For detailed feature comparisons, limits, and pricing, visit our [pricing page](/pricing/). To understand which plan is right for your needs, see our guide on [choosing a plan](/docs/subscription/).
+
+<Aside type="tip">
+  New organizations start with a 30-day Pro Trial on Distr Cloud (see our [trial
+  guide](/docs/free-trial/)). To try Distr locally instead, run the free and
+  open source Community Edition from our [self-hosting
+  guide](/docs/self-hosting/).
+</Aside>
+
+## Managing Your Subscription
+
+### Accessing Subscription Management
+
+Subscription management is available in the **Subscription** tab of the Vendor Portal settings. Only organization admins can open it, so other users have to ask an admin to manage the subscription.
+
+1. Log in to the [Vendor Portal](https://app.distr.sh/settings/organization/subscription)
+2. Click **Settings** in the sidebar and open the **Subscription** tab
+3. View your current subscription status, limits, and usage
+
+### Viewing Subscription Details
+
+The Subscription page displays:
+
+- **Current Usage** - How many customers and users you're currently using, along with your registry storage consumption and log retention period
+- **Usage Limits** - Current limits for customer organizations and user accounts
+- **Current Subscription Type** - Your active plan (Pro Trial, Pro, Business, or Enterprise)
+- **Subscription Renewal Date** - When your current subscription renews
+
+### Managing Customers and Users Within Your Plan
+
+You can add customer organizations and internal users within your current subscription plan limits:
+
+- **Adding Customers** - Add new customer organizations up to your plan's limit through the Vendor Portal
+- **Adding Users** - Add internal team members and customer users within your plan's user account limits
+- **Self-Service** - These operations are available directly in the Vendor Portal without requiring plan changes
+
+<Aside type="tip">
+  Monitor your usage in the Subscription section to see how many customers and
+  users you're currently using versus your plan limits.
+</Aside>
+
+### Updating Your Subscription
+
+#### Upgrading from Pro to Business
+
+Organization admins can upgrade from the Pro plan to the Business plan directly in the Vendor Portal:
+
+1. Navigate to **Settings** in the Vendor Portal and open the **Subscription** tab
+2. In the **Upgrade to Business** section, review the Business plan features and the estimated cost for your current quantities
+3. Click **Upgrade to Business** and confirm the change
+4. The upgrade takes effect immediately. On a yearly subscription the prorated amount is invoiced and charged immediately, on a monthly subscription it is reflected on your next invoice
+
+#### Downgrading or Other Plan Changes
+
+Downgrades and all other plan changes cannot be made through the Vendor Portal:
+
+1. Contact our support team via email at **support@distr.sh**
+2. Specify which plan you'd like to switch to
+3. Our team will process your request and guide you through the transition
+
+### Pro Rata Adjustment
+
+Whenever your subscription changes in the middle of a billing cycle — adding internal users or customers, or upgrading from Pro to Business — Stripe automatically applies a pro rata adjustment:
+
+- **Unused Time Credit** - You receive a credit for the unused time on your previous quantities or plan
+- **Remaining Time Charge** - You're charged for the new quantities or plan for the remainder of the current billing cycle
+- **Invoicing** - On a yearly subscription, the adjustment is invoiced and charged immediately. On a monthly subscription, it appears on your next invoice
+- **Renewal Date** - Your renewal date stays the same
+
+For a concrete example, see [Adding Users or Customers During a Billing Cycle](#adding-users-or-customers-during-a-billing-cycle).
+
+### Quantity Updates During Billing Cycle
+
+You can add internal Users and Customers within your plan limits in the middle of a billing cycle.
+
+#### Adding Users or Customers During a Billing Cycle
+
+When you add more customers or users to your Pro plan mid-cycle:
+
+- **Immediate Access** - The additional customers and users become available immediately
+- **Prorated Charges** - You'll be charged a prorated amount for the additional customers and users for the remainder of the current billing cycle
+- **Yearly Billing** - The prorated amount is invoiced and charged to your payment method immediately
+- **Monthly Billing** - The prorated amount is added to your next month's invoice
+
+**Example:**
+
+If you're on a Pro plan and add more customers on day 15 of a monthly billing cycle:
+
+- You currently have 10 customers on your Pro plan
+- You add 5 more customers (now 15 total)
+- You've used 15 days of your current billing cycle
+- You'll be charged a prorated amount for the 5 additional customers for the remaining 15 days
+- This prorated amount appears on your next month's invoice
+- You immediately gain access to the additional customers
+
+On a yearly subscription, adding the same 5 customers 6 months into the billing cycle creates an invoice for the remaining 6 months right away, which is charged to your payment method on file. Your renewal date does not change.
+
+#### Reducing Internal Users or Customers During a Billing Cycle
+
+When you downgrade your plan mid-cycle, the new plan and its limits take effect right away. To ensure a smooth transition, make sure your account is already within the limits of the plan you're switching to. If you currently have more customers or users than the new plan allows, you'll need to remove the excess before completing the downgrade.
+
+Once you're within the new plan's limits:
+
+- **Immediate Plan Change**: Your subscription updates right away
+- **Continued Access**: You keep access to your remaining customers and users for the rest of the current billing cycle
+- **Next Billing Cycle**: Your next month's invoice reflects the price of your new plan
+
+**Example:**
+If you're on the Business plan with 120 customers and want to move to the Pro plan that allows 100 customers:
+
+- Reduce your customer count from 120 to 100
+- Once you're at 100 customers, you can downgrade immediately
+- You continue using the new plan for the rest of your current billing cycle
+- Starting next month, your invoice reflects the new plan's pricing
+
+### Cancelling Your Subscription
+
+Subscriptions can be cancelled through the Stripe Customer Portal:
+
+1. Navigate to **Settings** in the Vendor Portal and open the **Subscription** tab
+2. Click **Manage Subscription** - This opens the Stripe Customer Portal
+3. In Stripe, navigate to your subscription
+4. Click **Cancel Subscription**
+5. Your subscription will remain active until the end of your current billing period
+6. Once that period ends, Distr sends you to the subscription page and you cannot use the Vendor Portal until you select a plan again. Your data, customers, and deployments stay intact
+
+<Aside type="note">
+  After cancelling, you can reactivate your subscription through the Stripe
+  Customer Portal or by selecting a new plan in the Vendor Portal.
+</Aside>
+
+## Understanding Usage Limits
+
+### Subscription Limits
+
+Each subscription tier has specific limits on:
+
+- **Customer Organizations** - The number of end-customer organizations you can onboard
+- **User Accounts** - The number of internal team members in your organization
+- **Deployments** - The number of internal deployments or deployments per customer organization.
+- **Registry Storage** - The amount of artifact storage available
+
+For specific limits per plan, visit our [pricing page](/pricing/).
+
+### Limit Enforcement
+
+When you approach or reach your subscription limits:
+
+1. **Warning Indicators** - The Subscription page shows your current usage vs. limits
+2. **Prevention** - You cannot create new customers or users beyond your limits
+
+## Billing & Invoices
+
+### Stripe Customer Portal
+
+All billing operations are managed through the Stripe Customer Portal:
+
+1. Navigate to **Settings** in the Vendor Portal and open the **Subscription** tab
+2. Click **Manage Subscription** - This opens the Stripe Customer Portal in a new window
+3. In Stripe, you can:
+   - View and download invoices
+   - Update payment methods
+   - View payment history
+   - Cancel your subscription
+
+### Subscription Periods
+
+Distr subscriptions support:
+
+- **Monthly Billing** - Charged monthly, cancel anytime
+- **Yearly Billing** - Charged yearly upfront (discounted pricing)
+
+<Aside type="note">
+  Billing cycle changes (e.g., monthly to yearly or yearly to monthly) cannot be
+  made through the Vendor Portal. To change your billing cycle, please contact
+  our support team via email at **support@distr.sh**. Our team will help you
+  switch between monthly and yearly billing.
+</Aside>
+
+### Invoices
+
+- **Automatic Generation** - Invoices are automatically generated for each billing cycle
+- **Email Delivery** - Invoices are sent to your organization's billing email
+- **Download** - Access and download invoices anytime through the Stripe Customer Portal
+- **Payment Methods** - Update credit cards and payment methods in Stripe
+
+### Payment Methods
+
+- **Credit Cards** - All major credit cards accepted
+- **Currency** - USD only for Pro and Business (Enterprise plans support billing in EUR)
+- **Auto-renewal** - Subscriptions automatically renew unless cancelled
+
+<Aside type="note">
+  For Enterprise customers, custom payment terms and methods may be available.
+  Contact your account representative for details.
+</Aside>

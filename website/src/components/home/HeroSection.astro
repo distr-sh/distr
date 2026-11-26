@@ -1,7 +1,7 @@
 ---
 import DemoButton from '~/components/buttons/DemoButton.astro';
 import SignupButton from '~/components/buttons/SignupButton.astro';
-import HeroCarousel from './HeroCarousel.astro';
+import ThemedImage from '~/components/util/ThemedImage.astro';
 import {images} from '~/assets/index';
 
 // Every industry is rendered into the HTML and only the visibility is
@@ -71,7 +71,11 @@ const cycleSeconds = industries.length * secondsPerIndustry;
     </div>
 
     <div class="mt-8 md:mt-16 mb-8 md:mb-16">
-      <HeroCarousel />
+      <ThemedImage
+        lightSrc={images.distr.dashboard.light}
+        darkSrc={images.distr.dashboard.dark}
+        alt="Distr Home showing deployment, update, license, support and security issues across all customers"
+      />
     </div>
   </div>
 </header>

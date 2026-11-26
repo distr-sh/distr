@@ -9,8 +9,8 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import pullThroughCacheDialogLight from '~/assets/docs/registry/overview/pull-through-cache-dialog-light.png';
-import pullThroughCacheDialogDark from '~/assets/docs/registry/overview/pull-through-cache-dialog-dark.png';
+import pullThroughCacheDialogLight from '~/assets/docs/registry/overview/pull-through-cache-dialog-light.webp';
+import pullThroughCacheDialogDark from '~/assets/docs/registry/overview/pull-through-cache-dialog-dark.webp';
 
 The Distr registry can act as a pull-through cache for any OCI-compatible upstream registry.
 Configure an artifact with an upstream URL and Distr will sync tags from the upstream and serve blobs to your customers on demand, with no direct upstream access required.
@@ -29,10 +29,12 @@ A synced tag counts toward your registry storage only once it has been pulled.
 
 ## Setting up a pull-through cache artifact
 
+Click **Add artifact** on the **Registry** page and fill in the **Pull-through cache** section.
+
 <ThemedImage
   lightSrc={pullThroughCacheDialogLight}
   darkSrc={pullThroughCacheDialogDark}
-  alt="Pull-through cache configuration dialog"
+  alt="Add Artifact modal with an upstream URL and basic authentication for a pull-through cache"
 />
 
 <Aside type="caution">

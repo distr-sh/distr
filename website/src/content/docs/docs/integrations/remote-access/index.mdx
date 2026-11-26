@@ -21,7 +21,7 @@ You ship the tunnel like your application, as a Distr application that the Distr
 
 1. Create a separate [application](/docs/controllers/application/), for example **Remote Access**, with a version that contains the tunnel.
    The tool guides below provide the Compose file and the Helm values for it.
-2. Store the credential of the tunnel as a [customer-specific secret](/docs/controllers/secrets/#customer-specific-secrets) of the customer you want to support.
+2. Store the credential of the tunnel as a [customer secret](/docs/platform/customer-secrets/) of the customer you want to support.
 3. Deploy the application to the customer's existing deployment target with **+ Deploy App**, as described in [Using Existing Deployment Targets](/docs/controllers/deployment/#using-existing-deployment-targets).
    It runs next to your application, and the deployment target stays as it is.
 4. Debug the installation through the tunnel.

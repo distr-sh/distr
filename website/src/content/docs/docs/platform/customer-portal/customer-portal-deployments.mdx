@@ -9,8 +9,8 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import deploymentsLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-deployments-light.png';
-import deploymentsDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-deployments-dark.png';
+import deploymentsLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-deployments-light.webp';
+import deploymentsDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-deployments-dark.webp';
 
 As an end customer, you can deploy and manage applications with Distr controllers directly from the [Customer Portal](/docs/platform/customer-portal/).
 
@@ -81,7 +81,7 @@ For the full list of statuses, see [Deployment Status](/docs/controllers/logs-an
 
 ### Step 6: Access environment logs
 
-Click the **Inspect** button on a deployment to view application logs directly from the portal. Container logs must be enabled per deployment. Use the **⋮** menu to toggle log collection on or off.
+Click the **Inspect** button on a deployment to view application logs directly from the portal. Logs are only collected when log collection is enabled for the deployment target. To turn it on or off, click the **⋮** menu on the deployment target, select **Settings**, check or uncheck **Collect application logs** and click **Update**. Viewers cannot change this setting.
 
 ### Step 7: Update deployments
 
@@ -89,7 +89,7 @@ Click the **Update** button to modify configuration values and update running de
 
 ## Alerts
 
-If your vendor has enabled alerts for your organization, you can configure deployment health notifications from the **Alerts** button in the Deployments view. Set up alert rules for deployment status changes and resource usage thresholds, and choose which users in your organization should receive email notifications.
+If your vendor has enabled alerts for your organization, you can configure deployment health notifications under **Notifications** in the sidebar. Set up alert rules for deployment status changes and resource usage thresholds, and choose which users in your organization should receive email notifications.
 
 For details on alert types and configuration, see [Alerts](/docs/controllers/alerts/).
 

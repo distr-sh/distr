@@ -1,39 +1,55 @@
 ---
 import ThemedImage from '../util/ThemedImage.astro';
-import SignupButton from '~/components/buttons/SignupButton.astro';
+import SignUpCta from '~/components/cta/standalone/SignUpCta.astro';
 import {images} from '~/assets/index';
 
 const products = [
   {
-    title: 'Single pane of glass for every self-hosted customer',
-    description:
-      'Manage customers, releases, deployment targets, artifacts, entitlements, logs, health, and support workflows from one place.',
-    lightImage: images.distr.dashboard.light,
-    darkImage: images.distr.dashboard.dark,
-    alt: 'Distr software distribution platform dashboard',
-  },
-  {
     title: 'A guided path for your customers',
     description:
-      'Give customers one place to install, access artifacts, manage credentials, control versions, and stay on top of their deployments.',
+      'One branded portal where customers deploy with Docker Compose or Helm on Kubernetes, pull artifacts, manage credentials and keep their deployments up to date.',
     lightImage: images.distr.customerPortal.light,
     darkImage: images.distr.customerPortal.dark,
-    alt: 'Distr customer portal for self-hosted deployments',
+    alt: 'Distr Customer Portal home with the customer deployments, license and activity',
   },
   {
-    title: 'Cut the support burden of self-hosted deployments',
+    title: 'Decide exactly what each customer gets',
     description:
-      'Centralize customer versions, entitlements, logs, metrics, deployment status, and support bundles so support and engineering can diagnose issues without long back-and-forth cycles.',
+      'Entitle each customer to specific versions and artifact tags, and issue signed license keys your application can verify offline.',
+    lightImage: images.distr.artifactLicenses.light,
+    darkImage: images.distr.artifactLicenses.dark,
+    alt: 'Distr artifact entitlement restricting a customer to specific tags',
+  },
+  {
+    title: 'Know who pulled which version',
+    description:
+      'Every registry pull is recorded with customer, user, IP address and version, so you know who runs what without asking.',
+    lightImage: images.distr.artifacts.light,
+    darkImage: images.distr.artifacts.dark,
+    alt: 'Distr registry downloads per customer and artifact version',
+  },
+  {
+    title: 'Cut the support burden',
+    description:
+      'Logs, metrics, deployment status and support bundles in one place, so you diagnose issues without long back-and-forth.',
     lightImage: images.distr.logViewer.light,
     darkImage: images.distr.logViewer.dark,
     alt: 'Distr log viewer for self-hosted customer deployments',
   },
+  {
+    title: 'Tell affected customers about vulnerabilities',
+    description:
+      'Mark the versions an advisory affects, see which customers deployed or pulled them and publish it in their portal.',
+    lightImage: images.distr.security.light,
+    darkImage: images.distr.security.dark,
+    alt: 'Distr security advisory listing affected customers and versions',
+  },
 ];
 ---
 
-<section class="py-8 md:py-16 lg:py-24 bg-gray-50 dark:bg-gray-800">
-  <div class="container mx-auto px-4 max-w-7xl">
-    <div class="text-center mb-12 md:mb-16 max-w-4xl mx-auto">
+<section>
+  <div class="bg-gray-50 dark:bg-gray-800 pt-8 md:pt-16 lg:pt-24">
+    <div class="container mx-auto px-4 max-w-4xl text-center">
       <h2 class="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight">
         The operational layer for self-hosted software
       </h2>
@@ -43,19 +59,24 @@ const products = [
         GovCloud, and air-gapped environments.
       </p>
     </div>
+  </div>
 
-    {products.map(product => (
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:gap-12 mb-12 md:mb-16 lg:mb-20 items-start">
-        <div class="lg:col-span-4 lg:sticky lg:top-24">
+  {products.map((product, i) => (
+    <div
+      class:list={[
+        'py-10 md:py-14 lg:py-20',
+        i % 2 === 0
+          ? 'bg-gray-50 dark:bg-gray-800'
+          : 'bg-white dark:bg-gray-900',
+      ]}>
+      <div class="container mx-auto px-4 max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:gap-12 lg:items-center">
+        <div class="lg:col-span-4">
           <h3 class="text-xl md:text-2xl lg:text-3xl font-bold mb-3 md:mb-4 border-l-4 border-accent-600 pl-3 md:pl-4">
             {product.title}
           </h3>
-          <p class="text-base md:text-lg text-gray-600 dark:text-gray-300 mb-4 md:mb-6 pl-3 md:pl-4 leading-relaxed">
+          <p class="text-base md:text-lg text-gray-600 dark:text-gray-300 pl-3 md:pl-4 leading-relaxed">
             {product.description}
           </p>
-          <div class="pl-3 md:pl-4">
-            <SignupButton />
-          </div>
         </div>
         <div class="lg:col-span-8">
           <div class="rounded-xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.15)] bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
@@ -63,10 +84,17 @@ const products = [
               lightSrc={product.lightImage}
               darkSrc={product.darkImage}
               alt={product.alt}
+              dropShadow={false}
             />
           </div>
         </div>
       </div>
-    ))}
-  </div>
+    </div>
+  ))}
 </section>
+
+<SignUpCta
+  bgClass="bg-white dark:bg-gray-900"
+  title="Try it with your own application"
+  description="Add your first customer, publish a version and deploy it in minutes. Or book a demo and we walk you through Distr with your setup in mind."
+/>

@@ -4,7 +4,7 @@ description: 'How the Distr Docker Compose controller works: installation, core 
 slug: docs/controllers/docker-controller
 sidebar:
   label: Docker Controller
-  order: 2
+  order: 3
 ---
 
 import {Aside} from '@astrojs/starlight/components';
@@ -127,8 +127,8 @@ When **Enable container image cleanup** is checked, the controller automatically
 To toggle image cleanup on an existing deployment target:
 
 1. Navigate to the deployment target in the Deployments view.
-2. Click the **⋮** menu and select **Edit**.
-3. Toggle **Enable container image cleanup**.
+2. Click the **⋮** menu and select **Settings**.
+3. Toggle **Enable container image cleanup** and click **Update**.
 
 Image cleanup only runs after a successful update. If a deployment fails, the previous images are kept so a rollback remains possible.
 
