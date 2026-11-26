@@ -14,15 +14,15 @@
             <p class="mt-3 text-sm wrap-break-word text-gray-600 dark:text-gray-400">{{ bundle.description }}</p>
           }
           <p class="mt-3 text-xs text-gray-500 dark:text-gray-500">
-            Created {{ bundle.createdAt | date: 'medium' }}
+            Created {{ bundle.createdAt | date: 'short' }}
             @if (createdByName(); as createdByName) {
               by {{ createdByName }}
             }
             @if (statusChangedByName(); as statusChangedByName) {
               @if (bundle.status === 'resolved') {
-                &middot; Resolved {{ bundle.statusChangedAt | date: 'medium' }} by {{ statusChangedByName }}
+                &middot; Resolved {{ bundle.statusChangedAt | date: 'short' }} by {{ statusChangedByName }}
               } @else {
-                &middot; Reopened {{ bundle.statusChangedAt | date: 'medium' }} by {{ statusChangedByName }}
+                &middot; Reopened {{ bundle.statusChangedAt | date: 'short' }} by {{ statusChangedByName }}
               }
             }
           </p>
