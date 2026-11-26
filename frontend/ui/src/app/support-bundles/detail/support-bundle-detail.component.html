@@ -89,6 +89,15 @@
             <app-clip [clip]="bundle.collectCommand" />
           </div>
         </app-alert>
+      } @else if (
+        bundle.status === 'open' &&
+        bundle.resources.length === 0 &&
+        auth.isCustomer() &&
+        auth.hasAnyRole('read_write', 'admin')
+      ) {
+        <app-alert type="warning" heading="Collect command expired" class="mt-4">
+          The command to collect a support bundle for this request has expired.
+        </app-alert>
       }
     </div>
 

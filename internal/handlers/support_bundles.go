@@ -393,7 +393,8 @@ func getSupportBundleDetailHandler(r *http.Request) (respond.Responder, error) {
 				comments, mapping.SupportBundleCommentToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID()),
 			),
 		}
-		if bundle.Status == types.SupportBundleStatusOpen && bundle.BundleSecretExpiresAt != nil {
+		if bundle.Status == types.SupportBundleStatusOpen && bundle.BundleSecretExpiresAt != nil &&
+			bundle.BundleSecretExpiresAt.After(time.Now()) {
 			org, err := db.GetOrganizationWithBranding(ctx, bundle.OrganizationID)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get organization: %w", err)
