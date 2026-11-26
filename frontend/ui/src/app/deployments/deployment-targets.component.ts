@@ -18,7 +18,6 @@ import {Application, ApplicationVersion, DeploymentTarget, DeploymentWithLatestR
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faPlus} from '@fortawesome/free-solid-svg-icons';
 import {
-  catchError,
   combineLatest,
   combineLatestWith,
   first,
@@ -203,10 +202,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
     shareReplay({bufferSize: 1, refCount: true}),
     takeUntilDestroyed()
   );
-  readonly deploymentTargetMetrics$ = this.deploymentTargetMetrics.poll().pipe(
-    takeUntilDestroyed(),
-    catchError(() => of([]))
-  );
+  readonly deploymentTargetMetrics$ = this.deploymentTargetMetrics.poll().pipe(takeUntilDestroyed(), startWith([]));
 
   private readonly organization = toSignal(this.organizationService.get());
   protected readonly limit = computed(() => {
