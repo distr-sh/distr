@@ -1,7 +1,8 @@
 import dayjs from 'dayjs';
 import {AccessToken, AccessTokenSecret} from '../../types/access-token';
 import {LicenseKey} from '../../types/license-key';
-import {nextAccessTokenExpiry, toCustomerHomeLicense} from './customer-home-mappers';
+import {SupportBundle} from '../../types/support-bundle';
+import {nextAccessTokenExpiry, toCustomerHomeLicense, toCustomerHomeSupportBundles} from './customer-home-mappers';
 
 describe('nextAccessTokenExpiry', () => {
   const now = dayjs('2026-06-01T12:00:00Z');
@@ -74,5 +75,38 @@ describe('toCustomerHomeLicense', () => {
     ];
     expect(toCustomerHomeLicense([], entitlements, now)?.name).toEqual('early');
     expect(toCustomerHomeLicense([], [], now)).toBeUndefined();
+  });
+});
+
+describe('toCustomerHomeSupportBundles', () => {
+  const createdAt = '2026-06-01T10:00:00Z';
+  const earlier = '2026-06-01T11:00:00Z';
+  const later = '2026-06-01T12:00:00Z';
+  const bundle = (overrides: Partial<SupportBundle>): SupportBundle => ({
+    id: 'bundle',
+    createdAt,
+    customerOrganizationId: 'customer',
+    customerOrganizationName: 'Customer',
+    createdByUserName: 'Creator',
+    deploymentType: 'docker',
+    title: 'Bundle',
+    status: 'open',
+    resourceCount: 1,
+    commentCount: 0,
+    statusChangedByUserName: 'Changer',
+    ...overrides,
+  });
+
+  it('should show a status change that follows the upload', () => {
+    const [result] = toCustomerHomeSupportBundles([
+      bundle({status: 'resolved', uploadedAt: earlier, statusChangedAt: later}),
+    ]);
+    expect(result).toMatchObject({lastEvent: 'resolved', updatedAt: later, updatedBy: {name: 'Changer'}});
+  });
+
+  it('should show an upload that follows a reopen', () => {
+    const [result] = toCustomerHomeSupportBundles([bundle({statusChangedAt: earlier, uploadedAt: later})]);
+    expect(result).toMatchObject({lastEvent: 'uploaded', updatedAt: later});
+    expect(result.updatedBy).toBeUndefined();
   });
 });
