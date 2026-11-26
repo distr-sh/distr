@@ -31,7 +31,7 @@ export class DeploymentTargetLogsTableComponent {
   protected readonly source = computed(
     () =>
       new RangeTimeseriesSource(
-        (options) => this.svc.get(this.deploymentTargetId(), options),
+        (options, context) => this.svc.get(this.deploymentTargetId(), options, context),
         logRecordToTimeseriesEntry,
         {
           order: this.orderDirection(),

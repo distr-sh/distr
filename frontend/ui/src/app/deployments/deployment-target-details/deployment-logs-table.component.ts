@@ -65,7 +65,7 @@ export class DeploymentLogsTableComponent {
   protected readonly source = computed(
     () =>
       new RangeTimeseriesSource(
-        (options) => this.svc.get(this.deploymentId(), this.resources(), options),
+        (options, context) => this.svc.get(this.deploymentId(), this.resources(), options, context),
         logRecordToTimeseriesEntry,
         {
           order: this.orderDirection(),

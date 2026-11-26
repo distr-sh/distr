@@ -30,7 +30,7 @@ import {
 } from 'rxjs';
 import {distinctBy} from '../../../util/arrays';
 import {downloadBlob} from '../../../util/blob';
-import {getFormDisplayedError} from '../../../util/errors';
+import {displayedInToast, getFormDisplayedError} from '../../../util/errors';
 import {IntersectionObserverDirective} from '../../directives/intersection-observer.directive';
 import {ToastService} from '../../services/toast.service';
 import {SpinnerComponent} from '../spinner/spinner.component';
@@ -149,13 +149,13 @@ export class TimeseriesTableComponent {
               ),
               exhaustMap(() => {
                 const isFirstPage = nextBefore === null;
-                return source.loadAfter(nextAfter ?? emptyPageCursor).pipe(
+                return source.pollAfter(nextAfter ?? emptyPageCursor).pipe(
                   tap((entries) => {
                     if (isFirstPage) {
                       this.hasMore.set(entries.length >= source.batchSize);
                     }
                   }),
-                  catchError((err) => this.handleError(err))
+                  catchError((err) => (displayedInToast(err) ? EMPTY : this.handleError(err)))
                 );
               }),
               tap((entries) => {

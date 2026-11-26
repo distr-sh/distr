@@ -1,4 +1,4 @@
-import {HttpClient, HttpParams} from '@angular/common/http';
+import {HttpClient, HttpContext, HttpParams} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {Observable} from 'rxjs';
 import {DeploymentLogRecord, DeploymentLogRecordResources} from '../types/deployment-log-record';
@@ -19,10 +19,11 @@ export class DeploymentLogsService {
   public get(
     deploymentId: string,
     resources: string[],
-    options?: TimeseriesOptions
+    options?: TimeseriesOptions,
+    context?: HttpContext
   ): Observable<DeploymentLogRecord[]> {
     const params = appendResources(new HttpParams({fromObject: timeseriesOptionsAsParams(options)}), resources);
-    return this.httpClient.get<DeploymentLogRecord[]>(`/api/v1/deployments/${deploymentId}/logs`, {params});
+    return this.httpClient.get<DeploymentLogRecord[]>(`/api/v1/deployments/${deploymentId}/logs`, {params, context});
   }
 
   public export(deploymentId: string, resources: string[], options?: TimeseriesOptions): Observable<Blob> {

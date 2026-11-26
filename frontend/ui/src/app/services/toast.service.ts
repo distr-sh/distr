@@ -10,6 +10,7 @@ export interface ToastEntry {
 
 export interface ToastRef {
   close(): void;
+  setMessage(message: string): void;
 }
 
 @Injectable({providedIn: 'root'})
@@ -36,6 +37,9 @@ export class ToastService {
   private add(type: ToastType, message: string, autoClose: boolean): ToastRef {
     const id = (this.toastIdSequence++).toFixed();
     this.toasts.update((toasts) => [...toasts, {id, type, message, autoClose}]);
-    return {close: () => this.dismiss(id)};
+    return {
+      close: () => this.dismiss(id),
+      setMessage: (message) => this.toasts.update((toasts) => toasts.map((t) => (t.id === id ? {...t, message} : t))),
+    };
   }
 }

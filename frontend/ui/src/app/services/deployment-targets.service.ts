@@ -11,6 +11,7 @@ import {
 } from '@distr-sh/distr-sdk';
 import {EMPTY, merge, Observable, retry, shareReplay, Subject, switchMap, tap, timer} from 'rxjs';
 import {ReactiveList} from './cache';
+import {polling} from './error-toast.interceptor';
 
 export interface DeploymentTargetFilter {
   customerOrganizationIds: string[];
@@ -72,7 +73,9 @@ export class DeploymentTargetsService {
 
   private createPolling(params: HttpParams): Observable<DeploymentTarget[]> {
     return merge(timer(0, 5000), this.pollRefresh$).pipe(
-      switchMap(() => this.httpClient.get<DeploymentTarget[]>(this.deploymentTargetsBaseUrl, {params})),
+      switchMap(() =>
+        this.httpClient.get<DeploymentTarget[]>(this.deploymentTargetsBaseUrl, {params, context: polling()})
+      ),
       retry({
         delay: (e, c) =>
           e instanceof HttpErrorResponse && (!e.status || e.status >= 500)
