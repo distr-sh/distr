@@ -308,6 +308,10 @@ export default defineConfig({
                     },
                     {label: 'Distr SDK', link: '/docs/integrations/sdk/'},
                     {
+                      label: 'Agent Skill',
+                      link: '/docs/integrations/agent-skill/',
+                    },
+                    {
                       label: 'Personal Access Tokens',
                       link: '/docs/integrations/personal-access-token/',
                     },

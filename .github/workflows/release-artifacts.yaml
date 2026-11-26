@@ -24,3 +24,52 @@ jobs:
         run: gh release upload ${{ github.ref_name }} deploy-quickstart.tar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  skill:
+    name: Publish agent skill
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install mise
+        uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
+        with:
+          install_args: 'node pnpm yq 7zip'
+      # Called directly because mise run would replace the tag with the VERSION from mise.toml.
+      - name: Build agent skill
+        run: hack/build-skill.sh "$GITHUB_REF_NAME"
+      - name: Upload archives
+        run: gh release upload "$GITHUB_REF_NAME" dist/skill/assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          aws-region: eu-central-1
+          role-to-assume: arn:aws:iam::639130800065:role/github-actions-distr.sh
+      # The website deploy syncs without --delete and never writes this prefix, so neither
+      # deploy removes or overwrites what the other one published.
+      - name: Publish discovery index and Claude marketplace
+        run: >-
+          aws s3 sync dist/skill/site/.well-known/agent-skills/ s3://distr.sh/.well-known/agent-skills/
+          --delete
+          --cache-control "max-age=60, public, must-revalidate"
+          --acl=public-read
+      - name: Invalidate cache
+        run: |
+          id="$(aws cloudfront create-invalidation \
+            --distribution-id E1PG5UM7ZE1H97 \
+            --paths '/.well-known/agent-skills/*' \
+            --query Invalidation.Id --output text)"
+          aws cloudfront wait invalidation-completed --distribution-id E1PG5UM7ZE1H97 --id "$id"
+      - name: Install from distr.sh
+        run: |
+          pnpm dlx skills@1.9.0 add https://distr.sh --skill distr --global --yes
+          installed="$(yq --front-matter=extract '.metadata.version' "$HOME/.agents/skills/distr/SKILL.md")"
+          if [[ "$installed" != "$GITHUB_REF_NAME" ]]; then
+            echo "installed skill has version $installed instead of $GITHUB_REF_NAME" >&2
+            exit 1
+          fi

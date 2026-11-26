@@ -22,6 +22,7 @@
         "deploy/charts/distr/examples/enterprise-gcp/values.yaml",
         "deploy/charts/distr/examples/quickstart/values.yaml",
         "deploy/charts/distr/examples/quickstart/custom-domains-values.yaml",
+        "skills/distr/SKILL.md",
         {
           "type": "json",
           "path": "package.json",

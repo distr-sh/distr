@@ -14,6 +14,8 @@ pnpm = "12.23.0"
 stripe = "1.55.15"
 "go:github.com/go-delve/delve/cmd/dlv" = "1.27.2"
 git-lfs = "3.8.1"
+yq = "4.54.3"
+7zip = "26.06"
 
 [env]
 _.source = ['hack/current-commit.sh']
@@ -81,6 +83,10 @@ sources = [
   "{{config_root}}/CHANGELOG.md",
 ]
 
+[tasks."build:skill"]
+description = 'Build the agent skill archives, discovery index and Claude marketplace into dist/skill'
+run = 'hack/build-skill.sh "$VERSION"'
+
 [tasks."build:controller:docker"]
 run = 'go build -ldflags="{{vars.ldflags}}" -o dist/docker-controller ./cmd/controller/docker'
 depends = ["go-tidy"]
@@ -111,6 +117,11 @@ run = 'hack/validate-migrations.sh'
 run = 'pnpm lint'
 dir = "website"
 
+[tasks."lint:skill"]
+description = 'Validate the agent skill and the Claude Code plugin built from it'
+run = 'hack/lint-skill.sh'
+depends = ["build:skill"]
+
 [tasks."lint:app"]
 run = { tasks = ["lint:go", "lint:frontend", "lint:migrations"] }
 description = 'Lint Distr and the controllers, without the website'
@@ -121,7 +132,7 @@ description = "Lint the renovate.json config file"
 sources = ["renovate.json"]
 
 [tasks.lint]
-run = { tasks = ["lint:app", "lint:website"] }
+run = { tasks = ["lint:app", "lint:website", "lint:skill"] }
 
 [tasks."test:go"]
 run = 'go test ./...'

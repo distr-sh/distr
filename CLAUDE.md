@@ -21,6 +21,7 @@ A deployment target is a "deployment" in user-facing text: UI copy, activity fee
 - `frontend/ui/`: the Angular app (standalone components, TailwindCSS 4, SCSS, Flowbite), built into `internal/frontend/dist/ui/`.
 - `sdk/js/`: `@distr-sh/distr-sdk`, a standalone pnpm project. Prefer its high-level `DistrService` over the low-level `Client`, and run its examples against the config in `src/examples/config.ts`.
 - `website/`: the docs and marketing site, a standalone pnpm project with a Prettier config of its own.
+- `skills/distr/`: the Distr agent skill. Keep it a routing layer to the documentation on `distr.sh/llms.txt` rather than a copy of it. `hack/build-skill.sh` packs it for the GitHub release and the discovery index on `distr.sh/.well-known/agent-skills/`.
 - `internal/`: the backend. `db/` holds every query, `handlers/` the HTTP handlers, `respond/` their adapter and response types, `api/` their request and response structs, `routing/` the routes and middleware, `mapping/` the conversions between `api` and `types`, `types/` the database models, `svc/` the services, `authn/` the authentication providers, `logstore/` the Loki-backed log records, `registry/` the OCI registry, `advisory/` the advisory visibility rules and `migrations/sql/` the schema.
 
 PostgreSQL is reached through pgx/v5, registry blobs and Loki chunks live in S3-compatible object storage and deployment logs live in Loki rather than in the database. Timestamp columns are `TIMESTAMP`, never `TIMESTAMPTZ`.
@@ -35,9 +36,10 @@ mise run build:controller:docker
 mise run build:controller:kubernetes
 mise run build:sdk             # after every SDK change
 mise run build:website
+mise run build:skill
 mise run test:go
 mise run test:frontend
-mise run lint                  # :app, :go, :frontend, :migrations, :website for parts
+mise run lint                  # :app, :go, :frontend, :migrations, :website, :skill for parts
 mise run format                # everything; :app, :go, :frontend, :website for parts
 ```
 
