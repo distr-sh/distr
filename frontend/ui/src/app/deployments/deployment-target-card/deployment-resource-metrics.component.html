@@ -2,6 +2,8 @@
   <div class="flex items-center justify-center p-8">
     <app-spinner class="size-8" />
   </div>
+} @else if (metrics.error()) {
+  <p class="p-4 text-sm text-red-600 dark:text-red-500">Failed to load resource metrics.</p>
 } @else if (groups().length === 0) {
   <p class="p-4 text-sm text-gray-500 dark:text-gray-400">No resource metrics have been reported yet.</p>
 } @else {
