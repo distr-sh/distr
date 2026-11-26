@@ -87,10 +87,11 @@ export class SupportBundleDetailComponent {
   private readonly timeline = viewChild(ActivityTimelineComponent);
 
   protected readonly bundle = signal<SupportBundleDetail | undefined>(undefined);
-  protected readonly justInitialized = toSignal(
+  private readonly initializedParam = toSignal(
     this.route.queryParamMap.pipe(map((params) => params.get('initialized') === 'true')),
     {initialValue: false}
   );
+  protected readonly justInitialized = computed(() => this.initializedParam() && !this.bundle()?.statusChangedAt);
   protected readonly updatingStatus = signal(false);
   protected readonly submittingComment = signal(false);
   protected readonly downloading = signal(false);
