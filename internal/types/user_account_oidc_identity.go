@@ -3,7 +3,9 @@ package types
 import (
 	"time"
 
+	"github.com/distr-sh/distr/internal/openapischema"
 	"github.com/google/uuid"
+	"github.com/oaswrap/spec/openapi"
 )
 
 type OIDCProvider string
@@ -15,6 +17,16 @@ const (
 	OIDCProviderGeneric   OIDCProvider = "generic"
 	OIDCProviderCustom    OIDCProvider = "custom"
 )
+
+func (OIDCProvider) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(
+		OIDCProviderGithub,
+		OIDCProviderGoogle,
+		OIDCProviderMicrosoft,
+		OIDCProviderGeneric,
+		OIDCProviderCustom,
+	)
+}
 
 // UserAccountOIDCIdentity is the identity of a user account at an identity provider.
 // Logins are matched on (Issuer, Subject), which stays stable when the email address

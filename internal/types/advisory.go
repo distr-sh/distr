@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/distr-sh/distr/internal/openapischema"
 	"github.com/google/uuid"
+	"github.com/oaswrap/spec/openapi"
 )
 
 var (
@@ -21,6 +23,16 @@ const (
 	AdvisoryStatusResolved  AdvisoryStatus = "resolved"
 	AdvisoryStatusCanceled  AdvisoryStatus = "canceled"
 )
+
+func (AdvisoryStatus) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(
+		AdvisoryStatusTriage,
+		AdvisoryStatusDraft,
+		AdvisoryStatusPublished,
+		AdvisoryStatusResolved,
+		AdvisoryStatusCanceled,
+	)
+}
 
 func ParseAdvisoryStatus(value string) (AdvisoryStatus, error) {
 	switch AdvisoryStatus(value) {
@@ -53,6 +65,16 @@ const (
 	AdvisorySeverityCritical AdvisorySeverity = "critical"
 )
 
+func (AdvisorySeverity) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(
+		AdvisorySeverityNone,
+		AdvisorySeverityLow,
+		AdvisorySeverityMedium,
+		AdvisorySeverityHigh,
+		AdvisorySeverityCritical,
+	)
+}
+
 func ParseAdvisorySeverity(value string) (AdvisorySeverity, error) {
 	switch AdvisorySeverity(value) {
 	case AdvisorySeverityNone:
@@ -77,6 +99,10 @@ const (
 	AdvisoryVersionRelationPatched  AdvisoryVersionRelation = "patched"
 )
 
+func (AdvisoryVersionRelation) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(AdvisoryVersionRelationAffected, AdvisoryVersionRelationPatched)
+}
+
 type AdvisoryEventType string
 
 const (
@@ -85,6 +111,15 @@ const (
 	AdvisoryEventTypeEdited        AdvisoryEventType = "edited"
 	AdvisoryEventTypeComment       AdvisoryEventType = "comment"
 )
+
+func (AdvisoryEventType) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(
+		AdvisoryEventTypePublished,
+		AdvisoryEventTypeStatusChanged,
+		AdvisoryEventTypeEdited,
+		AdvisoryEventTypeComment,
+	)
+}
 
 type Advisory struct {
 	ID                     uuid.UUID        `db:"id"`
@@ -176,6 +211,14 @@ const (
 	// but has since moved to a version marked neither affected nor patched.
 	AdvisoryImpactStateNotAffected AdvisoryImpactState = "not_affected"
 )
+
+func (AdvisoryImpactState) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(
+		AdvisoryImpactStateAffected,
+		AdvisoryImpactStatePatched,
+		AdvisoryImpactStateNotAffected,
+	)
+}
 
 // AdvisoryImpactedDeployment is one deployment that has run an affected application
 // version at some point. There is exactly one row per deployment: ApplicationVersion* is the
