@@ -181,7 +181,7 @@
               @if (showSupportColumn()) {
                 <td class="distr-table-cell">
                   @if (customer.supportBundles; as support) {
-                    @if (support.open + support.resolved + support.canceled === 0) {
+                    @if (support.open + support.resolved === 0) {
                       <span class="distr-text-muted block">-</span>
                     } @else {
                       <a
@@ -201,9 +201,6 @@
                         <span class="flex flex-wrap gap-x-2 text-xs">
                           @if (support.resolved > 0) {
                             <span class="distr-text-muted group-hover:underline">{{ support.resolved }} resolved</span>
-                          }
-                          @if (support.canceled > 0) {
-                            <span class="distr-text-muted group-hover:underline">{{ support.canceled }} canceled</span>
                           }
                         </span>
                       </a>

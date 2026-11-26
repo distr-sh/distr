@@ -18,27 +18,17 @@
             @if (createdByName(); as createdByName) {
               by {{ createdByName }}
             }
-            @if (statusChangedByName() && (bundle.status === 'resolved' || bundle.status === 'canceled')) {
+            @if (statusChangedByName() && bundle.status === 'resolved') {
               &middot; Set to {{ bundle.status }} {{ bundle.statusChangedAt | date: 'medium' }} by
               {{ statusChangedByName() }}
             }
           </p>
         </div>
         <div class="flex shrink-0 items-center gap-2">
-          @if (auth.hasAnyRole('read_write', 'admin') && bundle.status === 'initialized') {
-            <button
-              type="button"
-              (click)="cancelBundle()"
-              [disabled]="updatingStatus()"
-              class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
-              <fa-icon [icon]="faXmark" class="mr-2" />
-              Cancel
-            </button>
-          }
           @if (
             (auth.isVendor() || auth.isPartner()) &&
             auth.hasAnyRole('read_write', 'admin') &&
-            bundle.status === 'created'
+            bundle.status !== 'resolved'
           ) {
             <button
               type="button"

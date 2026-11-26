@@ -19,8 +19,6 @@ export function supportBundleStatusVariant(status: SupportBundleStatus): BadgeVa
       return 'warning';
     case 'resolved':
       return 'success';
-    case 'canceled':
-      return 'muted';
     default:
       return never(status);
   }

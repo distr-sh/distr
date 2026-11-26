@@ -13,7 +13,6 @@ export type ActivityFeedEntryType =
   | 'support_bundle_created'
   | 'support_bundle_uploaded'
   | 'support_bundle_resolved'
-  | 'support_bundle_canceled'
   | 'team_member_added';
 
 export interface ActivityFeedEntry {

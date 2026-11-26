@@ -10,4 +10,4 @@
 
 ### status
 
-> **status**: `"resolved"` \| `"canceled"`
+> **status**: `"resolved"`

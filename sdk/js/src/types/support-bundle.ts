@@ -1,6 +1,6 @@
 import {DeploymentType} from './deployment';
 
-export type SupportBundleStatus = 'initialized' | 'created' | 'resolved' | 'canceled';
+export type SupportBundleStatus = 'initialized' | 'created' | 'resolved';
 
 export interface SupportBundleConfigurationEnvVar {
   name: string;
@@ -110,5 +110,5 @@ export interface CreateSupportBundleCommentRequest {
 }
 
 export interface UpdateSupportBundleStatusRequest {
-  status: 'resolved' | 'canceled';
+  status: 'resolved';
 }

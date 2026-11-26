@@ -563,8 +563,8 @@ func updateSupportBundleStatusHandler(r *http.Request) (respond.Responder, error
 		if resp != nil || err != nil {
 			return resp, err
 		}
-		if bundle.Status == types.SupportBundleStatusResolved || bundle.Status == types.SupportBundleStatusCanceled {
-			return respond.BadRequest("cannot resolve support bundle in its current state"), nil
+		if bundle.Status == types.SupportBundleStatusResolved {
+			return respond.BadRequest("support request is already resolved"), nil
 		}
 		changedBy := a.CurrentUserID()
 		if bundle.Status == types.SupportBundleStatusInitialized {
@@ -581,25 +581,8 @@ func updateSupportBundleStatusHandler(r *http.Request) (respond.Responder, error
 				ctx, bundle.ID, bundle.OrganizationID, status, &changedBy,
 			)
 		}
-	case types.SupportBundleStatusCanceled:
-		bundle, resp, err = requireSupportBundle(r)
-		if resp != nil || err != nil {
-			return resp, err
-		}
-		if bundle.Status != types.SupportBundleStatusInitialized {
-			return respond.BadRequest("only initialized bundles can be canceled"), nil
-		}
-		changedBy := a.CurrentUserID()
-		err = db.RunTxRR(ctx, func(ctx context.Context) error {
-			if err := db.UpdateSupportBundleStatus(
-				ctx, bundle.ID, bundle.OrganizationID, status, &changedBy,
-			); err != nil {
-				return err
-			}
-			return db.ClearSupportBundleBundleSecret(ctx, bundle.ID)
-		})
 	default:
-		return respond.BadRequest("only 'resolved' or 'canceled' status is allowed"), nil
+		return respond.BadRequest("only 'resolved' status is allowed"), nil
 	}
 
 	if errors.Is(err, distrerr.ErrNotFound) {
