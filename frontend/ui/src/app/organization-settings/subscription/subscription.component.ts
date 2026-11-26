@@ -91,7 +91,8 @@ export class SubscriptionComponent implements OnInit {
   private readonly overlay = inject(OverlayService);
   private readonly fb = inject(NonNullableFormBuilder);
 
-  protected readonly isSubscriptionExpired = inject(OrganizationService).isSubscriptionExpired;
+  private readonly organizationService = inject(OrganizationService);
+  protected readonly isSubscriptionExpired = this.organizationService.isSubscriptionExpired;
   protected readonly isPartnerManagementEnabled = inject(FeatureFlagService).isPartnerManagementEnabled;
 
   protected subscriptionInfo = signal<SubscriptionInfo | undefined>(undefined);
@@ -261,7 +262,7 @@ export class SubscriptionComponent implements OnInit {
     this.subscriptionInfo.set(updatedInfo);
     this.hideModal();
     if (!this.pendingUpdate()?.subscriptionType) {
-      setTimeout(() => location.reload(), 1000);
+      this.organizationService.reload();
     }
   }
 
