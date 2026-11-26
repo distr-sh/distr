@@ -24,6 +24,19 @@ export function supportBundleProgress(status: SupportBundleStatus, resourceCount
   }
 }
 
+export function supportBundleProgressLabel(progress: SupportBundleProgress): string {
+  switch (progress) {
+    case 'awaiting_upload':
+      return 'Awaiting upload';
+    case 'uploaded':
+      return 'Uploaded';
+    case 'resolved':
+      return 'Resolved';
+    default:
+      return never(progress);
+  }
+}
+
 export function supportBundleProgressVariant(progress: SupportBundleProgress): BadgeVariant {
   switch (progress) {
     case 'awaiting_upload':
