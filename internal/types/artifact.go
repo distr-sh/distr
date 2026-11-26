@@ -30,6 +30,15 @@ const (
 	ManifestTypeSignature      ManifestType = "signature"
 )
 
+func (ManifestType) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(
+		ManifestTypeGeneric,
+		ManifestTypeContainerImage,
+		ManifestTypeHelmChart,
+		ManifestTypeSignature,
+	)
+}
+
 type UpstreamAuthType string
 
 const (

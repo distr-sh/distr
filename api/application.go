@@ -47,7 +47,7 @@ type CreateApplicationRequest struct {
 	Type types.DeploymentType `json:"type"`
 	// VersioningStrategy defaults to chronological when absent, which imposes no requirement on
 	// version names and so cannot break a client written before the field existed.
-	VersioningStrategy    types.VersioningStrategy `json:"versioningStrategy,omitempty"`
+	VersioningStrategy    types.VersioningStrategy `json:"versioningStrategy,omitempty" enum:"semver,chronological"`
 	AllowAutomaticUpdates bool                     `json:"allowAutomaticUpdates,omitempty"`
 }
 

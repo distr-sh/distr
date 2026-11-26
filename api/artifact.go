@@ -26,7 +26,7 @@ type PatchArtifactRequest struct {
 	Auth               Nullable[ArtifactUpstreamAuth] `json:"auth"`
 	Public             *bool                          `json:"public,omitempty"`
 	Featured           *bool                          `json:"featured,omitempty"`
-	VersioningStrategy *types.VersioningStrategy      `json:"versioningStrategy,omitempty"`
+	VersioningStrategy *types.VersioningStrategy      `json:"versioningStrategy,omitempty" enum:"semver,chronological"`
 	// DeleteNonSemverTags confirms that switching to semver deletes the tags that are not SemVer versions.
 	DeleteNonSemverTags bool `json:"deleteNonSemverTags,omitempty"`
 }
