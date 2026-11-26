@@ -763,11 +763,14 @@ func HasAnyArtifactEntitlement(ctx context.Context, orgID uuid.UUID) (bool, erro
 	return hasEntitlements, nil
 }
 
+// CheckEntitlementForArtifact reports distrerr.ErrForbidden when the customer has no unexpired entitlement for the
+// reference. With shouldIgnoreVersions, any entitlement for the artifact suffices, whatever versions it selects.
 func CheckEntitlementForArtifact(
 	ctx context.Context,
 	orgName, name, reference string,
 	customerOrganizationID uuid.UUID,
 	orgID uuid.UUID,
+	shouldIgnoreVersions bool,
 ) error {
 	hasEntitlements, err := HasAnyArtifactEntitlement(ctx, orgID)
 	if err != nil {
@@ -810,7 +813,11 @@ func CheckEntitlementForArtifact(
 					FROM ArtifactVersionAggregate av
 					JOIN ArtifactEntitlement_Artifact ala
 						ON av.artifact_id = ala.artifact_id
-							AND (ala.artifact_version_id IS NULL OR ala.artifact_version_id = av.id)
+							AND (
+								@shouldIgnoreVersions
+								OR ala.artifact_version_id IS NULL
+								OR ala.artifact_version_id = av.id
+							)
 					JOIN ArtifactEntitlement al ON ala.artifact_entitlement_id = al.id
 					WHERE al.customer_organization_id = @customerOrganizationId
 						AND (al.expires_at IS NULL OR al.expires_at > now())
@@ -821,6 +828,7 @@ func CheckEntitlementForArtifact(
 			"name":                   name,
 			"reference":              reference,
 			"customerOrganizationId": customerOrganizationID,
+			"shouldIgnoreVersions":   shouldIgnoreVersions,
 		},
 	).Scan(&referenceExists, &entitled)
 	if err != nil {
@@ -893,6 +901,7 @@ func ArtifactBlobBelongsToPublicArtifact(
 func CheckEntitlementForArtifactBlob(ctx context.Context, digest, artifactName string,
 	customerOrganizationID uuid.UUID,
 	orgID uuid.UUID,
+	shouldIgnoreVersions bool,
 ) error {
 	hasEntitlements, err := HasAnyArtifactEntitlement(ctx, orgID)
 	if err != nil {
@@ -933,7 +942,11 @@ func CheckEntitlementForArtifactBlob(ctx context.Context, digest, artifactName s
 				FROM ArtifactVersionAggregate av
 				JOIN ArtifactEntitlement_Artifact ala
 					ON av.artifact_id = ala.artifact_id
-						AND (ala.artifact_version_id IS NULL OR ala.artifact_version_id = av.id)
+						AND (
+							@shouldIgnoreVersions
+							OR ala.artifact_version_id IS NULL
+							OR ala.artifact_version_id = av.id
+						)
 				JOIN ArtifactEntitlement al ON ala.artifact_entitlement_id = al.id
 				WHERE al.customer_organization_id = @customerOrganizationId
 					AND (al.expires_at IS NULL OR al.expires_at > now())
@@ -943,6 +956,7 @@ func CheckEntitlementForArtifactBlob(ctx context.Context, digest, artifactName s
 			"artifactName":           artifactName,
 			"orgId":                  orgID,
 			"customerOrganizationId": customerOrganizationID,
+			"shouldIgnoreVersions":   shouldIgnoreVersions,
 		},
 	)
 	if err != nil {

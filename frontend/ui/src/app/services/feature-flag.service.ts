@@ -10,6 +10,7 @@ import {OrganizationService} from './organization.service';
 export class FeatureFlagService {
   private readonly organizationService = inject(OrganizationService);
   public readonly isLicensingEnabled$ = this.hasFeature('licensing');
+  public readonly isLicensingEnabled = toSignal(this.isLicensingEnabled$, {initialValue: false});
   public readonly isPrePostScriptEnabled$ = this.hasFeature('pre_post_scripts');
   public readonly isVendorBillingEnabled$ = this.hasFeature('vendor_billing');
   public readonly isVendorBillingEnabled = toSignal(this.isVendorBillingEnabled$, {initialValue: false});

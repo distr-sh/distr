@@ -1,0 +1,1 @@
+ALTER TABLE Organization DROP COLUMN controller_any_artifact_version_enabled;

@@ -12,11 +12,12 @@ func OrganizationToAPI(
 	defaultControllerImageRepository string,
 ) api.OrganizationResponse {
 	return api.OrganizationResponse{
-		Organization:                     o,
-		SubscriptionLimits:               subscription.GetSubscriptionLimits(o.SubscriptionType),
-		CurrentBillableUserAccountCount:  billableUserCount,
-		CurrentCustomerOrganizationCount: customerOrgCount,
-		ControllerImageRepository:        o.ControllerImageRepository,
-		DefaultControllerImageRepository: defaultControllerImageRepository,
+		Organization:                        o,
+		SubscriptionLimits:                  subscription.GetSubscriptionLimits(o.SubscriptionType),
+		CurrentBillableUserAccountCount:     billableUserCount,
+		CurrentCustomerOrganizationCount:    customerOrgCount,
+		ControllerImageRepository:           o.ControllerImageRepository,
+		DefaultControllerImageRepository:    defaultControllerImageRepository,
+		ControllerAnyArtifactVersionEnabled: o.ControllerAnyArtifactVersionEnabled,
 	}
 }

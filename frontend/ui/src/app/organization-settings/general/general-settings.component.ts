@@ -14,6 +14,7 @@ import {PillTabBarComponent} from '../../components/pill-tab-bar.component';
 import {TabItem} from '../../components/tab-bar.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AuthService} from '../../services/auth.service';
+import {FeatureFlagService} from '../../services/feature-flag.service';
 import {OrganizationService} from '../../services/organization.service';
 import {OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
@@ -69,6 +70,7 @@ export class GeneralSettingsComponent implements OnInit {
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly overlayService = inject(OverlayService);
   protected readonly auth = inject(AuthService);
+  protected readonly featureFlags = inject(FeatureFlagService);
   private readonly preflightConfirmTemplate = viewChild.required<TemplateRef<unknown>>('preflightConfirmTemplate');
 
   private organization?: Organization;
@@ -85,6 +87,7 @@ export class GeneralSettingsComponent implements OnInit {
     prePostScriptsEnabled: this.fb.control<boolean>(false),
     controllerImageRepositoryEnabled: this.fb.control<boolean>(false),
     controllerImageRepository: this.fb.control<string | undefined>(undefined),
+    controllerAnyArtifactVersionEnabled: this.fb.control<boolean>(false),
   });
   formLoading = signal(false);
 

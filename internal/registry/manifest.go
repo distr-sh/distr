@@ -240,7 +240,7 @@ func (m *manifests) handleReferrers(resp http.ResponseWriter, req *http.Request)
 	target := elem[len(elem)-1]
 	repo := strings.Join(elem[1:len(elem)-2], "/")
 
-	if err := m.authz.AuthorizeReference(req.Context(), repo, target, authz.ActionRead); err != nil {
+	if err := m.authz.AuthorizeReference(req.Context(), repo, target, authz.ActionDiscover); err != nil {
 		return regErrAuthz(err)
 	}
 

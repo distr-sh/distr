@@ -47,6 +47,7 @@ Artifact Entitlements enable you to:
 4. Entitlement edits are reflected in the customer portal in real time.
 5. Before creating your first entitlement, all customers can see all artifacts. After the first entitlement is created, customers only see entitled artifacts.
 6. A [public artifact](/docs/registry/#public-artifacts) is exempt: every customer sees it and can pull it, with or without an entitlement.
+7. With **Controllers can pull every version of an entitled artifact** in **Settings** under **General**, a controller can pull every version of an artifact its customer has an unexpired entitlement for, even versions the entitlement does not include. A deployment then does not fail because it references a version that is not entitled. Listing tags and referrers still shows a controller only the entitled versions.
 
 ## How to use it
 

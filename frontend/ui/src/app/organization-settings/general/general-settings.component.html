@@ -115,6 +115,25 @@
         }
       </div>
 
+      @if (featureFlags.isLicensingEnabled()) {
+        <div>
+          <input
+            formControlName="controllerAnyArtifactVersionEnabled"
+            id="controllerAnyArtifactVersionEnabled"
+            type="checkbox"
+            class="distr-checkbox" />
+          <label
+            for="controllerAnyArtifactVersionEnabled"
+            class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+            Controllers can pull every version of an entitled artifact
+          </label>
+          <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
+            When enabled, a controller can pull every version of an artifact its customer has an artifact entitlement
+            for, even versions the entitlement does not include. Listing tags still shows only entitled versions.
+          </p>
+        </div>
+      }
+
       <div>
         <input
           formControlName="prePostScriptsEnabled"
