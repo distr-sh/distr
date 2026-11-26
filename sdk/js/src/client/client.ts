@@ -22,6 +22,11 @@ export type ClientConfig = {
   apiBase: string;
   /** The API key to authenticate with the Distr API. */
   apiKey: string;
+  /**
+   * Extra headers sent with every request, e.g. the service-token headers of an authenticating proxy in front of a
+   * self-hosted Distr. They cannot override the Authorization header the client sets from {@link apiKey}.
+   */
+  headers?: Record<string, string>;
 };
 
 export type ApplicationVersionFiles = {
@@ -40,6 +45,7 @@ export class Client {
     this.config = {
       apiKey: config.apiKey,
       apiBase: config.apiBase || defaultClientConfig.apiBase,
+      headers: config.headers,
     };
     if (!this.config.apiBase.endsWith('/')) {
       this.config.apiBase += '/';
@@ -81,10 +87,7 @@ export class Client {
     const path = `applications/${applicationId}/versions`;
     const response = await fetch(`${this.config.apiBase}${path}`, {
       method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        Authorization: `AccessToken ${this.config.apiKey}`,
-      },
+      headers: this.headers(),
       body: formData,
     });
     return this.handleResponse<ApplicationVersion>(response, 'POST', path);
@@ -176,10 +179,7 @@ export class Client {
   private async get<T>(path: string): Promise<T> {
     const response = await fetch(`${this.config.apiBase}${path}`, {
       method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        Authorization: `AccessToken ${this.config.apiKey}`,
-      },
+      headers: this.headers(),
     });
     return await this.handleResponse<T>(response, 'GET', path);
   }
@@ -199,14 +199,20 @@ export class Client {
   private async send<TResponse, TBody>(method: string, path: string, body?: TBody): Promise<TResponse> {
     const response = await fetch(`${this.config.apiBase}${path}`, {
       method,
-      headers: {
-        Accept: 'application/json',
-        Authorization: `AccessToken ${this.config.apiKey}`,
-        'Content-Type': 'application/json',
-      },
+      headers: this.headers({'Content-Type': 'application/json'}),
       body: JSON.stringify(body),
     });
     return await this.handleResponse<TResponse>(response, method, path);
+  }
+
+  private headers(requestHeaders: Record<string, string> = {}): Headers {
+    const headers = new Headers(this.config.headers);
+    headers.set('Accept', 'application/json');
+    for (const [name, value] of Object.entries(requestHeaders)) {
+      headers.set(name, value);
+    }
+    headers.set('Authorization', `AccessToken ${this.config.apiKey}`);
+    return headers;
   }
 
   private async handleResponse<T>(response: Response, method: string, path: string) {
