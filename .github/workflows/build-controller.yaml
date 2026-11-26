@@ -6,8 +6,6 @@ on:
   push:
     branches:
       - 'main'
-    tags:
-      - '*'
     paths-ignore:
       - 'website/**'
       - 'docker-autoheal/**'
@@ -21,9 +19,11 @@ on:
       - 'sdk/**'
       - 'deploy/charts/**'
       - 'frontend/**'
+  workflow_call:
 
+# github.workflow is the caller's name in a called workflow, so it cannot tell the builds of a release apart.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_id || github.ref }}
+  group: build-controllers-${{ github.ref == 'refs/heads/main' && github.run_id || github.ref }}
   cancel-in-progress: true
 
 env:
