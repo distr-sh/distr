@@ -52,14 +52,14 @@ For a **Kubernetes** bundle, run the command on a machine with access to the clu
 To collect from a context without being asked, append `-s --` and the option to the command: `curl -fsSL '...' | sh -s -- --context prod`. See [Kubernetes bundles](/docs/platform/support-bundles/#kubernetes-bundles) for every option, the permissions the collector needs and what the collected resources contain.
 
 <Aside type="tip">
-  The collect command is shown in the Customer Portal after creating the request
-  and remains visible in the bundle detail view until the support bundle has
-  been uploaded or the request is resolved.
+  The collect command is valid for 24 hours. It is shown in the Customer Portal
+  after creating the request and remains visible in the bundle detail view until
+  the collection script has finished or the request is resolved.
 </Aside>
 
 ## Viewing and commenting on support requests
 
-After the collection script runs, the request status changes from **Awaiting upload** to **Uploaded**. Click on any request to open the detail view where you can:
+Once the collection script has uploaded resources, the request status changes from **Awaiting upload** to **Uploaded**. Click on any request to open the detail view where you can:
 
 - View all collected resources (container logs, environment variables, Kubernetes resources, script output)
 - Exchange comments with your vendor's support team
@@ -73,11 +73,11 @@ After the collection script runs, the request status changes from **Awaiting upl
 
 ## Support request status lifecycle
 
-| Status              | Meaning                                                                 |
-| ------------------- | ----------------------------------------------------------------------- |
-| **Awaiting upload** | Request open, collection script not yet run. Secret valid for 24 hours. |
-| **Uploaded**        | Request open, resources are attached and ready to review.               |
-| **Resolved**        | You or your vendor marked the request as resolved.                      |
+| Status              | Meaning                                                   |
+| ------------------- | --------------------------------------------------------- |
+| **Awaiting upload** | Request open, no resources have been uploaded yet.        |
+| **Uploaded**        | Request open, resources are attached and ready to review. |
+| **Resolved**        | You or your vendor marked the request as resolved.        |
 
 If you have the role **Administrator** or **User**, click **Mark as Resolved** in the detail view once your issue is solved, and **Reopen** if it comes back. Reopening a request without resources gives you a new collection command, valid for 24 hours. If you no longer need a request, delete it.
 
