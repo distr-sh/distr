@@ -309,7 +309,7 @@ export default defineConfig({
                     {label: 'Distr SDK', link: '/docs/integrations/sdk/'},
                     {
                       label: 'Skill',
-                      link: '/docs/integrations/skill/',
+                      link: '/docs/integrations/skills/',
                     },
                     {
                       label: 'Personal Access Tokens',

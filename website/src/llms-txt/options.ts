@@ -23,7 +23,7 @@ const promote = [
   'docs',
   'docs/core-concepts',
   'docs/quickstart',
-  'docs/integrations/skill',
+  'docs/integrations/skills',
 ];
 
 const collator = new Intl.Collator('en');

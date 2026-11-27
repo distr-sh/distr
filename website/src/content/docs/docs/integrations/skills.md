@@ -1,7 +1,7 @@
 ---
 title: Distr Skill
 description: Install the Distr skill so that coding agents like Claude Code, Cursor, Codex and GitHub Copilot know how to use the Distr API. It is updated with every Distr release.
-slug: docs/integrations/skill
+slug: docs/integrations/skills
 sidebar:
   label: Skill
   order: 3
