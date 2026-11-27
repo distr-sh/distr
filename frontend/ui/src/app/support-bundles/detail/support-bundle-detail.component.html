@@ -8,7 +8,10 @@
               {{ title() }}
             </h1>
             <app-deployment-type-badge class="ml-3" [type]="bundle.deploymentType" />
-            <app-support-bundle-status-badge class="ml-2" [status]="bundle.status" />
+            <app-support-bundle-status-badge
+              class="ml-2"
+              [status]="bundle.status"
+              [resourceCount]="bundle.resources.length" />
           </div>
           @if (bundle.description) {
             <p class="mt-3 text-sm text-gray-600 dark:text-gray-400">{{ bundle.description }}</p>
@@ -18,26 +21,36 @@
             @if (createdByName(); as createdByName) {
               by {{ createdByName }}
             }
-            @if (statusChangedByName() && bundle.status === 'resolved') {
-              &middot; Set to {{ bundle.status }} {{ bundle.statusChangedAt | date: 'medium' }} by
-              {{ statusChangedByName() }}
+            @if (statusChangedByName(); as statusChangedByName) {
+              @if (bundle.status === 'resolved') {
+                &middot; Resolved {{ bundle.statusChangedAt | date: 'medium' }} by {{ statusChangedByName }}
+              } @else {
+                &middot; Reopened {{ bundle.statusChangedAt | date: 'medium' }} by {{ statusChangedByName }}
+              }
             }
           </p>
         </div>
         <div class="flex shrink-0 items-center gap-2">
-          @if (
-            (auth.isVendor() || auth.isPartner()) &&
-            auth.hasAnyRole('read_write', 'admin') &&
-            bundle.status !== 'resolved'
-          ) {
-            <button
-              type="button"
-              (click)="markAsResolved()"
-              [disabled]="updatingStatus()"
-              class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
-              <fa-icon [icon]="faCheck" class="mr-2" />
-              Mark as Resolved
-            </button>
+          @if (auth.hasAnyRole('read_write', 'admin')) {
+            @if (bundle.status === 'resolved') {
+              <button
+                type="button"
+                (click)="reopen()"
+                [disabled]="updatingStatus()"
+                class="distr-btn-secondary inline-flex items-center px-4 py-2 text-sm font-medium">
+                <fa-icon [icon]="faRotateLeft" class="mr-2" />
+                Reopen
+              </button>
+            } @else {
+              <button
+                type="button"
+                (click)="markAsResolved()"
+                [disabled]="updatingStatus()"
+                class="distr-btn-secondary inline-flex items-center px-4 py-2 text-sm font-medium">
+                <fa-icon [icon]="faCheck" class="mr-2" />
+                Mark as Resolved
+              </button>
+            }
           }
           @if (auth.hasAnyRole('read_write', 'admin')) {
             <button type="button" (click)="deleteBundle()" [disabled]="deleting()" class="distr-btn-danger px-4 py-2">
@@ -47,15 +60,10 @@
           }
         </div>
       </div>
-      @if (
-        bundle.collectCommand &&
-        bundle.status === 'initialized' &&
-        auth.isCustomer() &&
-        auth.hasAnyRole('read_write', 'admin')
-      ) {
+      @if (bundle.collectCommand && auth.isCustomer() && auth.hasAnyRole('read_write', 'admin')) {
         <app-alert
           [type]="justInitialized() ? 'success' : 'info'"
-          [heading]="justInitialized() ? 'Support request successfully initialized' : 'Support request initialized'"
+          [heading]="justInitialized() ? 'Support request successfully initialized' : 'Collect a support bundle'"
           class="mt-4">
           @switch (bundle.deploymentType) {
             @case ('docker') {

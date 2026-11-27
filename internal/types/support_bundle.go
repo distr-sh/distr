@@ -10,9 +10,17 @@ import (
 type SupportBundleStatus string
 
 const (
-	SupportBundleStatusInitialized SupportBundleStatus = "initialized"
-	SupportBundleStatusCreated     SupportBundleStatus = "created"
-	SupportBundleStatusResolved    SupportBundleStatus = "resolved"
+	SupportBundleStatusOpen     SupportBundleStatus = "open"
+	SupportBundleStatusResolved SupportBundleStatus = "resolved"
+)
+
+type SupportBundleEvent string
+
+const (
+	SupportBundleEventCreated  SupportBundleEvent = "created"
+	SupportBundleEventUploaded SupportBundleEvent = "uploaded"
+	SupportBundleEventResolved SupportBundleEvent = "resolved"
+	SupportBundleEventReopened SupportBundleEvent = "reopened"
 )
 
 type SupportBundleConfigurationEnvVar struct {
@@ -56,24 +64,25 @@ type SupportBundle struct {
 	BundleSecret                 dbcrypto.String     `db:"bundle_secret"`
 	BundleSecretExpiresAt        *time.Time          `db:"bundle_secret_expires_at"`
 	StatusChangedByUserAccountID *uuid.UUID          `db:"status_changed_by_user_account_id"`
-	StatusChangedAt              *time.Time          `db:"status_changed_at"`
+	// StatusChangedAt is only set once a user resolved or reopened the bundle, so an open bundle that has it was
+	// reopened.
+	StatusChangedAt *time.Time `db:"status_changed_at"`
 }
 
-// CustomerSupportBundleEvent is the creation of a support bundle of a customer organization, or the latest
-// change of its status when Status is set.
+// CustomerSupportBundleEvent is the creation of a support bundle of a customer organization, the upload of its
+// resources or the latest change of its status.
 type CustomerSupportBundleEvent struct {
-	SupportBundleID        uuid.UUID            `db:"support_bundle_id"`
-	CustomerOrganizationID uuid.UUID            `db:"customer_organization_id"`
-	CreatedAt              time.Time            `db:"created_at"`
-	Title                  string               `db:"title"`
-	Status                 *SupportBundleStatus `db:"status"`
-	User                   *ActivityUser        `db:"user_account"`
+	SupportBundleID        uuid.UUID          `db:"support_bundle_id"`
+	CustomerOrganizationID uuid.UUID          `db:"customer_organization_id"`
+	CreatedAt              time.Time          `db:"created_at"`
+	Title                  string             `db:"title"`
+	Event                  SupportBundleEvent `db:"event"`
+	User                   *ActivityUser      `db:"user_account"`
 }
 
 // SupportBundleWithDetails carries the customer and partner organization of the memberships the users who created
 // the bundle and changed its status have in the vendor's organization. Deleted is set for a user who is no longer a
-// member or whose account was deleted. StatusChangedByDeleted only considers the resolved status,
-// since the collector sets created without a user, which a deleted account cannot be told apart from.
+// member or whose account was deleted.
 type SupportBundleWithDetails struct {
 	SupportBundle
 	CreatedByUserName                     *string    `db:"created_by_user_name"`
@@ -83,6 +92,7 @@ type SupportBundleWithDetails struct {
 	CreatedByDeleted                      bool       `db:"created_by_deleted"`
 	CustomerOrganizationName              string     `db:"customer_organization_name"`
 	ResourceCount                         int64      `db:"resource_count"`
+	UploadedAt                            *time.Time `db:"uploaded_at"`
 	CommentCount                          int64      `db:"comment_count"`
 	LastCommentAt                         *time.Time `db:"last_comment_at"`
 	StatusChangedByUserName               *string    `db:"status_changed_by_user_name"`

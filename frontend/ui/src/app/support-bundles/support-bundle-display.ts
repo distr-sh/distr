@@ -11,15 +11,41 @@ export const supportBundleDeleteConfirm: ConfirmConfig = {
   confirmLabel: 'Delete',
 };
 
-export function supportBundleStatusVariant(status: SupportBundleStatus): BadgeVariant {
+export type SupportBundleProgress = 'awaiting_upload' | 'uploaded' | 'resolved';
+
+export function supportBundleProgress(status: SupportBundleStatus, resourceCount: number): SupportBundleProgress {
   switch (status) {
-    case 'initialized':
+    case 'open':
+      return resourceCount > 0 ? 'uploaded' : 'awaiting_upload';
+    case 'resolved':
+      return 'resolved';
+    default:
+      return never(status);
+  }
+}
+
+export function supportBundleProgressLabel(progress: SupportBundleProgress): string {
+  switch (progress) {
+    case 'awaiting_upload':
+      return 'Awaiting upload';
+    case 'uploaded':
+      return 'Uploaded';
+    case 'resolved':
+      return 'Resolved';
+    default:
+      return never(progress);
+  }
+}
+
+export function supportBundleProgressVariant(progress: SupportBundleProgress): BadgeVariant {
+  switch (progress) {
+    case 'awaiting_upload':
+      return 'neutral';
+    case 'uploaded':
       return 'info';
-    case 'created':
-      return 'warning';
     case 'resolved':
       return 'success';
     default:
-      return never(status);
+      return never(progress);
   }
 }

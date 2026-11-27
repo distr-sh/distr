@@ -105,7 +105,6 @@ export class SupportBundlesService {
   public updateStatus(id: string, request: UpdateSupportBundleStatusRequest) {
     return this.httpClient.patch<void>(`${baseUrl}/${id}/status`, request);
   }
-
   public delete(id: string) {
     return this.httpClient.delete<void>(`${baseUrl}/${id}`);
   }

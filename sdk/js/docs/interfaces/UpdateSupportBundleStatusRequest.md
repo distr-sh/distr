@@ -10,4 +10,4 @@
 
 ### status
 
-> **status**: `"resolved"`
+> **status**: [`SupportBundleStatus`](../type-aliases/SupportBundleStatus.md)

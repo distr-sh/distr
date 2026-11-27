@@ -8,6 +8,7 @@ import (
 	"time"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/dbcrypto"
 	"github.com/distr-sh/distr/internal/distrerr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
@@ -293,13 +294,14 @@ var supportBundleWithDetailsOutputExpr = `
 	uj.user_account_id IS NULL AS created_by_deleted,
 	co.name AS customer_organization_name,
 	(SELECT count(*) FROM SupportBundleResource WHERE support_bundle_id = sb.id) AS resource_count,
+	(SELECT max(created_at) FROM SupportBundleResource WHERE support_bundle_id = sb.id) AS uploaded_at,
 	(SELECT count(*) FROM SupportBundleComment WHERE support_bundle_id = sb.id) AS comment_count,
 	(SELECT max(created_at) FROM SupportBundleComment WHERE support_bundle_id = sb.id) AS last_comment_at,
 	scu.name AS status_changed_by_user_name,
 	scu.image_id AS status_changed_by_image_id,
 	scuj.customer_organization_id AS status_changed_by_customer_organization_id,
 	scuj.partner_organization_id AS status_changed_by_partner_organization_id,
-	sb.status = 'resolved' AND scuj.user_account_id IS NULL AS status_changed_by_deleted
+	sb.status_changed_at IS NOT NULL AND scuj.user_account_id IS NULL AS status_changed_by_deleted
 `
 
 const supportBundleWithDetailsJoinExpr = `
@@ -311,8 +313,8 @@ const supportBundleWithDetailsJoinExpr = `
 		ON scuj.user_account_id = scu.id AND scuj.organization_id = sb.organization_id
 `
 
-// GetCustomerSupportBundleEvents returns the newest creations and status changes of the support bundles of the
-// customer organizations since, at most limit of them in total.
+// GetCustomerSupportBundleEvents returns the newest creations, uploads and status changes of the support bundles of
+// the customer organizations since, at most limit of them in total.
 func GetCustomerSupportBundleEvents(
 	ctx context.Context,
 	orgID uuid.UUID,
@@ -324,7 +326,7 @@ func GetCustomerSupportBundleEvents(
 	rows, err := db.Query(ctx,
 		`SELECT * FROM (
 			SELECT sb.id AS support_bundle_id, sb.customer_organization_id, sb.created_at, sb.title,
-				NULL::TEXT AS status,
+				'created' AS event,
 				`+activityUserOutputExpr+` AS user_account
 			FROM SupportBundle sb
 				`+activityUserJoinExpr("sb.created_by_user_account_id", "sb.organization_id")+`
@@ -332,7 +334,21 @@ func GetCustomerSupportBundleEvents(
 				AND sb.customer_organization_id = any(@customerOrgIds)
 				AND sb.created_at > @since
 			UNION ALL
-			SELECT sb.id, sb.customer_organization_id, sb.status_changed_at, sb.title, sb.status::TEXT,
+			SELECT sb.id, sb.customer_organization_id, r.uploaded_at, sb.title, 'uploaded',
+				`+activityUserOutputExpr+`
+			FROM SupportBundle sb
+				CROSS JOIN LATERAL (
+					SELECT max(created_at) AS uploaded_at
+					FROM SupportBundleResource
+					WHERE support_bundle_id = sb.id
+				) r
+				`+activityUserJoinExpr("NULL::UUID", "sb.organization_id")+`
+			WHERE sb.organization_id = @orgId
+				AND sb.customer_organization_id = any(@customerOrgIds)
+				AND r.uploaded_at > @since
+			UNION ALL
+			SELECT sb.id, sb.customer_organization_id, sb.status_changed_at, sb.title,
+				CASE WHEN sb.status = 'resolved' THEN 'resolved' ELSE 'reopened' END,
 				`+activityUserOutputExpr+`
 			FROM SupportBundle sb
 				`+activityUserJoinExpr("sb.status_changed_by_user_account_id", "sb.organization_id")+`
@@ -494,7 +510,7 @@ func UpdateSupportBundleStatus(
 	ctx context.Context,
 	id, orgID uuid.UUID,
 	status types.SupportBundleStatus,
-	changedByUserID *uuid.UUID,
+	changedByUserID uuid.UUID,
 ) error {
 	db := internalctx.GetDb(ctx)
 	result, err := db.Exec(
@@ -541,6 +557,59 @@ func ClearSupportBundleBundleSecret(ctx context.Context, bundleID uuid.UUID) err
 		pgx.NamedArgs{"id": bundleID},
 	); err != nil {
 		return fmt.Errorf("could not clear support bundle secret: %w", err)
+	}
+	return nil
+}
+
+// FinalizeSupportBundle keeps the bundle secret of a bundle without resources, so that the customer
+// can run the collect command again after a run that uploaded nothing.
+func FinalizeSupportBundle(ctx context.Context, bundleID uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	if _, err := db.Exec(
+		ctx,
+		`UPDATE SupportBundle
+		SET bundle_secret_expires_at = NULL
+		WHERE id = @id
+			AND EXISTS (SELECT 1 FROM SupportBundleResource WHERE support_bundle_id = @id)`,
+		pgx.NamedArgs{"id": bundleID},
+	); err != nil {
+		return fmt.Errorf("could not finalize support bundle: %w", err)
+	}
+	return nil
+}
+
+func RenewSupportBundleBundleSecret(
+	ctx context.Context,
+	bundle *types.SupportBundle,
+	bundleSecret dbcrypto.String,
+	expiresAt time.Time,
+) error {
+	bundleSecretEnc, err := supportBundleSecret.Encrypt(
+		bundleSecret, bundle.CustomerOrganizationID, bundle.OrganizationID)
+	if err != nil {
+		return fmt.Errorf("could not encrypt support bundle secret: %w", err)
+	}
+	db := internalctx.GetDb(ctx)
+	result, err := db.Exec(
+		ctx,
+		`UPDATE SupportBundle
+		SET bundle_secret = NULL,
+			bundle_secret_enc = @bundleSecretEnc,
+			bundle_secret_expires_at = @expiresAt
+		WHERE id = @id AND organization_id = @orgId AND customer_organization_id = @customerOrgId`,
+		pgx.NamedArgs{
+			"id":              bundle.ID,
+			"orgId":           bundle.OrganizationID,
+			"customerOrgId":   bundle.CustomerOrganizationID,
+			"bundleSecretEnc": bundleSecretEnc,
+			"expiresAt":       expiresAt,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("could not renew support bundle secret: %w", err)
+	}
+	if result.RowsAffected() == 0 {
+		return distrerr.ErrNotFound
 	}
 	return nil
 }

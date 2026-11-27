@@ -52,18 +52,19 @@ For a **Kubernetes** bundle, run the command on a machine with access to the clu
 To collect from a context without being asked, append `-s --` and the option to the command: `curl -fsSL '...' | sh -s -- --context prod`. See [Kubernetes bundles](/docs/platform/support-bundles/#kubernetes-bundles) for every option, the permissions the collector needs and what the collected resources contain.
 
 <Aside type="tip">
-  The collect command is shown in the Customer Portal after creating the request
-  and remains visible in the bundle detail view for as long as the bundle is in
-  the **Initialized** state.
+  The collect command is valid for 24 hours. It is shown in the Customer Portal
+  after creating the request and remains visible in the bundle detail view until
+  the collection script has finished uploading resources or the request is
+  resolved. If a run uploads nothing, you can run the same command again.
 </Aside>
 
 ## Viewing and commenting on support requests
 
-After the collection script runs, the request status changes from **Initialized** to **Created**. Click on any request to open the detail view where you can:
+Once the collection script has uploaded resources, the request status changes from **Awaiting upload** to **Uploaded**. Click on any request to open the detail view where you can:
 
 - View all collected resources (container logs, environment variables, Kubernetes resources, script output)
 - Exchange comments with your vendor's support team
-- Track the request status (Initialized, Created, Resolved)
+- Track the request status (Awaiting upload, Uploaded, Resolved)
 
 <ThemedImage
   lightSrc={detailLight}
@@ -73,13 +74,13 @@ After the collection script runs, the request status changes from **Initialized*
 
 ## Support request status lifecycle
 
-| Status          | Meaning                                                                         |
-| --------------- | ------------------------------------------------------------------------------- |
-| **Initialized** | Request created, collection script not yet run. Secret valid for 24 hours.      |
-| **Created**     | Collection script ran successfully. Resources are attached and ready to review. |
-| **Resolved**    | Vendor has marked the request as resolved.                                      |
+| Status              | Meaning                                                   |
+| ------------------- | --------------------------------------------------------- |
+| **Awaiting upload** | Request open, no resources have been uploaded yet.        |
+| **Uploaded**        | Request open, resources are attached and ready to review. |
+| **Resolved**        | You or your vendor marked the request as resolved.        |
 
-Once resolved, a request cannot be reopened. If you no longer need a request, delete it.
+If you have the role **Administrator** or **User**, click **Mark as Resolved** in the detail view once your issue is solved, and **Reopen** if it comes back. Reopening a request without resources gives you a new collection command, valid for 24 hours. If you no longer need a request, delete it.
 
 If you have the role **Administrator** or **User**, you can delete a request in any status, from the list or from its detail view. Deleting is permanent: the request, the collected resources and the comments are removed from Distr for you and for your vendor, and cannot be restored.
 

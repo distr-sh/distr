@@ -210,16 +210,35 @@ export function toCustomerHomeAccessTokens(tokens: AccessToken[], now: Dayjs = d
     }));
 }
 
+function lastSupportBundleEvent(
+  bundle: SupportBundle
+): Pick<CustomerHomeSupportBundle, 'lastEvent' | 'updatedAt' | 'updatedBy'> {
+  const {statusChangedAt, uploadedAt} = bundle;
+  if (statusChangedAt && !(uploadedAt && dayjs(uploadedAt).isAfter(statusChangedAt))) {
+    return {
+      lastEvent: bundle.status === 'resolved' ? 'resolved' : 'reopened',
+      updatedAt: statusChangedAt,
+      updatedBy: user(bundle.statusChangedByUserName, bundle.statusChangedByImageUrl),
+    };
+  } else if (uploadedAt) {
+    return {lastEvent: 'uploaded', updatedAt: uploadedAt};
+  } else {
+    return {
+      lastEvent: 'created',
+      updatedAt: bundle.createdAt,
+      updatedBy: user(bundle.createdByUserName, bundle.createdByImageUrl),
+    };
+  }
+}
+
 export function toCustomerHomeSupportBundles(bundles: SupportBundle[]): CustomerHomeSupportBundle[] {
   return bundles
     .map((bundle) => ({
       id: bundle.id,
       title: bundle.title,
       status: bundle.status,
-      updatedAt: bundle.statusChangedAt ?? bundle.createdAt,
-      updatedBy: bundle.statusChangedAt
-        ? user(bundle.statusChangedByUserName, bundle.statusChangedByImageUrl)
-        : user(bundle.createdByUserName, bundle.createdByImageUrl),
+      resourceCount: bundle.resourceCount,
+      ...lastSupportBundleEvent(bundle),
     }))
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }

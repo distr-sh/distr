@@ -148,3 +148,9 @@
 ### title
 
 > **title**: `string`
+
+---
+
+### uploadedAt?
+
+> `optional` **uploadedAt?**: `string`

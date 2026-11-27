@@ -245,3 +245,13 @@
 #### Inherited from
 
 [`SupportBundle`](SupportBundle.md).[`title`](SupportBundle.md#title)
+
+---
+
+### uploadedAt?
+
+> `optional` **uploadedAt?**: `string`
+
+#### Inherited from
+
+[`SupportBundle`](SupportBundle.md).[`uploadedAt`](SupportBundle.md#uploadedat)

@@ -3,7 +3,7 @@ import {ChangeDetectionStrategy, Component, computed, inject, signal, viewChild}
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCheck, faComment, faDownload, faTrash} from '@fortawesome/free-solid-svg-icons';
+import {faCheck, faComment, faDownload, faRotateLeft, faTrash} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, map, startWith, Subject, switchMap} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
@@ -82,14 +82,16 @@ export class SupportBundleDetailComponent {
   protected readonly faCheck = faCheck;
   protected readonly faComment = faComment;
   protected readonly faDownload = faDownload;
+  protected readonly faRotateLeft = faRotateLeft;
   protected readonly faTrash = faTrash;
   private readonly timeline = viewChild(ActivityTimelineComponent);
 
   protected readonly bundle = signal<SupportBundleDetail | undefined>(undefined);
-  protected readonly justInitialized = toSignal(
+  private readonly initializedParam = toSignal(
     this.route.queryParamMap.pipe(map((params) => params.get('initialized') === 'true')),
     {initialValue: false}
   );
+  protected readonly justInitialized = computed(() => this.initializedParam() && !this.bundle()?.statusChangedAt);
   protected readonly updatingStatus = signal(false);
   protected readonly submittingComment = signal(false);
   protected readonly downloading = signal(false);
@@ -111,7 +113,7 @@ export class SupportBundleDetailComponent {
 
   protected readonly statusChangedByName = computed(() => {
     const bundle = this.bundle();
-    return bundle && this.author(statusChangedBy(bundle))?.name;
+    return bundle?.statusChangedAt ? this.author(statusChangedBy(bundle))?.name : undefined;
   });
 
   protected readonly timelineEntries = computed<ActivityTimelineEntry[]>(() =>
@@ -187,6 +189,26 @@ export class SupportBundleDetailComponent {
     try {
       await firstValueFrom(this.supportBundlesService.updateStatus(bundle.id, {status: 'resolved'}));
       this.toast.success('Support request marked as resolved');
+      this.refresh$.next();
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    } finally {
+      this.updatingStatus.set(false);
+    }
+  }
+
+  protected async reopen(): Promise<void> {
+    const bundle = this.bundle();
+    if (!bundle) {
+      return;
+    }
+    this.updatingStatus.set(true);
+    try {
+      await firstValueFrom(this.supportBundlesService.updateStatus(bundle.id, {status: 'open'}));
+      this.toast.success('Support request reopened');
       this.refresh$.next();
     } catch (e) {
       const msg = getFormDisplayedError(e);

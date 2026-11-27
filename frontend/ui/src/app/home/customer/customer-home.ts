@@ -91,6 +91,8 @@ export interface CustomerHomeSupportBundle {
   id: string;
   title: string;
   status: SupportBundleStatus;
+  resourceCount: number;
+  lastEvent: 'created' | 'uploaded' | 'resolved' | 'reopened';
   updatedAt: string;
   updatedBy?: CustomerHomeUser;
 }

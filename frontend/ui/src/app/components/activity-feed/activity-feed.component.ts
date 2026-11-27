@@ -131,6 +131,7 @@ function icon({type}: ActivityFeedItem): IconDefinition {
     case 'support_bundle_created':
     case 'support_bundle_uploaded':
     case 'support_bundle_resolved':
+    case 'support_bundle_reopened':
       return faLifeRing;
     case 'team_member_added':
       return faUserPlus;
@@ -172,6 +173,7 @@ function link(
     case 'support_bundle_created':
     case 'support_bundle_uploaded':
     case 'support_bundle_resolved':
+    case 'support_bundle_reopened':
       return {link: `/support/${resourceId}`};
     case 'team_member_added':
       if (viewer === 'vendor') {
@@ -213,6 +215,7 @@ function customerTabLink(
     case 'support_bundle_created':
     case 'support_bundle_uploaded':
     case 'support_bundle_resolved':
+    case 'support_bundle_reopened':
       return {...tab('support'), queryParams: {search: activity.resourceName}};
     default:
       return never(activity.type);
@@ -245,6 +248,8 @@ function action({type, subject, detail}: ActivityFeedItem): string {
       return `support bundle uploaded for ${subject}`;
     case 'support_bundle_resolved':
       return `support request ${subject} resolved`;
+    case 'support_bundle_reopened':
+      return `support request ${subject} reopened`;
     case 'team_member_added':
       return `team member ${subject} added`;
     default:
