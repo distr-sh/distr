@@ -16,7 +16,7 @@
             {{ entry.action }}
           </div>
           <time class="block text-xs text-gray-500 dark:text-gray-400">
-            {{ entry.createdAt | date: 'medium' }}
+            {{ entry.createdAt | date: 'short' }}
           </time>
           @if (entry.body) {
             <div
