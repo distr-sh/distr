@@ -10,10 +10,14 @@ on:
       - '*'
     paths:
       - 'skills/**'
+      - 'go.mod'
+      - 'go.sum'
       - '.github/workflows/skills.yaml'
   pull_request:
     paths:
       - 'skills/**'
+      - 'go.mod'
+      - 'go.sum'
       - '.github/workflows/skills.yaml'
 
 permissions:
