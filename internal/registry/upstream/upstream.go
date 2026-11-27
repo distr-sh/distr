@@ -2,7 +2,6 @@ package upstream
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -83,6 +82,17 @@ func (s *Syncer) SyncArtifactTags(
 		return nil, db.UpdateArtifactSyncStatus(ctx, artifact.ID, &syncErr)
 	}
 
+	existingTags := map[string]struct{}{}
+	if skipExistingTags {
+		if names, err := db.GetArtifactVersionNames(ctx, artifact.ID); err != nil {
+			return nil, err
+		} else {
+			for _, name := range names {
+				existingTags[name] = struct{}{}
+			}
+		}
+	}
+
 	var skippedTags []string
 	var skippedTagsMu sync.Mutex
 	skipTag := func(tag string) {
@@ -101,9 +111,12 @@ func (s *Syncer) SyncArtifactTags(
 				skipTag(tag)
 				continue
 			}
+			if _, exists := existingTags[tag]; exists {
+				continue
+			}
 			g.Go(func() error {
 				log.Debug("upstream sync tag", zap.String("tag", tag))
-				if isAllowed, err := syncTag(gCtx, repo, artifact, tag, skipExistingTags); err != nil {
+				if isAllowed, err := syncTag(gCtx, repo, artifact, tag); err != nil {
 					return fmt.Errorf("syncing tag %q: %w", tag, err)
 				} else if !isAllowed {
 					skipTag(tag)
@@ -133,16 +146,7 @@ func (s *Syncer) SyncArtifactTags(
 }
 
 // syncTag returns false when the versioning strategy of the artifact no longer allows the tag.
-func syncTag(
-	ctx context.Context, repo *remote.Repository, artifact *types.Artifact, tag string, skipExistingTags bool,
-) (bool, error) {
-	if skipExistingTags {
-		if _, err := db.GetArtifactVersionByName(ctx, artifact.ID, tag); err == nil {
-			return true, nil
-		} else if !errors.Is(err, distrerr.ErrNotFound) {
-			return false, fmt.Errorf("checking if tag exists: %w", err)
-		}
-	}
+func syncTag(ctx context.Context, repo *remote.Repository, artifact *types.Artifact, tag string) (bool, error) {
 	desc, rc, err := repo.FetchReference(ctx, tag)
 	if err != nil {
 		return false, fmt.Errorf("fetching manifest: %w", err)
