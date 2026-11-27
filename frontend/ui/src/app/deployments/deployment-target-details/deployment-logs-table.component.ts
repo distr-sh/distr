@@ -62,20 +62,21 @@ export class DeploymentLogsTableComponent {
     return map;
   });
 
-  protected readonly source = computed(
-    () =>
-      new RangeTimeseriesSource(
-        (options) => this.svc.get(this.deploymentId(), this.resources(), options),
-        logRecordToTimeseriesEntry,
-        {
-          order: this.orderDirection(),
-          after: this.after(),
-          before: this.before(),
-          filter: this.filter(),
-          exclusionFilter: this.exclusionFilter(),
-        }
-      )
-  );
+  protected readonly source = computed(() => {
+    const deploymentId = this.deploymentId();
+    const resources = this.resources();
+    return new RangeTimeseriesSource(
+      (options) => this.svc.get(deploymentId, resources, options),
+      logRecordToTimeseriesEntry,
+      {
+        order: this.orderDirection(),
+        after: this.after(),
+        before: this.before(),
+        filter: this.filter(),
+        exclusionFilter: this.exclusionFilter(),
+      }
+    );
+  });
 
   protected readonly exporter: TimeseriesExporter = {
     export: () =>

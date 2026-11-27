@@ -28,20 +28,20 @@ export class DeploymentTargetLogsTableComponent {
   public readonly exclusionFilter = input<string>();
   public readonly orderDirection = input<OrderDirection>('DESC');
 
-  protected readonly source = computed(
-    () =>
-      new RangeTimeseriesSource(
-        (options) => this.svc.get(this.deploymentTargetId(), options),
-        logRecordToTimeseriesEntry,
-        {
-          order: this.orderDirection(),
-          after: this.after(),
-          before: this.before(),
-          filter: this.filter(),
-          exclusionFilter: this.exclusionFilter(),
-        }
-      )
-  );
+  protected readonly source = computed(() => {
+    const deploymentTargetId = this.deploymentTargetId();
+    return new RangeTimeseriesSource(
+      (options) => this.svc.get(deploymentTargetId, options),
+      logRecordToTimeseriesEntry,
+      {
+        order: this.orderDirection(),
+        after: this.after(),
+        before: this.before(),
+        filter: this.filter(),
+        exclusionFilter: this.exclusionFilter(),
+      }
+    );
+  });
 
   protected readonly exporter: TimeseriesExporter = {
     export: () =>
