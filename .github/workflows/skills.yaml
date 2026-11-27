@@ -1,0 +1,84 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: Skills
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '*'
+    paths:
+      - 'skills/**'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/skills.yaml'
+  pull_request:
+    paths:
+      - 'skills/**'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/skills.yaml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: skills-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Go
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Build skill
+        run: go run ./skills snapshot
+      - name: Lint skill
+        run: gh skill publish --dry-run
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  publish:
+    name: Publish
+    if: github.ref_type == 'tag'
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Go
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Build skill
+        run: go run ./skills "$GITHUB_REF_NAME"
+      - name: Upload archives
+        run: gh release upload --clobber "$GITHUB_REF_NAME" dist/skill/assets/*
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          aws-region: eu-central-1
+          role-to-assume: arn:aws:iam::639130800065:role/github-actions-distr.sh
+      - name: Publish discovery index and Claude marketplace
+        run: >-
+          aws s3 sync dist/skill/site/.well-known/agent-skills/ s3://distr.sh/.well-known/agent-skills/
+          --cache-control "max-age=60, public, must-revalidate"
+          --acl=public-read
+      - name: Invalidate cache
+        run: >-
+          aws cloudfront create-invalidation
+          --distribution-id E1PG5UM7ZE1H97
+          --paths '/.well-known/agent-skills/*'

@@ -81,6 +81,10 @@ sources = [
   "{{config_root}}/CHANGELOG.md",
 ]
 
+[tasks."build:skill"]
+description = 'Build the skill archives, discovery index and Claude marketplace into dist/skill'
+run = 'go run ./skills "$VERSION"'
+
 [tasks."build:controller:docker"]
 run = 'go build -ldflags="{{vars.ldflags}}" -o dist/docker-controller ./cmd/controller/docker'
 depends = ["go-tidy"]
@@ -111,6 +115,10 @@ run = 'hack/validate-migrations.sh'
 run = 'pnpm lint'
 dir = "website"
 
+[tasks."lint:skill"]
+description = 'Validate the skill against the Agent Skills specification'
+run = 'gh skill publish --dry-run'
+
 [tasks."lint:app"]
 run = { tasks = ["lint:go", "lint:frontend", "lint:migrations"] }
 description = 'Lint Distr and the controllers, without the website'
@@ -121,7 +129,7 @@ description = "Lint the renovate.json config file"
 sources = ["renovate.json"]
 
 [tasks.lint]
-run = { tasks = ["lint:app", "lint:website"] }
+run = { tasks = ["lint:app", "lint:website", "lint:skill"] }
 
 [tasks."test:go"]
 run = 'go test ./...'

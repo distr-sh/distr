@@ -1,0 +1,22 @@
+{
+  "name": "distr",
+  "owner": {
+    "name": "Distr",
+    "url": "https://distr.sh"
+  },
+  "metadata": {
+    "description": "Skills for Distr"
+  },
+  "plugins": [
+    {
+      "name": {{json .Name}},
+      "description": {{json .Description}},
+      "version": {{json .Version}},
+      "source": {
+        "source": "archive",
+        "url": {{json .PluginURL}},
+        "sha256": {{json .PluginSHA256}}
+      }
+    }
+  ]
+}
