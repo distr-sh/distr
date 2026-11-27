@@ -63,7 +63,7 @@ After the collection script runs, the request status changes from **Initialized*
 
 - View all collected resources (container logs, environment variables, Kubernetes resources, script output)
 - Exchange comments with your vendor's support team
-- Track the request status (Initialized, Created, Resolved, Canceled)
+- Track the request status (Initialized, Created, Resolved)
 
 <ThemedImage
   lightSrc={detailLight}
@@ -78,9 +78,8 @@ After the collection script runs, the request status changes from **Initialized*
 | **Initialized** | Request created, collection script not yet run. Secret valid for 24 hours.      |
 | **Created**     | Collection script ran successfully. Resources are attached and ready to review. |
 | **Resolved**    | Vendor has marked the request as resolved.                                      |
-| **Canceled**    | Request was canceled before data was collected.                                 |
 
-You can cancel an **Initialized** request if you no longer need it. Once resolved or canceled, a request cannot be reopened.
+Once resolved, a request cannot be reopened. If you no longer need a request, delete it.
 
 If you have the role **Administrator** or **User**, you can delete a request in any status, from the list or from its detail view. Deleting is permanent: the request, the collected resources and the comments are removed from Distr for you and for your vendor, and cannot be restored.
 

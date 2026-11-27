@@ -3,7 +3,7 @@ import {ChangeDetectionStrategy, Component, computed, inject, signal, viewChild}
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCheck, faComment, faDownload, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faCheck, faComment, faDownload, faTrash} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, map, startWith, Subject, switchMap} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
@@ -83,7 +83,6 @@ export class SupportBundleDetailComponent {
   protected readonly faComment = faComment;
   protected readonly faDownload = faDownload;
   protected readonly faTrash = faTrash;
-  protected readonly faXmark = faXmark;
   private readonly timeline = viewChild(ActivityTimelineComponent);
 
   protected readonly bundle = signal<SupportBundleDetail | undefined>(undefined);
@@ -188,32 +187,6 @@ export class SupportBundleDetailComponent {
     try {
       await firstValueFrom(this.supportBundlesService.updateStatus(bundle.id, {status: 'resolved'}));
       this.toast.success('Support request marked as resolved');
-      this.refresh$.next();
-    } catch (e) {
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
-      }
-    } finally {
-      this.updatingStatus.set(false);
-    }
-  }
-
-  protected async cancelBundle(): Promise<void> {
-    const bundle = this.bundle();
-    if (!bundle) {
-      return;
-    }
-    const confirmed = await firstValueFrom(
-      this.overlay.confirm('Are you sure you want to cancel this support request?')
-    );
-    if (!confirmed) {
-      return;
-    }
-    this.updatingStatus.set(true);
-    try {
-      await firstValueFrom(this.supportBundlesService.updateStatus(bundle.id, {status: 'canceled'}));
-      this.toast.success('Support request canceled');
       this.refresh$.next();
     } catch (e) {
       const msg = getFormDisplayedError(e);

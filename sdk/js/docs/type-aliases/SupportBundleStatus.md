@@ -6,4 +6,4 @@
 
 # Type Alias: SupportBundleStatus
 
-> **SupportBundleStatus** = `"initialized"` \| `"created"` \| `"resolved"` \| `"canceled"`
+> **SupportBundleStatus** = `"initialized"` \| `"created"` \| `"resolved"`

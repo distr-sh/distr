@@ -13,7 +13,6 @@ const (
 	SupportBundleStatusInitialized SupportBundleStatus = "initialized"
 	SupportBundleStatusCreated     SupportBundleStatus = "created"
 	SupportBundleStatusResolved    SupportBundleStatus = "resolved"
-	SupportBundleStatusCanceled    SupportBundleStatus = "canceled"
 )
 
 type SupportBundleConfigurationEnvVar struct {
@@ -73,7 +72,7 @@ type CustomerSupportBundleEvent struct {
 
 // SupportBundleWithDetails carries the customer and partner organization of the memberships the users who created
 // the bundle and changed its status have in the vendor's organization. Deleted is set for a user who is no longer a
-// member or whose account was deleted. StatusChangedByDeleted only considers the resolved and canceled statuses,
+// member or whose account was deleted. StatusChangedByDeleted only considers the resolved status,
 // since the collector sets created without a user, which a deleted account cannot be told apart from.
 type SupportBundleWithDetails struct {
 	SupportBundle

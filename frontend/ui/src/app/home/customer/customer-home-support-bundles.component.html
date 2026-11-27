@@ -36,9 +36,6 @@
                   @case ('resolved') {
                     Resolved
                   }
-                  @case ('canceled') {
-                    Canceled
-                  }
                 }
                 {{ bundle.updatedAt | relativeDate }}
                 @if (bundle.updatedBy; as user) {

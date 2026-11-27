@@ -80,7 +80,7 @@ type UploadResult struct {
 }
 
 // UploadRejectedError is a response that every further upload would receive as well, for example
-// because the bundle was canceled or finalized in the meantime.
+// because the bundle was resolved, deleted or finalized in the meantime.
 type UploadRejectedError struct {
 	Status  string
 	Message string

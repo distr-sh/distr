@@ -10,7 +10,7 @@ import {
 import {ApplicationEntitlement} from '../../types/application-entitlement';
 import {LatestArtifactPull} from '../../types/artifact-version-pull';
 import {License} from '../../types/license';
-import {SupportBundle, SupportBundleStatus} from '../../types/support-bundle';
+import {SupportBundle} from '../../types/support-bundle';
 import {CustomerDetailTabId} from './detail/customer-detail-navigation';
 
 export type CustomerManagement = 'controller' | 'self' | 'unknown';
@@ -46,7 +46,6 @@ export interface CustomerListDeployments extends DeploymentHealth {
 export interface CustomerListSupportBundles {
   open: number;
   resolved: number;
-  canceled: number;
 }
 
 export interface CustomerListDeploymentSources {
@@ -170,10 +169,8 @@ export function toCustomerListRows(
 }
 
 function toCustomerSupportBundles(bundles: SupportBundle[]): CustomerListSupportBundles {
-  const count = (status: SupportBundleStatus) => bundles.filter((bundle) => bundle.status === status).length;
   return {
     open: filterOpenSupportBundles(bundles).length,
-    resolved: count('resolved'),
-    canceled: count('canceled'),
+    resolved: bundles.filter((bundle) => bundle.status === 'resolved').length,
   };
 }

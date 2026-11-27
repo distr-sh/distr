@@ -31,7 +31,6 @@ const (
 	EntryTypeSupportBundleCreated       EntryType = "support_bundle_created"
 	EntryTypeSupportBundleUploaded      EntryType = "support_bundle_uploaded"
 	EntryTypeSupportBundleResolved      EntryType = "support_bundle_resolved"
-	EntryTypeSupportBundleCanceled      EntryType = "support_bundle_canceled"
 	EntryTypeTeamMemberAdded            EntryType = "team_member_added"
 )
 
@@ -293,8 +292,6 @@ func SupportBundles(events []types.CustomerSupportBundleEvent) []Entry {
 				entryType = EntryTypeSupportBundleUploaded
 			case types.SupportBundleStatusResolved:
 				entryType = EntryTypeSupportBundleResolved
-			case types.SupportBundleStatusCanceled:
-				entryType = EntryTypeSupportBundleCanceled
 			default:
 				continue
 			}
