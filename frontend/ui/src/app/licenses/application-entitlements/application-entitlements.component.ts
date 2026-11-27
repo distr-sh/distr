@@ -1,16 +1,14 @@
-import {AsyncPipe, DatePipe, NgPlural, NgPluralCase} from '@angular/common';
+import {DatePipe, NgPlural, NgPluralCase} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, input, signal, TemplateRef} from '@angular/core';
-import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleExclamation, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {catchError, combineLatest, EMPTY, filter, first, firstValueFrom, map, Observable, switchMap} from 'rxjs';
+import {catchError, EMPTY, filter, first, firstValueFrom, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
-import {filteredByFormControl} from '../../../util/filter';
 import {loadWhileOpen, refreshInBackground} from '../../../util/refresh';
 import {AlertComponent} from '../../components/alert/alert.component';
-import {SearchBarComponent} from '../../components/search-bar.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {ClickableRowDirective} from '../../directives/clickable-row.directive';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
@@ -27,14 +25,12 @@ import {EditApplicationEntitlementComponent} from './edit-application-entitlemen
   templateUrl: './application-entitlements.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
-    AsyncPipe,
     ReactiveFormsModule,
     FaIconComponent,
     DatePipe,
     NgPlural,
     NgPluralCase,
     EditApplicationEntitlementComponent,
-    SearchBarComponent,
     AlertComponent,
     ClickableRowDirective,
     SpinnerComponent,
@@ -42,7 +38,7 @@ import {EditApplicationEntitlementComponent} from './edit-application-entitlemen
 })
 export class ApplicationEntitlementsComponent {
   readonly customerOrganizationId = input<string>();
-  readonly hotkey = input(true);
+  readonly search = input.required<string>();
 
   protected readonly auth = inject(AuthService);
   private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
@@ -51,24 +47,19 @@ export class ApplicationEntitlementsComponent {
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
 
-  filterForm = new FormGroup({
-    search: new FormControl(''),
+  protected readonly entitlements = toSignal(this.applicationEntitlementsService.list());
+  protected readonly loaded = computed(() => this.entitlements() !== undefined);
+
+  protected readonly filteredEntitlements = computed(() => {
+    const search = this.search().toLowerCase();
+    const customerOrganizationId = this.customerOrganizationId();
+    return this.entitlements()?.filter(
+      (it) =>
+        (!customerOrganizationId || it.customerOrganizationId === customerOrganizationId) &&
+        (!search || (it.name || '').toLowerCase().includes(search))
+    );
   });
 
-  entitlements$: Observable<ApplicationEntitlement[]> = combineLatest([
-    filteredByFormControl(
-      this.applicationEntitlementsService.list(),
-      this.filterForm.controls.search,
-      (it: ApplicationEntitlement, search: string) =>
-        !search || (it.name || '').toLowerCase().includes(search.toLowerCase())
-    ),
-    toObservable(this.customerOrganizationId),
-  ]).pipe(
-    map(([entitlements, id]) => (id ? entitlements.filter((e) => e.customerOrganizationId === id) : entitlements)),
-    takeUntilDestroyed()
-  );
-
-  applications$ = this.applicationsService.list();
   private readonly customers = toSignal(this.customerOrganizationsService.getCustomerOrganizations().pipe(first()));
   protected readonly customerName = computed(() => {
     const customerOrganizationId = this.customerOrganizationId();

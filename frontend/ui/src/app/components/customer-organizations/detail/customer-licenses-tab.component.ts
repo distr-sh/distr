@@ -1,5 +1,6 @@
 import {Component, computed, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
+import {FormControl} from '@angular/forms';
 import {ActivatedRoute} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCopy} from '@fortawesome/free-solid-svg-icons';
@@ -14,16 +15,20 @@ import {AuthService} from '../../../services/auth.service';
 import {LicenseKeysService} from '../../../services/license-keys.service';
 import {OverlayService} from '../../../services/overlay.service';
 import {AlertComponent} from '../../alert/alert.component';
+import {CardHeadingComponent} from '../../card-heading.component';
+import {SearchBarComponent} from '../../search-bar.component';
 
 @Component({
   templateUrl: './customer-licenses-tab.component.html',
-  host: {class: 'flex flex-col gap-6'},
+  host: {class: 'flex flex-col gap-4'},
   imports: [
     AlertComponent,
+    CardHeadingComponent,
     FaIconComponent,
     LicenseKeysComponent,
     ApplicationEntitlementsComponent,
     ArtifactEntitlementsComponent,
+    SearchBarComponent,
   ],
 })
 export class CustomerLicensesTabComponent {
@@ -41,21 +46,8 @@ export class CustomerLicensesTabComponent {
   private readonly applicationEntitlements = toSignal(inject(ApplicationEntitlementsService).list());
   private readonly artifactEntitlements = toSignal(inject(ArtifactEntitlementsService).list());
 
-  /** The first table with rows of this customer takes the "/" hotkey, the license keys when all are empty. */
-  protected readonly hotkeyTable = computed(() => {
-    const id = this.customerOrganizationId();
-    const hasRows = (items: {customerOrganizationId?: string}[] | undefined) =>
-      items?.some((it) => it.customerOrganizationId === id) ?? false;
-    if (hasRows(this.licenseKeys())) {
-      return 'licenseKeys';
-    } else if (hasRows(this.applicationEntitlements())) {
-      return 'applicationEntitlements';
-    } else if (hasRows(this.artifactEntitlements())) {
-      return 'artifactEntitlements';
-    } else {
-      return 'licenseKeys';
-    }
-  });
+  protected readonly searchControl = new FormControl('', {nonNullable: true});
+  protected readonly search = toSignal(this.searchControl.valueChanges, {initialValue: ''});
 
   /** Offers the copy only to a customer without any licenses, once there is another customer to copy from. */
   protected readonly canCopyFromAnotherCustomer = computed(() => {

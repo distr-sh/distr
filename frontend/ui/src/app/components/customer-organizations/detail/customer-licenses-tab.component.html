@@ -7,10 +7,15 @@
     </button>
   </app-alert>
 }
-<app-license-keys [customerOrganizationId]="customerOrganizationId()" [hotkey]="hotkeyTable() === 'licenseKeys'" />
-<app-application-entitlements
-  [customerOrganizationId]="customerOrganizationId()"
-  [hotkey]="hotkeyTable() === 'applicationEntitlements'" />
-<app-artifact-entitlements
-  [customerOrganizationId]="customerOrganizationId()"
-  [hotkey]="hotkeyTable() === 'artifactEntitlements'" />
+<div class="distr-toolbar">
+  <app-search-bar [control]="searchControl" placeholder="Filter licenses" />
+</div>
+<app-license-keys [customerOrganizationId]="customerOrganizationId()" [search]="search()">
+  <h2 heading appCardHeading>License Keys</h2>
+</app-license-keys>
+<app-application-entitlements [customerOrganizationId]="customerOrganizationId()" [search]="search()">
+  <h2 heading appCardHeading>Application Entitlements</h2>
+</app-application-entitlements>
+<app-artifact-entitlements [customerOrganizationId]="customerOrganizationId()" [search]="search()">
+  <h2 heading appCardHeading>Artifact Entitlements</h2>
+</app-artifact-entitlements>

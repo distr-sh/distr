@@ -264,9 +264,16 @@
   }
 
   // the row above a table or card grid that holds `app-search-bar` and the page actions. Inside a
-  // `distr-table-panel` add `p-4`, above a `distr-card-grid` add `mb-4`.
+  // `distr-table-panel` add `p-4`, or `distr-toolbar-heading` when it holds a heading instead of a
+  // search bar, above a `distr-card-grid` add `mb-4`.
   .distr-toolbar {
     @apply flex flex-col items-stretch justify-between gap-3 md:flex-row md:items-center;
+  }
+
+  // The 38px buttons next to the 28px `text-lg` heading set the row height, so this padding keeps the
+  // heading 16px from the panel edges, as far as `p-4` keeps the search bar.
+  .distr-toolbar-heading {
+    @apply px-4 py-3;
   }
 
   .distr-toolbar-actions {

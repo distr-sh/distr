@@ -11,7 +11,7 @@ import {
   TemplateRef,
   viewChild,
 } from '@angular/core';
-import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
@@ -25,10 +25,9 @@ import {
   faTrash,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, switchMap} from 'rxjs';
+import {catchError, EMPTY, filter, firstValueFrom, map, Observable, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
-import {filteredByFormControl} from '../../../util/filter';
 import {loadWhileOpen, refreshInBackground} from '../../../util/refresh';
 import {AlertComponent} from '../../components/alert/alert.component';
 import {ClipComponent, ClipDirective} from '../../components/clip.component';
@@ -69,7 +68,8 @@ import {ViewLicenseKeyModalComponent} from './view-license-key-modal.component';
 })
 export class LicenseKeysComponent {
   readonly customerOrganizationId = input<string>();
-  readonly hotkey = input(true);
+  /** Replaces the component's own search bar when the page filters several tables at once. */
+  readonly search = input<string>();
 
   protected readonly auth = inject(AuthService);
   protected readonly features = inject(FeatureFlagService);
@@ -93,6 +93,7 @@ export class LicenseKeysComponent {
   private readonly isVendorOrPartner = this.auth.isVendor() || this.auth.isPartner();
   protected readonly canManage = this.isVendorOrPartner && this.auth.hasAnyRole('read_write', 'admin');
   protected readonly canCopyId = computed(() => this.isVendorOrPartner && this.features.isVendorBillingEnabled());
+  protected readonly showCustomerColumn = computed(() => this.isVendorOrPartner && !this.customerOrganizationId());
   protected readonly showDropdownForId = signal<string | undefined>(undefined);
 
   protected readonly selectedLicense = signal<LicenseKey | undefined>(undefined);
@@ -106,20 +107,19 @@ export class LicenseKeysComponent {
     search: new FormControl(''),
   });
 
-  protected readonly filteredLicenses = toSignal(
-    combineLatest([
-      filteredByFormControl(
-        this.licenseKeysService.list(),
-        this.filterForm.controls.search,
-        (it: LicenseKey, search: string) => !search || (it.name || '').toLowerCase().includes(search.toLowerCase())
-      ),
-      toObservable(this.customerOrganizationId),
-    ]).pipe(
-      map(([keys, id]) => (id ? keys.filter((k) => k.customerOrganizationId === id) : keys)),
-      takeUntilDestroyed()
-    ),
-    {initialValue: [] as LicenseKey[]}
-  );
+  private readonly filterValue = toSignal(this.filterForm.controls.search.valueChanges);
+  private readonly licenses = toSignal(this.licenseKeysService.list());
+  protected readonly loaded = computed(() => this.licenses() !== undefined);
+
+  protected readonly filteredLicenses = computed(() => {
+    const search = (this.search() ?? this.filterValue())?.toLowerCase();
+    const customerOrganizationId = this.customerOrganizationId();
+    return this.licenses()?.filter(
+      (it) =>
+        (!customerOrganizationId || it.customerOrganizationId === customerOrganizationId) &&
+        (!search || (it.name || '').toLowerCase().includes(search))
+    );
+  });
 
   editForm = new FormGroup({
     license: new FormControl<LicenseKey | undefined>(undefined, {
