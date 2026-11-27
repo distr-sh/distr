@@ -1,4 +1,4 @@
-FROM docker:29.10.0-cli-alpine3.24
+FROM docker:29.10.1-cli-alpine3.24
 ARG TARGETARCH
 WORKDIR /
 COPY LICENSE NOTICE /usr/share/doc/distr/
