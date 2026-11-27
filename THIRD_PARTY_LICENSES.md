@@ -119,8 +119,8 @@ published by their authors and verified against the checksums in [`go.sum`](go.s
 | github.com/davecgh/go-spew/spew | v1.1.2-0.20180830191138-d8f796af33cc | [ISC](https://pkg.go.dev/github.com/davecgh/go-spew/spew@v1.1.2-0.20180830191138-d8f796af33cc?tab=licenses) |
 | github.com/DefangLabs/secret-detector/pkg | v1.1.0 | [Apache-2.0](https://pkg.go.dev/github.com/DefangLabs/secret-detector/pkg@v1.1.0?tab=licenses) |
 | github.com/distribution/reference | v0.6.0 | [Apache-2.0](https://pkg.go.dev/github.com/distribution/reference@v0.6.0?tab=licenses) |
-| github.com/docker/cli | v29.10.0 | [Apache-2.0](https://pkg.go.dev/github.com/docker/cli@v29.10.0?tab=licenses) |
-| github.com/docker/cli/cli/connhelper/internal/syntax | v29.10.0 | [BSD-3-Clause](https://pkg.go.dev/github.com/docker/cli/cli/connhelper/internal/syntax@v29.10.0?tab=licenses) |
+| github.com/docker/cli | v29.10.1 | [Apache-2.0](https://pkg.go.dev/github.com/docker/cli@v29.10.1?tab=licenses) |
+| github.com/docker/cli/cli/connhelper/internal/syntax | v29.10.1 | [BSD-3-Clause](https://pkg.go.dev/github.com/docker/cli/cli/connhelper/internal/syntax@v29.10.1?tab=licenses) |
 | github.com/docker/compose/v5 | v5.8.0 | [Apache-2.0](https://pkg.go.dev/github.com/docker/compose/v5@v5.8.0?tab=licenses) |
 | github.com/docker/docker-credential-helpers | v0.9.10 | [MIT](https://pkg.go.dev/github.com/docker/docker-credential-helpers@v0.9.10?tab=licenses) |
 | github.com/docker/go-connections | v0.8.2 | [Apache-2.0](https://pkg.go.dev/github.com/docker/go-connections@v0.8.2?tab=licenses) |
