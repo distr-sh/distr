@@ -737,6 +737,22 @@ func GetArtifactReleaseTagNames(ctx context.Context, artifactID uuid.UUID) ([]st
 	return result, nil
 }
 
+func GetArtifactVersionNames(ctx context.Context, artifactID uuid.UUID) ([]string, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT v.name FROM ArtifactVersion v WHERE v.artifact_id = @artifactId`,
+		pgx.NamedArgs{"artifactId": artifactID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query artifact version names: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		return nil, fmt.Errorf("could not collect artifact version names: %w", err)
+	}
+	return result, nil
+}
+
 func GetArtifactsWithUpstreamURL(ctx context.Context) ([]types.Artifact, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `SELECT`+artifactOutputExpr+`FROM Artifact a WHERE a.upstream_url IS NOT NULL`)
