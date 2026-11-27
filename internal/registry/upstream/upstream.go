@@ -19,6 +19,7 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	godigest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"go.opentelemetry.io/otel/attribute"
 	"go.podman.io/image/v5/manifest"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
@@ -73,11 +74,15 @@ func (s *Syncer) SyncArtifactTags(
 		return nil, nil
 	}
 
+	ctx, span := startSpan(ctx, "upstream sync artifact", attribute.String("artifact.id", artifact.ID.String()))
+	defer span.End()
+
 	log := internalctx.GetLogger(ctx).With(zap.Stringer("artifactId", artifact.ID))
 	log.Debug("upstream sync started")
 
 	repo, err := newUpstreamRepository(artifact)
 	if err != nil {
+		recordSpanError(span, err)
 		syncErr := fmt.Sprintf("failed to create upstream client: %v", err)
 		return nil, db.UpdateArtifactSyncStatus(ctx, artifact.ID, &syncErr)
 	}
@@ -85,6 +90,7 @@ func (s *Syncer) SyncArtifactTags(
 	existingTags := map[string]struct{}{}
 	if skipExistingTags {
 		if names, err := db.GetArtifactVersionNames(ctx, artifact.ID); err != nil {
+			recordSpanError(span, err)
 			syncErr := fmt.Sprintf("failed to get existing versions: %v", err)
 			return nil, db.UpdateArtifactSyncStatus(ctx, artifact.ID, &syncErr)
 		} else {
@@ -116,8 +122,11 @@ func (s *Syncer) SyncArtifactTags(
 				continue
 			}
 			g.Go(func() error {
+				ctx, span := startSpan(gCtx, "upstream sync tag", attribute.String("artifact.tag", tag))
+				defer span.End()
 				log.Debug("upstream sync tag", zap.String("tag", tag))
-				if isAllowed, err := syncTag(gCtx, repo, artifact, tag); err != nil {
+				if isAllowed, err := syncTag(ctx, repo, artifact, tag); err != nil {
+					recordSpanError(span, err)
 					return fmt.Errorf("syncing tag %q: %w", tag, err)
 				} else if !isAllowed {
 					skipTag(tag)
@@ -138,6 +147,7 @@ func (s *Syncer) SyncArtifactTags(
 
 	var errStr *string
 	if firstErr != nil {
+		recordSpanError(span, firstErr)
 		errStr = new(firstErr.Error())
 	}
 

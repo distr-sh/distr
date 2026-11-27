@@ -12,9 +12,12 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
 	. "github.com/onsi/gomega"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
 type fakeAuthInfo struct {
@@ -170,4 +173,29 @@ func TestFeatureFlagMiddleware(t *testing.T) {
 		w := serve(fakeAuthInfo{})
 		g.Expect(w.Code).To(Equal(http.StatusForbidden))
 	})
+}
+
+func TestOTELNamesSpanAfterFullRoutePattern(t *testing.T) {
+	g := NewWithT(t)
+	exporter := tracetest.NewInMemoryExporter()
+	provider := sdktrace.NewTracerProvider(sdktrace.WithSyncer(exporter))
+
+	router := chi.NewRouter()
+	router.Route("/api/v1", func(r chi.Router) {
+		r.Use(OTEL(provider))
+		r.Route("/", func(r chi.Router) {
+			r.Use(func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					next.ServeHTTP(w, r.WithContext(r.Context()))
+				})
+			})
+			r.Post("/deployments/{deploymentId}/status", func(w http.ResponseWriter, r *http.Request) {})
+		})
+	})
+
+	router.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, "/api/v1/deployments/1/status", nil))
+
+	spans := exporter.GetSpans()
+	g.Expect(spans).To(HaveLen(1))
+	g.Expect(spans[0].Name).To(Equal("POST /api/v1/deployments/{deploymentId}/status"))
 }

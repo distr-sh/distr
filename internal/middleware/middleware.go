@@ -464,9 +464,9 @@ var RequireCustomDomainsConfigured = guard(func(r *http.Request) (respond.Respon
 func SetRequestPattern(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		next.ServeHTTP(w, r)
-		if r.Pattern == "" {
-			r.Pattern = chi.RouteContext(r.Context()).RoutePattern()
-		}
+		// chi sets r.Pattern on the request each router level receives, so this one only holds the pattern up
+		// to the mount point, while the route context holds the full pattern once routing has finished.
+		r.Pattern = chi.RouteContext(r.Context()).RoutePattern()
 	})
 }
 
