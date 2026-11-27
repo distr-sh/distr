@@ -83,7 +83,7 @@ sources = [
 
 [tasks."build:skill"]
 description = 'Build the skill archives, discovery index and Claude marketplace into dist/skill'
-run = 'node skills/build.mjs'
+run = 'go run ./skills "$VERSION"'
 
 [tasks."build:controller:docker"]
 run = 'go build -ldflags="{{vars.ldflags}}" -o dist/docker-controller ./cmd/controller/docker'

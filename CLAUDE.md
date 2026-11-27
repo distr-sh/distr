@@ -23,7 +23,7 @@ The skill in `skills/distr/` is the Distr skill, never the agent skill. Keep "Ag
 - `frontend/ui/`: the Angular app (standalone components, TailwindCSS 4, SCSS, Flowbite), built into `internal/frontend/dist/ui/`.
 - `sdk/js/`: `@distr-sh/distr-sdk`, a standalone pnpm project. Prefer its high-level `DistrService` over the low-level `Client`, and run its examples against the config in `src/examples/config.ts`.
 - `website/`: the docs and marketing site, a standalone pnpm project with a Prettier config of its own.
-- `skills/distr/`: the Distr skill. Keep it a routing layer to the documentation on `distr.sh/llms.txt` rather than a copy of it. `skills/build.mjs`, which needs nothing beyond Node itself, renders `skills/templates/` and packs the skill for the GitHub release and the discovery index on `distr.sh/.well-known/agent-skills/`. Keep what an installer must not copy outside `skills/distr/`.
+- `skills/distr/`: the Distr skill. Keep it a routing layer to the documentation on `distr.sh/llms.txt` rather than a copy of it. `skills/main.go` renders `skills/templates/` and packs the skill for the GitHub release and the discovery index on `distr.sh/.well-known/agent-skills/`. Keep what an installer must not copy outside `skills/distr/`.
 - `internal/`: the backend. `db/` holds every query, `handlers/` the HTTP handlers, `respond/` their adapter and response types, `api/` their request and response structs, `routing/` the routes and middleware, `mapping/` the conversions between `api` and `types`, `types/` the database models, `svc/` the services, `authn/` the authentication providers, `logstore/` the Loki-backed log records, `registry/` the OCI registry, `advisory/` the advisory visibility rules and `migrations/sql/` the schema.
 
 PostgreSQL is reached through pgx/v5, registry blobs and Loki chunks live in S3-compatible object storage and deployment logs live in Loki rather than in the database. Timestamp columns are `TIMESTAMP`, never `TIMESTAMPTZ`.
@@ -274,8 +274,8 @@ Keep the changes on the branch you work in to the one fix, feature or refactorin
 - Update `website/src/content/docs/docs/self-hosting/configuration.mdx` in the same change whenever you add, remove or change an environment variable in `internal/env/env.go`, including its default, whether it is required and the values it accepts.
 - Run `mise run build:helm-schema` after every change to `deploy/charts/distr/values.yaml`, since CI rejects a stale `values.schema.json`. Annotate a value with `# @schema` where the type inferred from the default is too narrow, an IntOrString field or an override a user sets to null being the cases, and render every file under `deploy/charts/distr/examples/` to confirm the schema still accepts them.
 - Use the GitHub CLI (`gh`) rather than the web interface to fetch data from GitHub.
-- Write shell for anything from a one-off command to a checked-in script (like `hack/validate-migrations.sh`), and Node once a task outgrows shell (like `hack/controller-changelog.mjs`). Avoid Python and never use Perl (e.g. `perl -pi -e`). Edit files directly rather than piping them through a stream editor.
-- Keep a file a script generates, a JSON manifest being the example, as a template file next to the script rather than inline in it, and render it from a Node script once it needs values filled in.
+- Write shell for anything from a one-off command to a checked-in script (like `hack/validate-migrations.sh`), and Node once a task outgrows shell (like `hack/controller-changelog.mjs`). Write a tool that builds or generates release artifacts in Go (like `skills/main.go` and `hack/third-party-licenses`). Avoid Python and never use Perl (e.g. `perl -pi -e`). Edit files directly rather than piping them through a stream editor.
+- Keep a file a script generates, a JSON manifest being the example, as a template file next to the script rather than inline in it.
 
 ## Code Review Instructions
 

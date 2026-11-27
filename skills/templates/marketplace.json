@@ -9,13 +9,13 @@
   },
   "plugins": [
     {
-      "name": "{{name}}",
-      "description": "{{description}}",
-      "version": "{{version}}",
+      "name": {{json .Name}},
+      "description": {{json .Description}},
+      "version": {{json .Version}},
       "source": {
         "source": "archive",
-        "url": "{{pluginUrl}}",
-        "sha256": "{{pluginSha256}}"
+        "url": {{json .PluginURL}},
+        "sha256": {{json .PluginSHA256}}
       }
     }
   ]

@@ -2,11 +2,11 @@
   "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
   "skills": [
     {
-      "name": "{{name}}",
+      "name": {{json .Name}},
       "type": "archive",
-      "description": "{{description}}",
-      "url": "{{archiveUrl}}",
-      "digest": "{{archiveDigest}}"
+      "description": {{json .Description}},
+      "url": {{json .ArchiveURL}},
+      "digest": {{json .ArchiveDigest}}
     }
   ]
 }
