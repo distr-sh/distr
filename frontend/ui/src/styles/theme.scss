@@ -273,7 +273,7 @@
   // The 38px buttons next to the 28px `text-lg` heading set the row height, so this padding keeps the
   // heading 16px from the panel edges, as far as `p-4` keeps the search bar.
   .distr-toolbar-heading {
-    @apply px-4 py-2.75;
+    @apply px-4 py-3;
   }
 
   .distr-toolbar-actions {
