@@ -3,11 +3,16 @@ package svc
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/distr-sh/distr/internal/buildconfig"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/exaring/otelpgx"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
@@ -27,6 +32,51 @@ func (tracer *loggingQueryTracer) TraceQueryStart(
 }
 
 func (tracer *loggingQueryTracer) TraceQueryEnd(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryEndData) {
+}
+
+// Taking an idle connection from the pool takes microseconds, so an acquire above this threshold had to wait for an
+// exhausted pool or to open a connection.
+const slowAcquireThreshold = 5 * time.Millisecond
+
+type acquireStartKey struct{}
+
+// slowAcquireTracer replaces the acquire spans of otelpgx, which add one span per query, with a span for slow or
+// failed acquires only. Since that span is created once the acquire has ended, the connect span and the queries of
+// AfterConnect are not nested under it.
+type slowAcquireTracer struct {
+	*otelpgx.Tracer
+	tracer trace.Tracer
+}
+
+var _ pgxpool.AcquireTracer = &slowAcquireTracer{}
+
+func (t *slowAcquireTracer) TraceAcquireStart(
+	ctx context.Context,
+	_ *pgxpool.Pool,
+	_ pgxpool.TraceAcquireStartData,
+) context.Context {
+	return context.WithValue(ctx, acquireStartKey{}, time.Now())
+}
+
+func (t *slowAcquireTracer) TraceAcquireEnd(ctx context.Context, _ *pgxpool.Pool, data pgxpool.TraceAcquireEndData) {
+	start, ok := ctx.Value(acquireStartKey{}).(time.Time)
+	if !ok || !trace.SpanFromContext(ctx).IsRecording() {
+		return
+	}
+	end := time.Now()
+	if data.Err == nil && end.Sub(start) < slowAcquireThreshold {
+		return
+	}
+	_, span := t.tracer.Start(ctx, "pool.acquire",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithTimestamp(start),
+		trace.WithAttributes(semconv.DBSystemNamePostgreSQL),
+	)
+	if data.Err != nil {
+		span.RecordError(data.Err)
+		span.SetStatus(codes.Error, data.Err.Error())
+	}
+	span.End(trace.WithTimestamp(end))
 }
 
 func (r *Registry) GetDbPool() *pgxpool.Pool {
@@ -107,9 +157,13 @@ func (reg *Registry) createDBPoolFor(ctx context.Context, url string, maxConns *
 	if env.EnableQueryLogging() {
 		config.ConnConfig.Tracer = &loggingQueryTracer{reg.logger}
 	} else {
-		config.ConnConfig.Tracer = otelpgx.NewTracer(
-			otelpgx.WithTracerProvider(reg.GetTracers().Default()),
-		)
+		config.ConnConfig.Tracer = &slowAcquireTracer{
+			Tracer: otelpgx.NewTracer(otelpgx.WithTracerProvider(reg.GetTracers().Default())),
+			tracer: reg.GetTracers().Default().Tracer(
+				"github.com/distr-sh/distr/internal/svc",
+				trace.WithInstrumentationVersion(buildconfig.Version()),
+			),
+		}
 	}
 	db, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
