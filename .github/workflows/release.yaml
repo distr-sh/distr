@@ -26,12 +26,22 @@ jobs:
       id-token: write
       packages: write
 
+  build-docker-autoheal:
+    name: Build Docker Autoheal
+    uses: ./.github/workflows/build-docker-autoheal.yaml
+    secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+
   create-version:
     name: Create version (${{ matrix.application.name }})
-    # The versions reference the distr-ee image and hand out the controller images.
+    # The versions reference the distr-ee image and hand out the controller and autoheal images.
     needs:
       - build-distr
       - build-controllers
+      - build-docker-autoheal
     if: ${{ !contains(github.ref_name, '-rc.') }}
     timeout-minutes: 5
     runs-on: ubuntu-latest
