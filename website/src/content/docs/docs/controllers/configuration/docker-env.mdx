@@ -25,12 +25,12 @@ environment variable templates in more detail.
 ## What is an Environment Variable Template?
 
 Environment variables are used to pass deployment-specific values to your application.
-With Distr, you can define a template for these variables, allowing users to customize them before deployment and ensuring all necessary values are set.
+With Distr, you can define a template for these variables. Users can customize them before deployment, and the template makes sure all necessary values are set.
 
 This setup consists of three parts:
 
 1. A **parameterized Docker Compose file** that references dynamic variables.
-2. A **template file** that provides default values for those variables, allowing end users to modify them in Distr before deployment.
+2. A **template file** that provides default values for those variables, which end users can modify in Distr before deployment.
 3. The actual **environment** configured during the deployment of the application.
 
 <Aside type="caution">
@@ -99,7 +99,7 @@ You can execute this example with the following command:
 docker compose up
 ```
 
-When running the Docker Compose file you will be able to see the following output for the webservers `/env` endpoint:
+When running the Docker Compose file you will be able to see the following output for the webserver's `/env` endpoint:
 
 <Tabs>
   <TabItem label="service one">

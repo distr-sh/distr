@@ -1,6 +1,6 @@
 ---
 title: Docker Controller
-description: 'How the Distr Docker Compose controller works: installation, core loop, OCI registry authentication, self-updates, Docker Swarm support, and uninstallation.'
+description: 'How the Distr Docker Compose controller works: installation, core loop, OCI registry authentication, self-updates, Docker Swarm support and uninstallation.'
 slug: docs/controllers/docker-controller
 sidebar:
   label: Docker Controller
@@ -9,7 +9,7 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 
-The Docker Compose controller manages container-based deployments, handling both single- and multi-container applications. It performs application updates with minimal downtime, collects container health metrics and logs, and supports environment variable templating for flexible configuration.
+The Docker Compose controller manages container-based deployments of both single- and multi-container applications. It performs application updates with minimal downtime and collects container health metrics and logs. It also supports environment variable templating.
 
 <Aside type="note">
   Unless you're using Distr to deploy your own applications internally, the
@@ -73,7 +73,7 @@ volumes:
   scratch:
 ```
 
-All requests to Distr are authenticated with a JWT token obtained by calling `DISTR_LOGIN_ENDPOINT` with the `targetId` and `targetSecret` credentials. The Docker socket is mounted so the controller can manage containers on the host. Which socket that is can be configured per deployment target, see [Custom Docker Endpoint](#custom-docker-endpoint). [Controller Security](/docs/controllers/security/) describes what the controller can access on the host and what it sends to Distr.
+All requests to Distr are authenticated with a JWT token obtained by calling `DISTR_LOGIN_ENDPOINT` with the `targetId` and `targetSecret` credentials. The Docker socket is mounted so the controller can manage containers on the host. Which socket that is can be configured per deployment target. See [Custom Docker Endpoint](#custom-docker-endpoint). [Controller Security](/docs/controllers/security/) describes what the controller can access on the host and what it sends to Distr.
 
 ## Core Logic
 

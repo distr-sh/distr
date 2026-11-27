@@ -49,7 +49,7 @@ Configure the environment variables for your Docker Compose application. These v
 
 For more information on how to use them, refer to [our guide on working with environment variables](/docs/controllers/docker-env/).
 
-You can also enable Docker Swarm mode for deployments that should run in swarm mode. See [Docker Swarm](/docs/controllers/docker-controller/#docker-swarm) for more details. Additionally, you can enable container log collection to view application logs directly in the portal. Learn more about [Container Logs](/docs/controllers/logs-and-metrics/#container-logs).
+You can also enable Docker Swarm mode for deployments that should run in swarm mode. See [Docker Swarm](/docs/controllers/docker-controller/#docker-swarm) for more details. To view application logs directly in the portal, enable container log collection. Learn more about [Container Logs](/docs/controllers/logs-and-metrics/#container-logs).
 
 <Aside type="note">
   For Helm applications, you'll configure the Helm values instead. You can
@@ -62,10 +62,9 @@ You can also enable Docker Swarm mode for deployments that should run in swarm m
 Review your configuration and click **Create Deployment** to proceed to the deployment page.
 
 <Aside type="caution">
-  **Important**: This command will automatically install the Distr controller,
-  which will then automatically install the application. The controller runs in
-  the customer environment and manages the full lifecycle of your application
-  deployment.
+  This command will automatically install the Distr controller, which will then
+  automatically install the application. The controller runs in the customer
+  environment and manages the full lifecycle of your application deployment.
 </Aside>
 
 ### Step 5: Monitor deployment status
@@ -74,7 +73,7 @@ View real-time updates as your deployment initializes. The status indicator show
 
 - **Running**: The deployment is running (no healthchecks configured)
 - **Healthy**: The deployment is running and all healthchecks are passing
-- **Error**: Something is wrong, check the logs for details
+- **Error**: Something is wrong. Check the logs for details
 - **Stale**: The controller has not reported this deployment's health in the last 60 seconds
 
 For the full list of statuses, see [Deployment Status](/docs/controllers/logs-and-metrics/#deployment-status).
@@ -85,7 +84,7 @@ Click the **Inspect** button on a deployment to view application logs directly f
 
 ### Step 7: Update deployments
 
-Click the **Update** button to modify configuration values and update running deployments as needed. You can change environment variables, switch application versions, or adjust other settings.
+Click the **Update** button to modify configuration values and update running deployments as needed. You can change environment variables, switch application versions or adjust other settings.
 
 ## Alerts
 

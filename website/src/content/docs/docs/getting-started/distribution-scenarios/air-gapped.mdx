@@ -12,9 +12,9 @@ import ThemedImage from '~/components/util/ThemedImage.astro';
 import airGappedLight from '~/assets/docs/getting-started/distribution-scenarios/air-gapped/air-gapped-light.webp';
 import airGappedDark from '~/assets/docs/getting-started/distribution-scenarios/air-gapped/air-gapped-dark.webp';
 
-[Air-gapped](/glossary/air-gapped-meaning/) deployments sit at the far end of the [self-hosted spectrum](/blog/self-hosted-spectrum/): the product runs in the customer's environment with **no vendor access** and no live path to your SaaS control plane.
+[Air-gapped](/glossary/air-gapped-meaning/) deployments sit at the far end of the [self-hosted spectrum](/blog/self-hosted-spectrum/): the product runs in the customer's environment with no vendor access and no live path to your SaaS control plane.
 
-Two problems to solve:
+There are two problems to solve:
 
 1. **Create a complete offline package** (application + every image and dependency).
 2. **Move that package across the gap** (USB, exchange/staging server or another customer-approved transfer), then deploy inside the isolated network.
@@ -38,7 +38,7 @@ For Kubernetes, [Zarf](/docs/integrations/zarf/) is the path we recommend. A Zar
 
 1. **Create the Zarf package with Distr.** Build it in CI (for example the GitHub Actions job in the [Zarf integration guide](/docs/integrations/zarf/#step-4-automate-with-github-actions)) so every release produces a versioned archive, then publish it to your Distr registry. Control who can pull which versions with [artifact entitlements](/docs/platform/artifact-entitlements/).
 2. **Customer moves it across the gap** on a connected staging machine they control: pull the entitled package from Distr, then transfer via USB/removable media, an exchange/DMZ server or whatever one-way process they already trust.
-3. **Deploy offline** inside the air-gapped cluster with `zarf package deploy` from the local archive. No vendor access, no pull from Distr at install time.
+3. **Deploy offline** inside the air-gapped cluster with `zarf package deploy` from the local archive. This needs no vendor access and no pull from Distr at install time.
 
 </Steps>
 
@@ -100,13 +100,13 @@ How the package enters the isolated network is the customer's process. Common pa
 
 - **USB / removable media:** download on a connected host, carry media in, deploy from local files.
 - **Exchange / staging server:** download to a customer-controlled DMZ or jump host, then move through their approved transfer into the isolated network.
-- **Data diode / one-way:** same idea: content only moves inbound under their controls.
+- **Data diode / one-way:** the same idea, with content moving only inbound under their controls.
 
 ## Restricted outbound to Distr (not a true air-gapped deployment)
 
 If the customer allows outbound access **only** to Distr, the environment is restricted, not air-gapped. They authenticate and pull entitled Compose + images directly from your [Distr registry](/docs/registry/) (see the [customer portal registry](/docs/platform/customer-portal/registry/) flow), then run Compose there.
 
-That only works when every `image:` in Compose points at Distr. If Compose still references Docker Hub (or another registry), whitelist Distr is not enough.
+That only works when every `image:` in Compose points at Distr. If Compose still references Docker Hub (or another registry), whitelisting Distr is not enough.
 
 Prefer the true air-gapped paths above when there is no outbound path at all. Use restricted pulls when the buyer allows Distr but nothing else.
 

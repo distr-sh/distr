@@ -1,6 +1,6 @@
 ---
 title: Branding
-description: Apply custom branding and content to the Customer Portal, allowing end users to view release notes, deployment instructions, and operational guidance in a vendor-branded interface.
+description: Apply custom branding and content to the Customer Portal, allowing end users to view release notes, deployment instructions and operational guidance in a vendor-branded interface.
 slug: docs/platform/branding
 sidebar:
   label: Branding & White-Labeling
@@ -16,9 +16,9 @@ import brandedCustomerPortalLight from '~/assets/docs/platform/customers/brandin
 import brandedCustomerPortalDark from '~/assets/docs/platform/customers/branding/branded-customer-portal-dark.webp';
 import {Aside} from '@astrojs/starlight/components';
 
-The Branding tab of the Customer Portal page in the Vendor Portal allows you to apply your own branding to the UI that customers use to deploy and manage your software.
+The Branding tab of the Customer Portal page in the Vendor Portal lets you apply your own branding to the UI that customers use to deploy and manage your software.
 
-A well-configured Customer Portal should provide all the information your end users need to install, operate, and troubleshoot your software independently.
+A well-configured Customer Portal should provide all the information your end users need to install, operate and troubleshoot your software independently.
 
 <Aside type="note">
   Custom branding for your Customer Portal is available on the Pro plan and
@@ -69,7 +69,7 @@ These settings replace Distr's branding across the application for users and cus
 - **Portal Logo**: Shown in the navigation bar for users and customers of your organization, and on the login page of your custom domain. SVG, PNG, JPG or GIF with a recommended height of 64px. If not set, the Distr logo is shown.
 - **Favicon**: Shown in the browser tab. SVG, PNG, GIF or ICO with a recommended size of 64px x 64px (square). If not set, the Distr favicon is shown.
 
-None of these settings require a custom domain: they apply to all logged-in users and customers of your organization on app.distr.sh as well. With a [custom domain](#custom-domains), they additionally apply to unauthenticated pages such as the login page.
+None of these settings require a custom domain: they apply to all logged-in users and customers of your organization on app.distr.sh as well. With a [custom domain](#custom-domains), they also apply to unauthenticated pages such as the login page.
 
 <ThemedImage
   lightSrc={brandingWhiteLabelLight}
@@ -82,7 +82,7 @@ None of these settings require a custom domain: they apply to all logged-in user
 For a fully white-labeled experience, Distr supports custom domains for the Customer Portal and the artifact registry.
 When your portal is accessed via your custom domain, all Distr-specific branding is removed and your white-label settings also apply to unauthenticated pages such as the login page.
 
-Organization admins can set up custom domains self-service. The Vendor Portal and Registry domains are configured under **Settings → Organization → Domains & Sign-in** and the Customer Portal domain under **Customer Portal → Domain & Sign-in**:
+Organization admins can set up custom domains self-service. The Vendor Portal and Registry domains are configured under **Settings → Domains & Sign-in** and the Customer Portal domain under **Customer Portal → Domain & Sign-in**:
 
 1. **Vendor Portal domain** (e.g. `app.your-company.com`): Serves the web UI and API for your own team (and your partners, if partner management is enabled). It also serves the artifact registry under the `/v2/` path, so a single domain is usually all you need.
 2. **Customer Portal domain** (optional, e.g. `portal.your-company.com`): Serves the Customer Portal for all of your customers. When it is set, invitation links, password resets and notification mails sent to customer users point at it instead of your Vendor Portal domain; without it, they use your Vendor Portal domain like everyone else.
@@ -92,9 +92,9 @@ Each of the two optional domains starts collapsed behind its own checkbox, so th
 
 Enter the domain as a bare hostname (no `https://`) and add it.
 Then create a CNAME record at your DNS provider, pointing your domain at the target shown below it; the copy button next to the target puts it on your clipboard.
-The TLS certificate is issued automatically on the first request once the DNS record has propagated — no certificate upload or renewal handling required.
+The TLS certificate is issued automatically on the first request once the DNS record has propagated. You do not need to upload or renew a certificate.
 
-Each domain shows a status panel — green once its CNAME record resolves to the expected target, red with the reason otherwise (e.g. no record found, or it points somewhere else) — along with when it was last checked. Use the reload icon next to the panel to check again after updating your DNS record, without waiting for propagation to be picked up on its own.
+Each domain shows a status panel along with when it was last checked. The panel is green once its CNAME record resolves to the expected target, red with the reason otherwise (e.g. no record found, or it points somewhere else). Use the reload icon next to the panel to check again after updating your DNS record, without waiting for propagation to be picked up on its own.
 
 A domain is only used for links, mails, controller manifests and registry URLs once that check has succeeded; until then everything keeps using the default host, so a domain that is not set up yet never sends anyone to a hostname that does not answer. The check is repeated in the background, and a domain whose record is removed or repointed later falls back the same way. Point your domain at the target with a CNAME and not with an A record: the address behind the target can change, and only the CNAME follows it.
 
@@ -124,7 +124,7 @@ On Distr Cloud, the [Docker](/docs/controllers/docker-controller/) and [Kubernet
 If your organization has a [custom registry domain](#custom-domains), they are pulled through that domain instead, e.g. `registry.your-company.com/distr`.
 Self-hosted instances pull them from `ghcr.io/distr-sh/distr` unless the instance is [configured](/docs/self-hosting/configuration/) otherwise.
 
-To have your customers pull them from another registry, enable **Use an external controller repository** under **Settings → Organization → General** and enter its host and an optional path (e.g. `registry.distr.sh/your-org`).
+To have your customers pull them from another registry, enable **Use an external controller repository** under **Settings → General** and enter its host and an optional path (e.g. `registry.distr.sh/your-org`).
 The setting applies to all of your customers.
 
 A single customer can pull from a repository of its own, so that its deployment targets show neither Distr nor your registry domain.
@@ -144,8 +144,8 @@ A new repository applies when a deployment target connects and at its next contr
 
 ## Custom Email
 
-By default, all transactional e-mails — invitations, e-mail verifications, password resets, license key updates and deployment notifications — are sent by Distr.
-To send them from your own domain instead, check **Send emails through your own SMTP server** under **Settings → Organization → Domains & Sign-in → Email Sending Provider** and configure your SMTP server:
+By default, Distr sends all transactional e-mails: invitations, e-mail verifications, password resets, license key updates and deployment notifications.
+To send them from your own domain instead, check **Send emails through your own SMTP server** under **Settings → Domains & Sign-in → Email Sending Provider** and configure your SMTP server:
 
 1. **Sender address** (e.g. `notifications@your-company.com`): The address your users and customers see as the sender.
 2. **SMTP host and port**: Your mail provider's SMTP endpoint, e.g. `smtp.your-company.com` on port `587`.
@@ -156,7 +156,7 @@ Use **Send test email** to send a test message to your own address before saving
 A failed test reports the error from your SMTP server verbatim, so you can see exactly what to fix.
 
 Your SMTP server must be authorized to send for the domain of your sender address.
-Set up SPF, DKIM and DMARC records for that domain at your DNS provider as documented by your mail provider — otherwise recipients may reject your e-mails or classify them as spam.
+Set up SPF, DKIM and DMARC records for that domain at your DNS provider as documented by your mail provider. Otherwise recipients may reject your e-mails or classify them as spam.
 
 <Aside type="note">
   Custom email is available on the Business plan. Unchecking "Send emails

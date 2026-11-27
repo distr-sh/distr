@@ -46,7 +46,7 @@ Once enabled, the metrics are available at `GET /metrics` on the configured addr
 ## Securing the metrics endpoint
 
 If `METRICS_BEARER_TOKEN` is set, every request to the metrics endpoint must include the token in the `Authorization` header.
-Unauthenticated requests will receive a `401 Unauthorized` response.
+Unauthenticated requests receive a `401 Unauthorized` response.
 
 Example Prometheus scrape configuration with authentication:
 
@@ -65,7 +65,7 @@ scrape_configs:
 
 ### Distr-specific metrics
 
-These custom metrics are exposed under the `distr` namespace and provide insight into the state of your Distr instance.
+These custom metrics are exposed under the `distr` namespace and describe the state of your Distr instance.
 
 | Metric                                      | Type  | Labels                                                                                                                    | Description                                                                                             |
 | ------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |

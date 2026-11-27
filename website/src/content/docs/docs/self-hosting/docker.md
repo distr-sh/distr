@@ -30,9 +30,9 @@ mkdir distr && cd distr && curl -fsSL https://github.com/distr-sh/distr/releases
 ```
 
 This command creates a new directory called `distr` containing two files: `docker-compose.yaml` and `.env`.
-For a basic setup, you don't have to modify `docker-compose.yaml`, but please open `.env` in your favorite text editor and change the values of `POSTGRES_PASSWORD`, `JWT_SECRET`, `DATABASE_ENCRYPTION_KEY` and `RUSTFS_SECRET_KEY`.
-Feel free to also change the value of `DISTR_HOST`, if you intend to make your instance publicly available.
-Once you are happy with your configuration, simply start Distr using Docker Compose:
+For a basic setup, you don't have to modify `docker-compose.yaml`, but open `.env` in a text editor and change the values of `POSTGRES_PASSWORD`, `JWT_SECRET`, `DATABASE_ENCRYPTION_KEY` and `RUSTFS_SECRET_KEY`.
+You can also change the value of `DISTR_HOST` if you intend to make your instance publicly available.
+Once you are happy with your configuration, start Distr using Docker Compose:
 
 ```shell
 docker compose up -d --remove-orphans
@@ -67,7 +67,7 @@ The three enterprise stacks run the Enterprise image `registry.distr.sh/enterpri
 It comes from our own registry, so run `docker login registry.distr.sh` with the credentials you received from us before you start the stack.
 
 :::tip[Let Distr manage your own instance]
-The smoothest way to run a paid plan is to deploy the stack with Distr itself, through a [Docker controller](/docs/controllers/docker-controller/) on the target VM.
+The simplest way to run a paid plan is to deploy the stack with Distr itself, through a [Docker controller](/docs/controllers/docker-controller/) on the target VM.
 The controller then handles the rollout of new Distr versions, configures registry credentials and injects the license key for you: the `enterprise`, `enterprise-aws` and `enterprise-gcp` stacks ship `LICENSE_KEY={{ index .LicenseKeys "Distr" }}` in their `.env`, which the controller resolves at deploy time from the [license key](/docs/platform/license-keys/) named `Distr`.
 
 Those three stacks reference their credentials as [Distr Secrets](/docs/controllers/secrets/) in the same way, so the file you version and ship holds references and the controller resolves them into the `.env` it writes on the target.
@@ -167,7 +167,7 @@ For the database, use Cloud SQL for PostgreSQL with a private IP in the same VPC
 
 The stack talks to Google Cloud Storage in two different ways, one per bucket:
 
-- The registry bucket goes through the S3 interoperability (XML) API, because the OCI registry speaks S3. Create an HMAC key for the service account under Cloud Storage → Settings → Interoperability, use it as `REGISTRY_S3_ACCESS_KEY_ID` and `REGISTRY_S3_SECRET_ACCESS_KEY`, and point `REGISTRY_S3_ENDPOINT` at `https://storage.googleapis.com` with path-style addressing. The interoperability API also needs the three compatibility settings the shipped `.env` contains (`REGISTRY_S3_REQUEST_CHECKSUM_CALCULATION`, `REGISTRY_S3_RESPONSE_CHECKSUM_VALIDATION` and `REGISTRY_RESIGN_FOR_GCP`).
+- The registry bucket goes through the S3 interoperability (XML) API, because the OCI registry speaks S3. Create an HMAC key for the service account under Cloud Storage → Settings → Interoperability, use it as `REGISTRY_S3_ACCESS_KEY_ID` and `REGISTRY_S3_SECRET_ACCESS_KEY`. Point `REGISTRY_S3_ENDPOINT` at `https://storage.googleapis.com` with path-style addressing. The interoperability API also needs the three compatibility settings the shipped `.env` contains (`REGISTRY_S3_REQUEST_CHECKSUM_CALCULATION`, `REGISTRY_S3_RESPONSE_CHECKSUM_VALIDATION` and `REGISTRY_RESIGN_FOR_GCP`).
 - The logs bucket goes through the native GCS API, so Loki only needs its name in `LOKI_GCS_BUCKET_NAME`.
 
 The Compose stack passes no storage credentials to Loki.

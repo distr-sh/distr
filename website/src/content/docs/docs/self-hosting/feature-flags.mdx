@@ -13,11 +13,14 @@ As long as a feature is not generally available or we don't think it should be a
 Feature flags are just an array in the postgres database.
 All feature types can be found in [`types.go`](https://github.com/distr-sh/distr/blob/main/internal/types/types.go).
 
-If you want to enable a feature for an organization, you can do this by running the following command in your postgres database:
+If you want to enable a feature for an organization, you can do this by running the following command in your postgres database. It adds the feature and keeps the ones the organization already has:
 
 ```sql
- update organization set features ='{pre_post_scripts}' where id = 'your-organization-id';
+update organization set features = array_append(features, 'your_feature')
+where id = 'your-organization-id' and not 'your_feature' = any(features);
 ```
+
+Pre- and post-connect scripts need no database access: an organization admin enables them under **Settings → General** by checking **Enable Pre- and Post-Connect Scripts (Pre-Flight Checks)** in the **Controllers** section.
 
 <Aside type="caution">
   Distr Pro feature flags will be reset on application start and require the

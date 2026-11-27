@@ -14,7 +14,7 @@ import listVendorDark from '~/assets/docs/platform/support/support-bundles/suppo
 import settingsLight from '~/assets/docs/platform/support/support-bundles/support-bundle-settings-light.webp';
 import settingsDark from '~/assets/docs/platform/support/support-bundles/support-bundle-settings-dark.webp';
 
-Support Bundles give your customers a structured way to share [diagnostic data](/glossary/support-bundle/) when they report an issue. A customer initializes a bundle, runs a single `curl` command, and the collected data appears in your Vendor Portal. For a Docker deployment the command runs on the deployment host, for a Kubernetes deployment on a machine with access to the cluster. Nothing is uploaded without the customer's explicit approval.
+Support Bundles give your customers a structured way to share [diagnostic data](/glossary/support-bundle/) when they report an issue. A customer initializes a bundle and runs a single `curl` command, and the collected data appears in your Vendor Portal. For a Docker deployment the command runs on the deployment host, for a Kubernetes deployment on a machine with access to the cluster. Nothing is uploaded without the customer's explicit approval.
 
 <Aside type="note">
   Support Bundles are available for Docker and Kubernetes deployments on the
@@ -141,7 +141,8 @@ Use the **Enabled** toggle to park a script without deleting it. Disabled script
   Custom scripts execute on infrastructure you do not control, so the customer
   is shown the full source of every script and can exclude any of them before
   anything runs. Write scripts that only read diagnostic state, and never
-  include credentials in them — anyone who can collect a bundle can read them.
+  include credentials in them, since anyone who can collect a bundle can read
+  them.
 </Aside>
 
 If a script fails or writes to standard error, its exit code and standard error are appended to the collected output so you can tell an empty result apart from a broken script.

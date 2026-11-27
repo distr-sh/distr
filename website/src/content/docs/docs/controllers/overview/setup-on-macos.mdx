@@ -52,8 +52,8 @@ When Docker Desktop runs on macOS, it creates a lightweight Linux VM, and the
 Distr expects to connect to the `default` Docker socket
 (`/var/run/docker.sock`). This mismatch can cause connectivity issues,
 especially when pulling or deploying container images. Setting the context to
-`default` aligns the Docker CLI with the expected Docker endpoint, ensuring
-Distr can interact with the Docker daemon properly.
+`default` aligns the Docker CLI with the expected Docker endpoint, so that
+Distr can interact with the Docker daemon.
 
 **Set the current Docker context to `default`, run:**
 
@@ -111,7 +111,7 @@ Inside the file, find the line that contains:
 "credsStore": "desktop"
 ```
 
-Delete this line entirely, ensuring you **don't leave a trailing comma** that could cause JSON parsing errors.
+Delete this line entirely and **don't leave a trailing comma**, which could cause JSON parsing errors.
 
 After editing, your file should look something like this:
 

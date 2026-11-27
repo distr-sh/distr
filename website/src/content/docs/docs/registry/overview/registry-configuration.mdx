@@ -1,6 +1,6 @@
 ---
 title: Registry Configuration
-description: Set up your registry, push your first artifact, and start distributing your software to customers with fine-grained access control.
+description: Set up your registry, push your first artifact and start distributing your software to customers with fine-grained access control.
 slug: docs/registry/configuration
 sidebar:
   label: Registry Configuration
@@ -16,7 +16,7 @@ import customerArtifactPullsDark from '~/assets/docs/registry/overview/customer-
 import customerPortalArtifactsLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-artifacts-light.webp';
 import customerPortalArtifactsDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-artifacts-dark.webp';
 
-A quick guide to configuring and using the Distr Artifact Registry for secure, tag-based software distribution.
+This guide shows how to configure and use the Distr Artifact Registry for secure, tag-based software distribution.
 
 ## 1. Set your Registry Slug
 
@@ -31,7 +31,7 @@ Set it in **Settings** under **General**.
 
 <Aside type="note">
   The slug must start with a lowercase letter or digit and can only contain
-  lowercase letters, digits, `.`, `_`, `__`, or `-`.
+  lowercase letters, digits, `.`, `_`, `__` or `-`.
 </Aside>
 
 ---
@@ -45,7 +45,8 @@ echo "YOUR-ACCESS-TOKEN" | docker login registry.distr.sh:8585 --password-stdin 
 ```
 
 <Aside type="tip">
-  No username is required, the PAT is linked directly to your user account.
+  No username is required because the PAT is linked directly to your user
+  account.
 </Aside>
 
 ---
@@ -86,7 +87,7 @@ Replace slug with your configured registry slug, and 1.0.0 with your desired ver
 ## 5. Customer Access
 
 - Customers should authenticate with their own [PAT](/docs/integrations/personal-access-token/) and can only pull artifacts they are licensed for.
-- The [customer portal](/docs/platform/customer-portal/registry/#registry-quickstart-from-the-customer-portal) provides a simplified view, the registry UI only shows the artifacts and versions that are accessible to the user.
+- The [customer portal](/docs/platform/customer-portal/registry/#registry-quickstart-from-the-customer-portal) provides a simplified view: the registry UI only shows the artifacts and versions that are accessible to the user.
 
 <ThemedImage
   lightSrc={customerPortalArtifactsLight}

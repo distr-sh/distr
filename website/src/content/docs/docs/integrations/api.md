@@ -27,7 +27,7 @@ For Distr Cloud these are [app.distr.sh/docs](https://app.distr.sh/docs) and [ap
 To authenticate with the Distr API, you need to use a Personal Access Token.
 To create a Personal Access Token, follow the steps outlined in the [Creating a Personal Access Token](/docs/integrations/personal-access-token/) guide.
 
-For each HTTP request to the API, you need to include the Personal Access Token in the `Authorization` header, like shown here:
+For each HTTP request to the API, you need to include the Personal Access Token in the `Authorization` header, as shown here:
 
 ```shell
 curl 'https://app.distr.sh/api/v1/applications' \
