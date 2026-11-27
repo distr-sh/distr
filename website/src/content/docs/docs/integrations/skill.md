@@ -35,8 +35,11 @@ npx skills update distr --global
 The [GitHub CLI](https://cli.github.com/manual/gh_skill_install) installs the skill from the latest Distr release on GitHub:
 
 ```shell
-gh skill install distr-sh/distr skills/distr --scope user
+gh skill install distr-sh/distr skills/distr --agent claude-code --scope user
 ```
+
+Set `--agent` to the agent you use, for example `claude-code`, `cursor`, `codex` or `github-copilot`, and repeat the command for every further agent.
+Without `--agent`, the GitHub CLI asks for the agents in a terminal and installs for GitHub Copilot alone everywhere else.
 
 To update the skill, run:
 
