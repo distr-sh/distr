@@ -62,7 +62,9 @@
             @for (bundle of filteredBundles(); track bundle.id) {
               <tr [appClickableRow]="'/support/' + bundle.id" class="distr-table-row">
                 <td class="distr-table-cell">
-                  {{ bundle.title || bundle.id.substring(0, 8) }}
+                  <div class="max-w-xs truncate" [title]="bundle.title">
+                    {{ bundle.title || bundle.id.substring(0, 8) }}
+                  </div>
                 </td>
                 @if (showCustomerColumn()) {
                   <td class="px-4 py-3">{{ bundle.customerOrganizationName }}</td>
