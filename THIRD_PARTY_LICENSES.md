@@ -87,9 +87,9 @@ published by their authors and verified against the checksums in [`go.sum`](go.s
 | github.com/aws/aws-sdk-go-v2/service/sso | v1.39.5 | [Apache-2.0](https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/sso@v1.39.5?tab=licenses) |
 | github.com/aws/aws-sdk-go-v2/service/ssooidc | v1.44.5 | [Apache-2.0](https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/ssooidc@v1.44.5?tab=licenses) |
 | github.com/aws/aws-sdk-go-v2/service/sts | v1.53.0 | [Apache-2.0](https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/sts@v1.53.0?tab=licenses) |
-| github.com/aws/smithy-go | v1.28.9 | [Apache-2.0](https://pkg.go.dev/github.com/aws/smithy-go@v1.28.9?tab=licenses) |
-| github.com/aws/smithy-go/internal/sync/singleflight | v1.28.9 | [BSD-3-Clause](https://pkg.go.dev/github.com/aws/smithy-go/internal/sync/singleflight@v1.28.9?tab=licenses) |
-| github.com/aws/smithy-go/transport/http/protocol/internal/json/internal/stdlib | v1.28.9 | [BSD-3-Clause](https://pkg.go.dev/github.com/aws/smithy-go/transport/http/protocol/internal/json/internal/stdlib@v1.28.9?tab=licenses) |
+| github.com/aws/smithy-go | v1.28.10 | [Apache-2.0](https://pkg.go.dev/github.com/aws/smithy-go@v1.28.10?tab=licenses) |
+| github.com/aws/smithy-go/internal/sync/singleflight | v1.28.10 | [BSD-3-Clause](https://pkg.go.dev/github.com/aws/smithy-go/internal/sync/singleflight@v1.28.10?tab=licenses) |
+| github.com/aws/smithy-go/transport/http/protocol/internal/json/internal/stdlib | v1.28.10 | [BSD-3-Clause](https://pkg.go.dev/github.com/aws/smithy-go/transport/http/protocol/internal/json/internal/stdlib@v1.28.10?tab=licenses) |
 | github.com/beorn7/perks/quantile | v1.0.1 | [MIT](https://pkg.go.dev/github.com/beorn7/perks/quantile@v1.0.1?tab=licenses) |
 | github.com/blang/semver/v4 | v4.0.0 | [MIT](https://pkg.go.dev/github.com/blang/semver/v4@v4.0.0?tab=licenses) |
 | github.com/boombuler/barcode | v1.0.1-0.20190219062509-6c824513bacc | [MIT](https://pkg.go.dev/github.com/boombuler/barcode@v1.0.1-0.20190219062509-6c824513bacc?tab=licenses) |
@@ -157,7 +157,7 @@ published by their authors and verified against the checksums in [`go.sum`](go.s
 | github.com/go-logr/stdr | v1.2.2 | [Apache-2.0](https://pkg.go.dev/github.com/go-logr/stdr@v1.2.2?tab=licenses) |
 | github.com/go-logr/zapr | v1.3.0 | [Apache-2.0](https://pkg.go.dev/github.com/go-logr/zapr@v1.3.0?tab=licenses) |
 | github.com/go-mailx/mailx | v1.1.0 | [MIT](https://pkg.go.dev/github.com/go-mailx/mailx@v1.1.0?tab=licenses) |
-| github.com/go-mailx/mailx-ses | v1.1.5 | [MIT](https://pkg.go.dev/github.com/go-mailx/mailx-ses@v1.1.5?tab=licenses) |
+| github.com/go-mailx/mailx-ses | v1.1.6 | [MIT](https://pkg.go.dev/github.com/go-mailx/mailx-ses@v1.1.6?tab=licenses) |
 | github.com/go-mailx/mailx-smtp | v1.1.1 | [MIT](https://pkg.go.dev/github.com/go-mailx/mailx-smtp@v1.1.1?tab=licenses) |
 | github.com/go-openapi/jsonpointer | v1.0.0 | [Apache-2.0](https://pkg.go.dev/github.com/go-openapi/jsonpointer@v1.0.0?tab=licenses) |
 | github.com/go-openapi/jsonreference | v1.0.0 | [Apache-2.0](https://pkg.go.dev/github.com/go-openapi/jsonreference@v1.0.0?tab=licenses) |

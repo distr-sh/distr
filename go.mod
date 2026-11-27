@@ -14,7 +14,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.69.0
 	github.com/aws/aws-sdk-go-v2/service/kms v1.63.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.116.0
-	github.com/aws/smithy-go v1.28.9
+	github.com/aws/smithy-go v1.28.10
 	github.com/compose-spec/compose-go/v2 v2.17.0
 	github.com/containerd/log v0.2.0
 	github.com/coreos/go-oidc/v3 v3.21.0
@@ -32,7 +32,7 @@ require (
 	github.com/go-co-op/gocron/v2 v2.23.2
 	github.com/go-logr/zapr v1.3.0
 	github.com/go-mailx/mailx v1.1.0
-	github.com/go-mailx/mailx-ses v1.1.5
+	github.com/go-mailx/mailx-ses v1.1.6
 	github.com/go-mailx/mailx-smtp v1.1.1
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/golang-migrate/migrate/v4 v4.20.1
