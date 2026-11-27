@@ -6,8 +6,6 @@ on:
   push:
     branches:
       - 'main'
-    tags:
-      - '*'
     paths:
       - 'docker-autoheal/**'
       - '.github/workflows/build-docker-autoheal.yaml'
@@ -15,9 +13,11 @@ on:
     paths:
       - 'docker-autoheal/**'
       - '.github/workflows/build-docker-autoheal.yaml'
+  workflow_call:
 
+# github.workflow is the caller's name in a called workflow, so it cannot tell the builds of a release apart.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_id || github.ref }}
+  group: build-docker-autoheal-${{ github.ref == 'refs/heads/main' && github.run_id || github.ref }}
   cancel-in-progress: true
 
 jobs:
