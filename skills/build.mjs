@@ -4,11 +4,10 @@
 //   assets/  the archives uploaded to the GitHub release of the tag
 //   site/    the files synced to distr.sh, whose index and marketplace point at those archives
 
-import {zipSync} from 'fflate';
 import {createHash} from 'node:crypto';
 import {mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync} from 'node:fs';
 import {dirname, join} from 'node:path';
-import {parse} from 'yaml';
+import {zip} from './zip.mjs';
 
 const skillDir = join(import.meta.dirname, 'distr');
 const templatesDir = join(import.meta.dirname, 'templates');
@@ -16,11 +15,12 @@ const outDir = join(import.meta.dirname, '..', 'dist', 'skill');
 const assetsDir = join(outDir, 'assets');
 const siteDir = join(outDir, 'site', '.well-known', 'agent-skills');
 
-function readFrontmatter() {
-  const content = readFileSync(join(skillDir, 'SKILL.md'), 'utf8');
-  const match = content.match(/^---\n([\s\S]*?)\n---\n/);
-  if (!match) throw new Error('SKILL.md has no frontmatter');
-  return parse(match[1]);
+// Reads a top-level field that fits on one line, which is all the frontmatter of SKILL.md holds.
+function readFrontmatterField(key) {
+  const frontmatter = readFileSync(join(skillDir, 'SKILL.md'), 'utf8').match(/^---\n([\s\S]*?)\n---\n/)?.[1];
+  const value = frontmatter?.match(new RegExp(`^${key}: (.+)$`, 'm'))?.[1];
+  if (!value) throw new Error(`SKILL.md has no ${key} in its frontmatter`);
+  return value;
 }
 
 function listSkillFiles() {
@@ -36,14 +36,8 @@ if (!tag) {
 }
 
 const releaseUrl = `https://github.com/distr-sh/distr/releases/download/${tag}`;
-const {name, description} = readFrontmatter();
-
-// A fixed mtime keeps the archives from depending on when the files were checked out.
-const mtime = new Date('2020-01-01T00:00:00Z');
-
-function zip(files) {
-  return zipSync(Object.fromEntries(Object.entries(files).map(([path, content]) => [path, [content, {mtime}]])));
-}
+const name = readFrontmatterField('name');
+const description = readFrontmatterField('description');
 
 function sha256(bytes) {
   return createHash('sha256').update(bytes).digest('hex');
