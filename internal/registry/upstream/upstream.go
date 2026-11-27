@@ -90,6 +90,7 @@ func (s *Syncer) SyncArtifactTags(
 	existingTags := map[string]struct{}{}
 	if skipExistingTags {
 		if names, err := db.GetArtifactVersionNames(ctx, artifact.ID); err != nil {
+			recordSpanError(span, err)
 			syncErr := fmt.Sprintf("failed to get existing versions: %v", err)
 			return nil, db.UpdateArtifactSyncStatus(ctx, artifact.ID, &syncErr)
 		} else {
