@@ -14,8 +14,6 @@ pnpm = "12.23.0"
 stripe = "1.55.15"
 "go:github.com/go-delve/delve/cmd/dlv" = "1.27.2"
 git-lfs = "3.8.1"
-yq = "4.54.3"
-7zip = "26.06"
 
 [env]
 _.source = ['hack/current-commit.sh']
@@ -84,8 +82,9 @@ sources = [
 ]
 
 [tasks."build:skill"]
-description = 'Build the agent skill archives, discovery index and Claude marketplace into dist/skill'
-run = 'hack/build-skill.sh "$VERSION"'
+description = 'Build the skill archives, discovery index and Claude marketplace into dist/skill'
+run = 'pnpm build'
+dir = "skills"
 
 [tasks."build:controller:docker"]
 run = 'go build -ldflags="{{vars.ldflags}}" -o dist/docker-controller ./cmd/controller/docker'
@@ -118,9 +117,8 @@ run = 'pnpm lint'
 dir = "website"
 
 [tasks."lint:skill"]
-description = 'Validate the agent skill and the Claude Code plugin built from it'
-run = 'hack/lint-skill.sh'
-depends = ["build:skill"]
+description = 'Validate the skill against the Agent Skills specification'
+run = 'gh skill publish --dry-run'
 
 [tasks."lint:app"]
 run = { tasks = ["lint:go", "lint:frontend", "lint:migrations"] }

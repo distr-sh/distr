@@ -14,6 +14,8 @@ A deployment target is a "deployment" in user-facing text: UI copy, activity fee
 
 "Control plane" is a category, not a name. Keep it where it explains an architecture in general (BYOC, Kubernetes, what a vendor's SaaS does), and never use it as a second name for our own server: write "Distr", not "the Distr control plane" or "the control plane".
 
+The skill in `skills/distr/` is the Distr skill, never the agent skill. Keep "Agent Skills" only for the specification on agentskills.io and the `.well-known/agent-skills/` path it defines.
+
 ## Repository layout
 
 - `cmd/distr/`: Distr itself, a Go backend on chi/v5 serving the REST API on `/api/v1` and the compiled frontend on `/`.
@@ -21,7 +23,7 @@ A deployment target is a "deployment" in user-facing text: UI copy, activity fee
 - `frontend/ui/`: the Angular app (standalone components, TailwindCSS 4, SCSS, Flowbite), built into `internal/frontend/dist/ui/`.
 - `sdk/js/`: `@distr-sh/distr-sdk`, a standalone pnpm project. Prefer its high-level `DistrService` over the low-level `Client`, and run its examples against the config in `src/examples/config.ts`.
 - `website/`: the docs and marketing site, a standalone pnpm project with a Prettier config of its own.
-- `skills/distr/`: the Distr agent skill. Keep it a routing layer to the documentation on `distr.sh/llms.txt` rather than a copy of it. `hack/build-skill.sh` packs it for the GitHub release and the discovery index on `distr.sh/.well-known/agent-skills/`.
+- `skills/distr/`: the Distr skill. Keep it a routing layer to the documentation on `distr.sh/llms.txt` rather than a copy of it. `skills/` is a standalone pnpm project whose `build.mjs` renders `skills/templates/` and packs the skill for the GitHub release and the discovery index on `distr.sh/.well-known/agent-skills/`. Keep what an installer must not copy outside `skills/distr/`.
 - `internal/`: the backend. `db/` holds every query, `handlers/` the HTTP handlers, `respond/` their adapter and response types, `api/` their request and response structs, `routing/` the routes and middleware, `mapping/` the conversions between `api` and `types`, `types/` the database models, `svc/` the services, `authn/` the authentication providers, `logstore/` the Loki-backed log records, `registry/` the OCI registry, `advisory/` the advisory visibility rules and `migrations/sql/` the schema.
 
 PostgreSQL is reached through pgx/v5, registry blobs and Loki chunks live in S3-compatible object storage and deployment logs live in Loki rather than in the database. Timestamp columns are `TIMESTAMP`, never `TIMESTAMPTZ`.
@@ -241,7 +243,7 @@ Do write a comment that records something a reader cannot see:
 
 ## Tests
 
-Only write a test that could fail for a real reason. Every test is code that has to be maintained, and one that restates the implementation costs maintenance without ever catching a bug.
+Only write a test or a lint check that could fail for a real reason. Every test is code that has to be maintained, and one that restates the implementation costs maintenance without ever catching a bug.
 
 - Assert with [Gomega](https://onsi.github.io/gomega/) in Go tests.
 - Do not test guard clauses, getters, plain mappings, a single `if` branch or that a value passed in comes back out.
@@ -273,6 +275,7 @@ Keep the changes on the branch you work in to the one fix, feature or refactorin
 - Run `mise run build:helm-schema` after every change to `deploy/charts/distr/values.yaml`, since CI rejects a stale `values.schema.json`. Annotate a value with `# @schema` where the type inferred from the default is too narrow, an IntOrString field or an override a user sets to null being the cases, and render every file under `deploy/charts/distr/examples/` to confirm the schema still accepts them.
 - Use the GitHub CLI (`gh`) rather than the web interface to fetch data from GitHub.
 - Write shell for anything from a one-off command to a checked-in script (like `hack/validate-migrations.sh`), and Node once a task outgrows shell (like `hack/controller-changelog.mjs`). Avoid Python and never use Perl (e.g. `perl -pi -e`). Edit files directly rather than piping them through a stream editor.
+- Keep a file a script generates, a JSON manifest being the example, as a template file next to the script rather than inline in it, and render it from a Node script once it needs values filled in.
 
 ## Code Review Instructions
 

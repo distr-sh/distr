@@ -1,0 +1,16 @@
+{
+  "name": "distr-skills",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "fflate": "^0.8.3",
+    "yaml": "^2.9.1"
+  },
+  "packageManager": "pnpm@12.23.0",
+  "engines": {
+    "node": "26.x"
+  }
+}

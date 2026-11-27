@@ -16,7 +16,6 @@ Distr distributes applications to customers who run them on their own infrastruc
 1. **Read the current documentation before you act.** Distr changes with every release, so do not rely on what you remember. Start from the index at https://distr.sh/llms.txt, which links every page. Fetch https://distr.sh/llms-small.txt for a compact version of all documentation or https://distr.sh/llms-full.txt for the complete one.
 2. **Take the API from the instance you talk to.** Every instance serves its own OpenAPI specification on `/docs/openapi.json`. A self-hosted instance can run an older version than Distr Cloud, so read the specification of that instance rather than the one on `app.distr.sh`.
 3. **Never hard-code a personal access token.** Read it from an environment variable or a secret store and keep it out of commits, logs and output.
-4. **Call the component in customer environments the Distr Controller.** It is never called an agent.
 
 ## What to read
 

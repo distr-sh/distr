@@ -1,13 +1,13 @@
 ---
-title: Distr Agent Skill
-description: Install the Distr agent skill so that coding agents like Claude Code, Cursor, Codex and GitHub Copilot know how to use the Distr API. It is updated with every Distr release.
-slug: docs/integrations/agent-skill
+title: Distr Skill
+description: Install the Distr skill so that coding agents like Claude Code, Cursor, Codex and GitHub Copilot know how to use the Distr API. It is updated with every Distr release.
+slug: docs/integrations/skill
 sidebar:
-  label: Agent Skill
+  label: Skill
   order: 3
 ---
 
-The Distr agent skill teaches coding agents how to work with Distr: where to find the current documentation and how to call the [Distr API](/docs/integrations/api/).
+The Distr skill teaches coding agents how to work with Distr: where to find the current documentation and how to call the [Distr API](/docs/integrations/api/).
 It follows the [Agent Skills](https://agentskills.io) format, so Claude Code, Cursor, Codex, GitHub Copilot, Gemini CLI and most other agents can load it.
 
 The skill is released together with Distr.
