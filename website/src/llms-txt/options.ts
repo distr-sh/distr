@@ -19,7 +19,12 @@ interface CustomerFrontmatter extends EntryFrontmatter {
   caseStudy?: {pageTitle: string; pageDescription: string};
 }
 
-const promote = ['docs', 'docs/core-concepts', 'docs/quickstart'];
+const promote = [
+  'docs',
+  'docs/core-concepts',
+  'docs/quickstart',
+  'docs/integrations/skill',
+];
 
 const collator = new Intl.Collator('en');
 
