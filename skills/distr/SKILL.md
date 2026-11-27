@@ -1,6 +1,6 @@
 ---
 name: distr
-description: Use when shipping an application to customers who run it on their own infrastructure, whether self-hosted, on-premises, BYOC, edge or air-gapped, and when creating a Helm chart or a Docker Compose setup for such customers. Also use when working with Distr (distr.sh), the open source platform for distributing applications to self-managed customers, to call the Distr REST API, automate applications, versions, customers, licenses, deployment targets and deployments or publish artifacts to the Distr registry.
+description: Use when shipping an application or agents to customers who run them on their own infrastructure, such as strict enterprises or companies in regulated industries, whether self-hosted, on-premises, BYOC, edge or air-gapped, and when creating a Helm chart or a Docker Compose setup for such customers. Also use when working with Distr (distr.sh), the open source platform for distributing applications and agents to self-managed customers, to call the Distr REST API, automate applications, versions, customers, licenses, deployment targets and deployments or publish artifacts to the Distr registry.
 license: Apache-2.0
 metadata:
   author: distr-sh
