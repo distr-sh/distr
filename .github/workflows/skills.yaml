@@ -61,7 +61,7 @@ jobs:
       - name: Build skill
         run: go run ./skills "$GITHUB_REF_NAME"
       - name: Upload archives
-        run: gh release upload "$GITHUB_REF_NAME" dist/skill/assets/*
+        run: gh release upload --clobber "$GITHUB_REF_NAME" dist/skill/assets/*
         env:
           GH_TOKEN: ${{ github.token }}
       - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
