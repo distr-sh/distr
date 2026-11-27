@@ -172,8 +172,6 @@ jobs:
             ${{ env.REGISTRY_IMAGE }}
             ${{ !contains(github.ref_name, '-rc.') && format('registry.distr.sh/distr/{0}', matrix.controller) || '' }}
           tags: |
-            type=ref,event=branch
-            type=sha,event=branch
             type=semver,pattern={{version}}
           flavor: |
             latest=false
