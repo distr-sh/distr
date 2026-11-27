@@ -8,7 +8,9 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/distr-sh/distr/internal/openapischema"
 	"github.com/google/uuid"
+	"github.com/oaswrap/spec/openapi"
 )
 
 type VersioningStrategy string
@@ -21,6 +23,14 @@ const (
 	// applications whose names were never validated and cannot be selected.
 	VersioningStrategyLegacy VersioningStrategy = "legacy"
 )
+
+func (VersioningStrategy) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(
+		VersioningStrategySemver,
+		VersioningStrategyChronological,
+		VersioningStrategyLegacy,
+	)
+}
 
 // SelectableVersioningStrategies are the strategies an application may be set to.
 func SelectableVersioningStrategies() []VersioningStrategy {

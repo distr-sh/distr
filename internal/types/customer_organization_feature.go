@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+
+	"github.com/distr-sh/distr/internal/openapischema"
+	"github.com/oaswrap/spec/openapi"
 )
 
 var ErrInvalidCustomerOrganizationFeature = fmt.Errorf("invalid customer organization feature")
@@ -29,6 +32,19 @@ const (
 	// customer side it gates.
 	CustomerOrganizationFeatureVulnerabilities CustomerOrganizationFeature = "vulnerabilities"
 )
+
+func (CustomerOrganizationFeature) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(
+		CustomerOrganizationFeatureDeploymentTargets,
+		CustomerOrganizationFeatureArtifacts,
+		CustomerOrganizationFeatureAlerts,
+		CustomerOrganizationFeatureUpdateNotifications,
+		CustomerOrganizationFeatureSupportBundles,
+		CustomerOrganizationFeatureSettings,
+		CustomerOrganizationFeatureOidcProviders,
+		CustomerOrganizationFeatureVulnerabilities,
+	)
+}
 
 // CustomerOrganizationFeatureRequirements maps each customer feature that an organization can only
 // hand out with an organization feature of its own to that feature. The organization feature

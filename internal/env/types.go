@@ -3,6 +3,9 @@ package env
 import (
 	"fmt"
 	"net/mail"
+
+	"github.com/distr-sh/distr/internal/openapischema"
+	"github.com/oaswrap/spec/openapi"
 )
 
 // URLScheme is the scheme of a URL this instance builds or fetches.
@@ -20,6 +23,10 @@ const (
 	RegistrationHidden   RegistrationMode = "hidden"
 	RegistrationDisabled RegistrationMode = "disabled"
 )
+
+func (RegistrationMode) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(RegistrationEnabled, RegistrationHidden, RegistrationDisabled)
+}
 
 func parseRegistrationMode(value string) (RegistrationMode, error) {
 	switch value {

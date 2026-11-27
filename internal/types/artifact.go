@@ -5,7 +5,9 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/openapischema"
 	"github.com/google/uuid"
+	"github.com/oaswrap/spec/openapi"
 )
 
 // NonReleaseTagPattern matches the tags clients push for signatures and attestations, the OCI referrers
@@ -28,12 +30,25 @@ const (
 	ManifestTypeSignature      ManifestType = "signature"
 )
 
+func (ManifestType) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(
+		ManifestTypeGeneric,
+		ManifestTypeContainerImage,
+		ManifestTypeHelmChart,
+		ManifestTypeSignature,
+	)
+}
+
 type UpstreamAuthType string
 
 const (
 	UpstreamAuthTypeBasic  UpstreamAuthType = "basic"
 	UpstreamAuthTypeAWSECR UpstreamAuthType = "aws_ecr"
 )
+
+func (UpstreamAuthType) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(UpstreamAuthTypeBasic, UpstreamAuthTypeAWSECR)
+}
 
 type Artifact struct {
 	ID             uuid.UUID  `db:"id" json:"id"`

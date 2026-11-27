@@ -8,9 +8,11 @@ import (
 	"slices"
 	"time"
 
+	"github.com/distr-sh/distr/internal/openapischema"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/oaswrap/spec/openapi"
 	"github.com/opencontainers/go-digest"
 )
 
@@ -21,6 +23,10 @@ const (
 	UserRoleReadWrite UserRole = "read_write"
 	UserRoleAdmin     UserRole = "admin"
 )
+
+func (UserRole) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(UserRoleReadOnly, UserRoleReadWrite, UserRoleAdmin)
+}
 
 func ParseUserRole(value string) (UserRole, error) {
 	switch value {
@@ -116,6 +122,10 @@ func AllSubscriptionTypes() []SubscriptionType {
 		SubscriptionTypeEnterprise,
 		SubscriptionTypeTrial,
 	}
+}
+
+func (SubscriptionType) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(AllSubscriptionTypes()...)
 }
 
 // Feature is mirrored by the Feature type in frontend/ui/src/app/types/organization.ts. Change both together.
@@ -261,6 +271,10 @@ const (
 	DeploymentTypeKubernetes DeploymentType = "kubernetes"
 )
 
+func (DeploymentType) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(DeploymentTypeDocker, DeploymentTypeKubernetes)
+}
+
 var ErrInvalidDeploymentType = errors.New("invalid deployment type")
 
 func ParseDeploymentType(value string) (DeploymentType, error) {
@@ -292,6 +306,10 @@ const (
 	HelmChartTypeRepository HelmChartType = "repository"
 	HelmChartTypeOCI        HelmChartType = "oci"
 )
+
+func (HelmChartType) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(HelmChartTypeRepository, HelmChartTypeOCI)
+}
 
 var ErrInvalidHelmChartType = errors.New("invalid helm chart type")
 
@@ -343,6 +361,18 @@ const (
 	SubscriptionPeriodMonthly SubscriptionPeriod = "monthly"
 	SubscriptionPeriodYearly  SubscriptionPeriod = "yearly"
 )
+
+func (DockerType) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(DockerTypeCompose, DockerTypeSwarm)
+}
+
+func (DeploymentTargetScope) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(DeploymentTargetScopeCluster, DeploymentTargetScopeNamespace)
+}
+
+func (SubscriptionPeriod) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(SubscriptionPeriodMonthly, SubscriptionPeriodYearly)
+}
 
 var ErrInvalidDeploymentTargetScope = errors.New("invalid deployment target scope")
 

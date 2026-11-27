@@ -4,7 +4,9 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/internal/dbcrypto"
+	"github.com/distr-sh/distr/internal/openapischema"
 	"github.com/google/uuid"
+	"github.com/oaswrap/spec/openapi"
 )
 
 type DeploymentRevisionTrigger string
@@ -17,6 +19,15 @@ const (
 	DeploymentRevisionTriggerSecretChange     DeploymentRevisionTrigger = "secret_change"
 	DeploymentRevisionTriggerLicenseKeyChange DeploymentRevisionTrigger = "license_key_change"
 )
+
+func (DeploymentRevisionTrigger) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(
+		DeploymentRevisionTriggerUser,
+		DeploymentRevisionTriggerAutomaticUpdate,
+		DeploymentRevisionTriggerSecretChange,
+		DeploymentRevisionTriggerLicenseKeyChange,
+	)
+}
 
 type DeploymentRevision struct {
 	Base

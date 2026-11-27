@@ -3,7 +3,9 @@ package types
 import (
 	"time"
 
+	"github.com/distr-sh/distr/internal/openapischema"
 	"github.com/google/uuid"
+	"github.com/oaswrap/spec/openapi"
 )
 
 type DomainType string
@@ -13,6 +15,10 @@ const (
 	DomainTypeRegistry       DomainType = "registry"
 	DomainTypeCustomerPortal DomainType = "customer_portal"
 )
+
+func (DomainType) OpenAPISchema() *openapi.Schema {
+	return openapischema.StringEnum(DomainTypeApp, DomainTypeRegistry, DomainTypeCustomerPortal)
+}
 
 type CustomDomain struct {
 	ID        uuid.UUID  `db:"id"`
