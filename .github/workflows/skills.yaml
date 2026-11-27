@@ -72,12 +72,9 @@ jobs:
         with:
           aws-region: eu-central-1
           role-to-assume: arn:aws:iam::639130800065:role/github-actions-distr.sh
-      # The website deploy syncs without --delete and never writes this prefix, so neither
-      # deploy removes or overwrites what the other one published.
       - name: Publish discovery index and Claude marketplace
         run: >-
           aws s3 sync dist/skill/site/.well-known/agent-skills/ s3://distr.sh/.well-known/agent-skills/
-          --delete
           --cache-control "max-age=60, public, must-revalidate"
           --acl=public-read
       - name: Invalidate cache
