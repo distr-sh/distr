@@ -4,9 +4,9 @@ dependencies:
   version: 18.12.28
 - name: rustfs
   repository: https://charts.rustfs.com
-  version: 1.0.6
+  version: 1.0.7
 - name: loki
   repository: oci://ghcr.io/grafana-community/helm-charts
   version: 21.6.3
-digest: sha256:3ba8247157cbca9439e22ae793d9f03edc60d9d802943e7c26967031665b05af
-generated: "2026-11-27T09:34:57.494922014Z"
+digest: sha256:71afa64aaf118d5f3b4dd25c2d29a581723e7e88d6b602fab8364068295f9ac4
+generated: "2026-11-28T12:58:22.719418161Z"
