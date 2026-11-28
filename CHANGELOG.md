@@ -1,5 +1,40 @@
 # Changelog
 
+## [4.12.1](https://github.com/distr-sh/distr/compare/4.12.0...4.12.1) (2026-11-28)
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([#4105](https://github.com/distr-sh/distr/issues/4105)) ([a564f1f](https://github.com/distr-sh/distr/commit/a564f1f00a45660694ef04456dd8187b60049ac4))
+* **deps:** update kubernetes monorepo to v0.37.3 ([#4106](https://github.com/distr-sh/distr/issues/4106)) ([7911b26](https://github.com/distr-sh/distr/commit/7911b2616718822d2d27a2cb27a8740fb3eb9e5c))
+* **deps:** update module github.com/docker/cli to v29.10.1+incompatible ([#4107](https://github.com/distr-sh/distr/issues/4107)) ([5bf9922](https://github.com/distr-sh/distr/commit/5bf99226d6cd39974205c1639ac95e8d116d2bf9))
+* **deps:** update module github.com/go-mailx/mailx-ses to v1.1.6 ([#4108](https://github.com/distr-sh/distr/issues/4108)) ([04318cf](https://github.com/distr-sh/distr/commit/04318cf09504b9c02ec220317c0ed95788f97b23))
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.166.0 ([#4109](https://github.com/distr-sh/distr/issues/4109)) ([859fb71](https://github.com/distr-sh/distr/commit/859fb7167f13885820a2e51cc8fea606a07e63cd))
+* **frontend:** fix log page not updated on deployment change ([#4110](https://github.com/distr-sh/distr/issues/4110)) ([c814df0](https://github.com/distr-sh/distr/commit/c814df0d08f6aefdcd3b1ae61eeb8bceffb49819))
+
+
+### Other
+
+* **deps:** update codemirror ([#4098](https://github.com/distr-sh/distr/issues/4098)) ([f4d359b](https://github.com/distr-sh/distr/commit/f4d359b583b3f731f07f196a3aa745ffe6284c01))
+* **deps:** update dependency vitest to v5.1.2 ([#4099](https://github.com/distr-sh/distr/issues/4099)) ([1d3ae34](https://github.com/distr-sh/distr/commit/1d3ae342ed868415e07d5ffc5e4fcc6859452b15))
+* **deps:** update docker docker tag to v29.10.1 ([#4101](https://github.com/distr-sh/distr/issues/4101)) ([1b2b92e](https://github.com/distr-sh/distr/commit/1b2b92e49e59bdfbc074502854a5e18c243f14bc))
+* **deps:** update hello-distr to v0.4.36 ([#4102](https://github.com/distr-sh/distr/issues/4102)) ([a28fe83](https://github.com/distr-sh/distr/commit/a28fe833700e62a5f5cfd6936023d3bea97bf3d5))
+* **deps:** update hello-distr to v0.4.37 ([#4119](https://github.com/distr-sh/distr/issues/4119)) ([b84314e](https://github.com/distr-sh/distr/commit/b84314e921f8fde2ccca973e084a8524e9c568a5))
+* **deps:** update loki docker tag to v21.6.3 ([#4103](https://github.com/distr-sh/distr/issues/4103)) ([709dcb0](https://github.com/distr-sh/distr/commit/709dcb0e454d0456b13ae64fc533c8301df85761))
+* **deps:** update postgresql docker tag to v18.12.28 ([#4083](https://github.com/distr-sh/distr/issues/4083)) ([2b5dc2e](https://github.com/distr-sh/distr/commit/2b5dc2e998851db84f83e9784fd1f8a96ecf7b9a))
+* **deps:** update rustfs/rustfs docker tag to v1.0.7 ([#4122](https://github.com/distr-sh/distr/issues/4122)) ([56c1f71](https://github.com/distr-sh/distr/commit/56c1f71290e7458e505724cc3d7ec14b63bb0b46))
+* **frontend:** Use unified search bar for customer detail license tab ([#4077](https://github.com/distr-sh/distr/issues/4077)) ([9e613a0](https://github.com/distr-sh/distr/commit/9e613a02ff1de3902a6e382b646afcd76649568c))
+
+
+### Docs
+
+* **backend:** add enum options to generated OpenAPI schema ([#4096](https://github.com/distr-sh/distr/issues/4096)) ([a6e0a1f](https://github.com/distr-sh/distr/commit/a6e0a1f23fafd18ce86a64ccf99729a10dfd49df))
+
+
+### Performance
+
+* **backend:** upstream sync job loads all version names for artifact at once ([#4111](https://github.com/distr-sh/distr/issues/4111)) ([8680ceb](https://github.com/distr-sh/distr/commit/8680ceb49e5af2f888155877b2e55bbb3cb47fa9))
+
 ## [4.12.0](https://github.com/distr-sh/distr/compare/4.11.0...4.12.0) (2026-11-26)
 
 
