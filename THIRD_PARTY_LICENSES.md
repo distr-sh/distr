@@ -80,7 +80,7 @@ published by their authors and verified against the checksums in [`go.sum`](go.s
 | github.com/aws/aws-sdk-go-v2/service/internal/s3shared | v1.20.13 | [Apache-2.0](https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/internal/s3shared@v1.20.13?tab=licenses) |
 | github.com/aws/aws-sdk-go-v2/service/kms | v1.63.1 | [Apache-2.0](https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/kms@v1.63.1?tab=licenses) |
 | github.com/aws/aws-sdk-go-v2/service/s3 | v1.116.1 | [Apache-2.0](https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/s3@v1.116.1?tab=licenses) |
-| github.com/aws/aws-sdk-go-v2/service/sesv2 | v1.80.0 | [Apache-2.0](https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/sesv2@v1.80.0?tab=licenses) |
+| github.com/aws/aws-sdk-go-v2/service/sesv2 | v1.80.1 | [Apache-2.0](https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/sesv2@v1.80.1?tab=licenses) |
 | github.com/aws/aws-sdk-go-v2/service/signin | v1.14.1 | [Apache-2.0](https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/signin@v1.14.1?tab=licenses) |
 | github.com/aws/aws-sdk-go-v2/service/sns | v1.47.2 | [Apache-2.0](https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/sns@v1.47.2?tab=licenses) |
 | github.com/aws/aws-sdk-go-v2/service/sqs | v1.52.1 | [Apache-2.0](https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/sqs@v1.52.1?tab=licenses) |
@@ -157,7 +157,7 @@ published by their authors and verified against the checksums in [`go.sum`](go.s
 | github.com/go-logr/stdr | v1.2.2 | [Apache-2.0](https://pkg.go.dev/github.com/go-logr/stdr@v1.2.2?tab=licenses) |
 | github.com/go-logr/zapr | v1.3.0 | [Apache-2.0](https://pkg.go.dev/github.com/go-logr/zapr@v1.3.0?tab=licenses) |
 | github.com/go-mailx/mailx | v1.1.0 | [MIT](https://pkg.go.dev/github.com/go-mailx/mailx@v1.1.0?tab=licenses) |
-| github.com/go-mailx/mailx-ses | v1.1.6 | [MIT](https://pkg.go.dev/github.com/go-mailx/mailx-ses@v1.1.6?tab=licenses) |
+| github.com/go-mailx/mailx-ses | v1.1.7 | [MIT](https://pkg.go.dev/github.com/go-mailx/mailx-ses@v1.1.7?tab=licenses) |
 | github.com/go-mailx/mailx-smtp | v1.1.1 | [MIT](https://pkg.go.dev/github.com/go-mailx/mailx-smtp@v1.1.1?tab=licenses) |
 | github.com/go-openapi/jsonpointer | v1.0.0 | [Apache-2.0](https://pkg.go.dev/github.com/go-openapi/jsonpointer@v1.0.0?tab=licenses) |
 | github.com/go-openapi/jsonreference | v1.0.0 | [Apache-2.0](https://pkg.go.dev/github.com/go-openapi/jsonreference@v1.0.0?tab=licenses) |
